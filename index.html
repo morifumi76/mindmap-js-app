@@ -3775,7 +3775,7 @@
 
             var name = document.createElement('span');
             name.className = 'map-item-name';
-            name.textContent = folder.name;
+            name.textContent = '\uD83D\uDCC1 ' + folder.name;
             name.title = folder.name;
 
             var menuBtn = document.createElement('button');
@@ -4359,7 +4359,8 @@
             if (meta && meta.type === 'folder' && meta.isDefault) return;
 
             // Replace name span with an input element
-            var currentName = nameEl.textContent;
+            // Use meta name (raw) to avoid including display-only prefixes like \uD83D\uDCC1
+            var currentName = meta ? meta.name : nameEl.textContent;
             var input = document.createElement('input');
             input.type = 'text';
             input.className = 'map-item-rename-input';
