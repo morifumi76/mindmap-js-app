@@ -57,7 +57,7 @@ const { chromium } = require('playwright');
     assert(!!await page.$('#sidebar'), 'Sidebar exists');
     assert(!!await page.$('#sidebarToggle'), 'Toggle button exists');
     assert(!!await page.$('#copyBtn'), 'Copy button');
-    assert(!!await page.$('#resetBtn'), 'Reset button');
+    assert(!!await page.$('#expandAllBtn'), 'Expand All button');
     assert(!!await page.$('#copyFormat'), 'Format dropdown (hidden)');
     assert(!!await page.$('#copyBorder'), 'Border dropdown (hidden)');
 
@@ -126,8 +126,8 @@ const { chromium } = require('playwright');
     console.log('\n=== Fixed-width buttons ===');
     const copyBtnWidth = await page.$eval('#copyBtn', el => el.offsetWidth);
     assert(copyBtnWidth === 100, 'Copy button width = 100px: ' + copyBtnWidth);
-    const resetBtnWidth = await page.$eval('#resetBtn', el => el.offsetWidth);
-    assert(resetBtnWidth === 80, 'Reset button width = 80px: ' + resetBtnWidth);
+    const expandAllBtnWidth = await page.$eval('#expandAllBtn', el => el.offsetWidth);
+    assert(expandAllBtnWidth === 100, 'Expand All button width = 100px: ' + expandAllBtnWidth);
 
     // Copy button style: bg #37352f, color white
     const copyBtnBg = await page.$eval('#copyBtn', el => getComputedStyle(el).backgroundColor);
@@ -135,15 +135,15 @@ const { chromium } = require('playwright');
     const copyBtnColor = await page.$eval('#copyBtn', el => getComputedStyle(el).color);
     assert(copyBtnColor.includes('255, 255, 255') || copyBtnColor === 'rgb(255, 255, 255)', 'Copy btn text is white: ' + copyBtnColor);
 
-    // Reset button style: bg transparent, color #91918e, border
-    const resetBtnBg = await page.$eval('#resetBtn', el => getComputedStyle(el).backgroundColor);
-    assert(resetBtnBg.includes('0, 0, 0, 0') || resetBtnBg === 'rgba(0, 0, 0, 0)', 'Reset btn bg is transparent: ' + resetBtnBg);
-    const resetBtnColor = await page.$eval('#resetBtn', el => getComputedStyle(el).color);
-    assert(resetBtnColor.includes('145, 145, 142') || resetBtnColor === 'rgb(145, 145, 142)', 'Reset btn text is #91918e: ' + resetBtnColor);
+    // Expand All button style: same as Copy - bg #37352f, color white
+    const expandBtnBg = await page.$eval('#expandAllBtn', el => getComputedStyle(el).backgroundColor);
+    assert(expandBtnBg.includes('55, 53, 47') || expandBtnBg === 'rgb(55, 53, 47)', 'Expand btn bg is #37352f: ' + expandBtnBg);
+    const expandBtnColor = await page.$eval('#expandAllBtn', el => getComputedStyle(el).color);
+    assert(expandBtnColor.includes('255, 255, 255') || expandBtnColor === 'rgb(255, 255, 255)', 'Expand btn text is white: ' + expandBtnColor);
 
-    // Reset button text (no 🗑 emoji)
-    const resetBtnText = await page.$eval('#resetBtn', el => el.textContent.trim());
-    assert(resetBtnText === 'リセット', 'Reset button text is リセット (no emoji): ' + resetBtnText);
+    // Expand All button text
+    const expandBtnText = await page.$eval('#expandAllBtn', el => el.textContent.trim());
+    assert(expandBtnText === 'すべて開く', 'Expand All button text is すべて開く: ' + expandBtnText);
 
     // Button area centered
     const buttonAreaJustify = await page.$eval('.sidebar-button-area', el => getComputedStyle(el).justifyContent);

@@ -99,12 +99,12 @@ function assert(cond, msg) {
     let pageItems = await page.locator('.map-item.page-item').count();
     assert(pageItems >= 1, 'Page items exist in sidebar');
 
-    // Active page should have 📌 pin at end
+    // Active page should have 📌 pin at end (inline inside name)
     let activePagePin = await page.evaluate(() => {
         var active = document.querySelector('.map-item.page-item.active');
         if (!active) return null;
         var pin = active.querySelector('.map-item-pin');
-        return pin ? pin.textContent : null;
+        return pin ? pin.textContent.trim() : null;
     });
     assert(activePagePin === '📌', 'Active page shows pin icon 📌 at end');
 
@@ -113,7 +113,7 @@ function assert(cond, msg) {
         var items = document.querySelectorAll('.map-item.page-item:not(.active)');
         for (var i = 0; i < items.length; i++) {
             var pin = items[i].querySelector('.map-item-pin');
-            if (pin && pin.textContent !== '') return false;
+            if (pin) return false;
         }
         return true;
     });
