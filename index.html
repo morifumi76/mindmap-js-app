@@ -147,17 +147,39 @@
             border-bottom: 4px solid #2196f3;
         }
 
-        /* Collapse indicator circle */
+        /* Collapse indicator circle – absolute-positioned at junction (right edge of node) */
         .node-collapse-indicator {
-            display: inline-block;
-            width: 7px;
-            height: 7px;
+            position: absolute;
+            top: 50%;
+            right: -4px;
+            transform: translate(100%, -50%);
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
-            background: #91918e;
-            margin-left: 6px;
+            background: #37352f;
             cursor: pointer;
-            vertical-align: middle;
-            flex-shrink: 0;
+            z-index: 10;
+            transition: transform 0.12s, opacity 0.12s;
+            pointer-events: auto;
+        }
+
+        .node-collapse-indicator:hover {
+            transform: translate(100%, -50%) scale(1.25);
+            opacity: 0.75;
+        }
+
+        /* Clickable hit area at the connection-line junction (right side of node) */
+        .node-junction-hitarea {
+            position: absolute;
+            top: 50%;
+            right: -6px;
+            transform: translate(100%, -50%);
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            z-index: 9;
+            border-radius: 50%;
+            pointer-events: auto;
         }
 
         .node-text {
@@ -768,11 +790,11 @@
             gap: 8px;
         }
 
-        .sidebar-btn-copy {
+        .sidebar-btn-copy,
+        .sidebar-btn-expand-all {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 4px;
             width: 100px;
             min-width: 100px;
             max-width: 100px;
@@ -791,41 +813,12 @@
             white-space: nowrap;
         }
 
-        .sidebar-btn-copy:hover {
+        .sidebar-btn-copy:hover,
+        .sidebar-btn-expand-all:hover {
             opacity: 0.85;
         }
 
-        .sidebar-btn-copy:active {
-            transform: scale(0.97);
-        }
-
-        .sidebar-btn-expand-all {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            width: 90px;
-            min-width: 90px;
-            max-width: 90px;
-            height: 32px;
-            border: 1px solid #e0e0e0;
-            border-radius: 6px;
-            background: transparent;
-            color: #91918e;
-            font-family: var(--font-family);
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            flex-grow: 0;
-            flex-shrink: 0;
-            transition: background 0.12s;
-            white-space: nowrap;
-        }
-
-        .sidebar-btn-expand-all:hover {
-            background: #f7f7f5;
-        }
-
+        .sidebar-btn-copy:active,
         .sidebar-btn-expand-all:active {
             transform: scale(0.97);
         }
@@ -1057,7 +1050,7 @@
                     </div>
                 </div>
                 <div class="sidebar-button-area">
-                    <button class="sidebar-btn-copy" id="copyBtn" title="クリップボードにコピー">📋 コピー</button>
+                    <button class="sidebar-btn-copy" id="copyBtn" title="クリップボードにコピー">コピー</button>
                     <button class="sidebar-btn-expand-all" id="expandAllBtn" title="すべてのノードを展開">すべて開く</button>
                 </div>
             </div>
@@ -2591,14 +2584,7 @@
                 } else {
                     measurer.classList.remove('root');
                 }
-                // Add collapse indicator space if collapsed and has children
-                var existingIndicator = measurer.querySelector('.node-collapse-indicator');
-                if (existingIndicator) existingIndicator.remove();
-                if (node.children.length > 0 && isNodeCollapsed(node.id)) {
-                    var indicator = document.createElement('span');
-                    indicator.className = 'node-collapse-indicator';
-                    measurer.appendChild(indicator);
-                }
+                // Collapse indicator is now outside the node (absolute-positioned), no extra space needed
                 dims[node.id] = { width: measurer.offsetWidth, height: measurer.offsetHeight };
                 for (var i = 0; i < node.children.length; i++) {
                     measure(node.children[i]);
@@ -2670,16 +2656,30 @@
             }
             el.appendChild(textEl);
 
-            // Collapse indicator: show small circle when collapsed and has children
-            if (node.children.length > 0 && isNodeCollapsed(node.id)) {
-                var collapseIndicator = document.createElement('span');
-                collapseIndicator.className = 'node-collapse-indicator';
-                collapseIndicator.title = '展開 (Cmd+.)';
-                collapseIndicator.addEventListener('click', function(e) {
+            // Collapse indicator (shown only when collapsed) and junction hit area
+            // Both are absolute-positioned at the right edge of the node (connection junction)
+            if (node.id !== 'root' && node.children.length > 0) {
+                if (isNodeCollapsed(node.id)) {
+                    // Show collapse indicator dot when collapsed
+                    var collapseIndicator = document.createElement('span');
+                    collapseIndicator.className = 'node-collapse-indicator';
+                    collapseIndicator.title = '展開 (Cmd+.)';
+                    collapseIndicator.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        toggleNodeCollapse(node.id);
+                    });
+                    el.appendChild(collapseIndicator);
+                }
+
+                // Always add a hit area at the junction for click-to-toggle
+                var hitArea = document.createElement('span');
+                hitArea.className = 'node-junction-hitarea';
+                hitArea.title = isNodeCollapsed(node.id) ? '展開 (Cmd+.)' : '折りたたむ (Cmd+.)';
+                hitArea.addEventListener('click', function(e) {
                     e.stopPropagation();
                     toggleNodeCollapse(node.id);
                 });
-                el.appendChild(collapseIndicator);
+                el.appendChild(hitArea);
             }
 
             // Use a closure to capture node reference

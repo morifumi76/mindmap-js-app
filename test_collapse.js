@@ -64,16 +64,16 @@ const { chromium } = require('playwright');
     assert(expandBtnText === 'すべて開く', 'Expand All button text is すべて開く');
 
     const expandBtnWidth = await page.$eval('#expandAllBtn', el => el.offsetWidth);
-    assert(expandBtnWidth === 90, 'Expand All button width = 90px: ' + expandBtnWidth);
+    assert(expandBtnWidth === 100, 'Expand All button width = 100px: ' + expandBtnWidth);
 
     const expandBtnHeight = await page.$eval('#expandAllBtn', el => el.offsetHeight);
     assert(expandBtnHeight === 32, 'Expand All button height = 32px: ' + expandBtnHeight);
 
     const expandBtnBg = await page.$eval('#expandAllBtn', el => getComputedStyle(el).backgroundColor);
-    assert(expandBtnBg.includes('0, 0, 0, 0') || expandBtnBg === 'rgba(0, 0, 0, 0)', 'Expand btn bg transparent');
+    assert(expandBtnBg.includes('55, 53, 47') || expandBtnBg === 'rgb(55, 53, 47)', 'Expand btn bg #37352f: ' + expandBtnBg);
 
     const expandBtnColor = await page.$eval('#expandAllBtn', el => getComputedStyle(el).color);
-    assert(expandBtnColor.includes('145, 145, 142') || expandBtnColor === 'rgb(145, 145, 142)', 'Expand btn text color #91918e');
+    assert(expandBtnColor.includes('255, 255, 255') || expandBtnColor === 'rgb(255, 255, 255)', 'Expand btn text color #ffffff: ' + expandBtnColor);
 
     const expandBtnBorder = await page.$eval('#expandAllBtn', el => getComputedStyle(el).borderRadius);
     assert(expandBtnBorder === '6px', 'Expand btn border-radius 6px: ' + expandBtnBorder);
@@ -328,8 +328,8 @@ const { chromium } = require('playwright');
         const h = parseFloat(indicatorStyle.height);
         assert(h >= 6 && h <= 8, 'Indicator height 6-8px: ' + h);
         assert(indicatorStyle.borderRadius === '50%', 'Indicator is circle: ' + indicatorStyle.borderRadius);
-        assert(indicatorStyle.bg.includes('145, 145, 142') || indicatorStyle.bg === 'rgb(145, 145, 142)',
-            'Indicator color #91918e: ' + indicatorStyle.bg);
+        assert(indicatorStyle.bg.includes('55, 53, 47') || indicatorStyle.bg === 'rgb(55, 53, 47)',
+            'Indicator color #37352f: ' + indicatorStyle.bg);
     }
 
     // ========================================

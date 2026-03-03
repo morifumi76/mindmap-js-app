@@ -127,7 +127,7 @@ const { chromium } = require('playwright');
     const copyBtnWidth = await page.$eval('#copyBtn', el => el.offsetWidth);
     assert(copyBtnWidth === 100, 'Copy button width = 100px: ' + copyBtnWidth);
     const expandAllBtnWidth = await page.$eval('#expandAllBtn', el => el.offsetWidth);
-    assert(expandAllBtnWidth === 90, 'Expand All button width = 90px: ' + expandAllBtnWidth);
+    assert(expandAllBtnWidth === 100, 'Expand All button width = 100px: ' + expandAllBtnWidth);
 
     // Copy button style: bg #37352f, color white
     const copyBtnBg = await page.$eval('#copyBtn', el => getComputedStyle(el).backgroundColor);
@@ -135,11 +135,11 @@ const { chromium } = require('playwright');
     const copyBtnColor = await page.$eval('#copyBtn', el => getComputedStyle(el).color);
     assert(copyBtnColor.includes('255, 255, 255') || copyBtnColor === 'rgb(255, 255, 255)', 'Copy btn text is white: ' + copyBtnColor);
 
-    // Expand All button style: bg transparent, color #91918e, border
+    // Expand All button style: same as Copy - bg #37352f, color white
     const expandBtnBg = await page.$eval('#expandAllBtn', el => getComputedStyle(el).backgroundColor);
-    assert(expandBtnBg.includes('0, 0, 0, 0') || expandBtnBg === 'rgba(0, 0, 0, 0)', 'Expand btn bg is transparent: ' + expandBtnBg);
+    assert(expandBtnBg.includes('55, 53, 47') || expandBtnBg === 'rgb(55, 53, 47)', 'Expand btn bg is #37352f: ' + expandBtnBg);
     const expandBtnColor = await page.$eval('#expandAllBtn', el => getComputedStyle(el).color);
-    assert(expandBtnColor.includes('145, 145, 142') || expandBtnColor === 'rgb(145, 145, 142)', 'Expand btn text is #91918e: ' + expandBtnColor);
+    assert(expandBtnColor.includes('255, 255, 255') || expandBtnColor === 'rgb(255, 255, 255)', 'Expand btn text is white: ' + expandBtnColor);
 
     // Expand All button text
     const expandBtnText = await page.$eval('#expandAllBtn', el => el.textContent.trim());
