@@ -147,6 +147,19 @@
             border-bottom: 4px solid #2196f3;
         }
 
+        /* Collapse indicator circle */
+        .node-collapse-indicator {
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #91918e;
+            margin-left: 6px;
+            cursor: pointer;
+            vertical-align: middle;
+            flex-shrink: 0;
+        }
+
         .node-text {
             outline: none;
             min-width: 50px;
@@ -371,10 +384,9 @@
         }
 
         .map-item-pin {
-            flex-shrink: 0;
+            display: inline;
             font-size: 11px;
             line-height: 1;
-            margin-left: 4px;
         }
 
         .map-item-name {
@@ -787,13 +799,14 @@
             transform: scale(0.97);
         }
 
-        .sidebar-btn-reset {
+        .sidebar-btn-expand-all {
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 80px;
-            min-width: 80px;
-            max-width: 80px;
+            gap: 8px;
+            width: 90px;
+            min-width: 90px;
+            max-width: 90px;
             height: 32px;
             border: 1px solid #e0e0e0;
             border-radius: 6px;
@@ -809,11 +822,11 @@
             white-space: nowrap;
         }
 
-        .sidebar-btn-reset:hover {
+        .sidebar-btn-expand-all:hover {
             background: #f7f7f5;
         }
 
-        .sidebar-btn-reset:active {
+        .sidebar-btn-expand-all:active {
             transform: scale(0.97);
         }
 
@@ -1045,7 +1058,7 @@
                 </div>
                 <div class="sidebar-button-area">
                     <button class="sidebar-btn-copy" id="copyBtn" title="クリップボードにコピー">📋 コピー</button>
-                    <button class="sidebar-btn-reset" id="resetBtn" title="マップをリセット">リセット</button>
+                    <button class="sidebar-btn-expand-all" id="expandAllBtn" title="すべてのノードを展開">すべて開く</button>
                 </div>
             </div>
             <!-- Hidden selects for backward compatibility -->
@@ -1111,6 +1124,39 @@
         let clipboardIsCut = false;
 
         let nodeIdCounter = 0;
+
+        // Node collapse state: { [nodeId]: true/false } - per map, saved in localStorage
+        var NODE_COLLAPSE_KEY_PREFIX = 'mindmap-node-collapse-';
+        function getNodeCollapseState() {
+            if (!currentMapId) return {};
+            try {
+                var raw = localStorage.getItem(NODE_COLLAPSE_KEY_PREFIX + currentMapId);
+                if (raw) return JSON.parse(raw);
+            } catch(e) {}
+            return {};
+        }
+        function setNodeCollapseState(state) {
+            if (!currentMapId) return;
+            try { localStorage.setItem(NODE_COLLAPSE_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
+        }
+        function isNodeCollapsed(nodeId) {
+            var state = getNodeCollapseState();
+            return state[nodeId] === true;
+        }
+        function toggleNodeCollapse(nodeId) {
+            if (nodeId === 'root') return; // root cannot be collapsed
+            var node = findNode(nodeId);
+            if (!node || !node.node.children || node.node.children.length === 0) return; // only nodes with children
+            var state = getNodeCollapseState();
+            state[nodeId] = !state[nodeId];
+            setNodeCollapseState(state);
+            render();
+        }
+        function expandAllNodes() {
+            setNodeCollapseState({});
+            render();
+            showToast('すべてのノードを展開しました');
+        }
 
         // Drag reparenting state
         let nodeDragState = {
@@ -1515,23 +1561,7 @@
         }
 
         function resetMindMap() {
-            if (!confirm('マインドマップをリセットしますか？\nすべてのノードが削除されます。')) return;
-            mindMapData = {
-                root: { id: 'root', text: '中心テーマ', children: [] }
-            };
-            undoHistory = [];
-            undoIndex = -1;
-            selectedNodeIds.clear();
-            lastSelectedNodeId = null;
-            editingNodeId = null;
-            clipboard = null;
-            clipboardIsCut = false;
-            saveState();
-            render();
-            resetView();
-            selectNode('root');
-            setTimeout(function() { startEditing('root'); }, 100);
-            showToast('🗑 リセットしました');
+            // Function removed - no longer needed
         }
 
         function undo() {
@@ -1585,6 +1615,19 @@
             result.push(node);
             for (var i = 0; i < node.children.length; i++) {
                 getAllNodesInOrder(node.children[i], result);
+            }
+            return result;
+        }
+
+        // Get only visible nodes (respecting collapse state)
+        function getVisibleNodesInOrder(node, result) {
+            if (node === undefined) node = mindMapData.root;
+            if (result === undefined) result = [];
+            result.push(node);
+            if (!isNodeCollapsed(node.id)) {
+                for (var i = 0; i < node.children.length; i++) {
+                    getVisibleNodesInOrder(node.children[i], result);
+                }
             }
             return result;
         }
@@ -2232,26 +2275,28 @@
                 result = prefix + connector + icon + node.text + '\n';
             }
 
-            // ---- Children ----
-            for (var i = 0; i < node.children.length; i++) {
-                var isLastChild = (i === node.children.length - 1);
-                var newContinues = parentContinues.slice();
-                newContinues.push(!isLastChild);
-                result += generateCopyText(node.children[i], level + 1, newContinues, format, useBorder);
-            }
+            // ---- Children (skip if node is collapsed) ----
+            if (!isNodeCollapsed(node.id)) {
+                // Get visible children for correct last-child computation
+                var visibleChildren = node.children;
+                for (var i = 0; i < visibleChildren.length; i++) {
+                    var isLastChild = (i === visibleChildren.length - 1);
+                    var newContinues = parentContinues.slice();
+                    newContinues.push(!isLastChild);
+                    result += generateCopyText(visibleChildren[i], level + 1, newContinues, format, useBorder);
+                }
 
-            // ---- Separator blank line between sibling groups (border mode only) ----
-            // Add a continuation-bar blank line after a node that has children,
-            // if it is NOT the last sibling at its level and border mode is on.
-            if (useBorder && level > 0 && node.children.length > 0) {
-                var amILast = (parentContinues[level - 1] === false);
-                if (!amILast) {
-                    var sep = '';
-                    for (var i = 0; i < level - 1; i++) {
-                        sep += parentContinues[i] ? '│  ' : '   ';
+                // ---- Separator blank line between sibling groups (border mode only) ----
+                if (useBorder && level > 0 && visibleChildren.length > 0) {
+                    var amILast = (parentContinues[level - 1] === false);
+                    if (!amILast) {
+                        var sep = '';
+                        for (var i = 0; i < level - 1; i++) {
+                            sep += parentContinues[i] ? '│  ' : '   ';
+                        }
+                        sep += '│';
+                        result += sep + '\n';
                     }
-                    sep += '│';
-                    result += sep + '\n';
                 }
             }
             return result;
@@ -2546,6 +2591,14 @@
                 } else {
                     measurer.classList.remove('root');
                 }
+                // Add collapse indicator space if collapsed and has children
+                var existingIndicator = measurer.querySelector('.node-collapse-indicator');
+                if (existingIndicator) existingIndicator.remove();
+                if (node.children.length > 0 && isNodeCollapsed(node.id)) {
+                    var indicator = document.createElement('span');
+                    indicator.className = 'node-collapse-indicator';
+                    measurer.appendChild(indicator);
+                }
                 dims[node.id] = { width: measurer.offsetWidth, height: measurer.offsetHeight };
                 for (var i = 0; i < node.children.length; i++) {
                     measure(node.children[i]);
@@ -2564,20 +2617,22 @@
             var nodeWidth = dims.width;
             var nodeHeight = dims.height;
             var hGap = 40, vGap = 16;
+            var collapsed = isNodeCollapsed(node.id);
+            var visibleChildren = collapsed ? [] : node.children;
             var totalH = 0, childHeights = [];
-            for (var i = 0; i < node.children.length; i++) {
-                var ch = calcSubtreeHeight(node.children[i], vGap, nodeDims);
+            for (var i = 0; i < visibleChildren.length; i++) {
+                var ch = calcSubtreeHeight(visibleChildren[i], vGap, nodeDims);
                 childHeights.push(ch);
                 totalH += ch;
             }
-            if (node.children.length > 1) totalH += (node.children.length - 1) * vGap;
+            if (visibleChildren.length > 1) totalH += (visibleChildren.length - 1) * vGap;
             positions[node.id] = { x: x, y: y, width: nodeWidth, height: nodeHeight, level: level };
             var childX = x + nodeWidth + hGap;
             var childY = y - totalH / 2;
-            for (var i = 0; i < node.children.length; i++) {
+            for (var i = 0; i < visibleChildren.length; i++) {
                 var ch = childHeights[i];
                 var centerY = childY + ch / 2;
-                layoutNodes(node.children[i], positions, childX, centerY, level + 1, nodeDims);
+                layoutNodes(visibleChildren[i], positions, childX, centerY, level + 1, nodeDims);
                 childY += ch + vGap;
             }
             return positions;
@@ -2586,7 +2641,7 @@
         function calcSubtreeHeight(node, gap, nodeDims) {
             var dims = (nodeDims && nodeDims[node.id]) ? nodeDims[node.id] : { width: 150, height: 40 };
             var nodeHeight = dims.height;
-            if (node.children.length === 0) return nodeHeight;
+            if (node.children.length === 0 || isNodeCollapsed(node.id)) return nodeHeight;
             var total = 0;
             for (var i = 0; i < node.children.length; i++) {
                 total += calcSubtreeHeight(node.children[i], gap, nodeDims);
@@ -2614,6 +2669,18 @@
                 textEl.textContent = node.text;
             }
             el.appendChild(textEl);
+
+            // Collapse indicator: show small circle when collapsed and has children
+            if (node.children.length > 0 && isNodeCollapsed(node.id)) {
+                var collapseIndicator = document.createElement('span');
+                collapseIndicator.className = 'node-collapse-indicator';
+                collapseIndicator.title = '展開 (Cmd+.)';
+                collapseIndicator.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    toggleNodeCollapse(node.id);
+                });
+                el.appendChild(collapseIndicator);
+            }
 
             // Use a closure to capture node reference
             (function(nodeData, nodeElement) {
@@ -2679,8 +2746,10 @@
             })(node, el);
 
             container.appendChild(el);
-            for (var i = 0; i < node.children.length; i++) {
-                renderNodes(node.children[i], container, positions);
+            var collapsed = isNodeCollapsed(node.id);
+            var visibleChildren = collapsed ? [] : node.children;
+            for (var i = 0; i < visibleChildren.length; i++) {
+                renderNodes(visibleChildren[i], container, positions);
             }
         }
 
@@ -2688,8 +2757,10 @@
             var pp = positions[node.id];
             if (!pp) return;
             var off = 5000;
-            for (var i = 0; i < node.children.length; i++) {
-                var child = node.children[i];
+            var collapsed = isNodeCollapsed(node.id);
+            var visibleChildren = collapsed ? [] : node.children;
+            for (var i = 0; i < visibleChildren.length; i++) {
+                var child = visibleChildren[i];
                 var cp = positions[child.id];
                 if (!cp) continue;
                 var sx = pp.x + pp.width + off, sy = pp.y + off;
@@ -2841,6 +2912,12 @@
                     break;
                 case 'x': case 'X':
                     if (cmdKey) { e.preventDefault(); cutSelectedNodes(); }
+                    break;
+                case '.':
+                    if (cmdKey) {
+                        e.preventDefault();
+                        if (currentId) toggleNodeCollapse(currentId);
+                    }
                     break;
                 case 'Escape':
                     clearSelection();
@@ -3084,7 +3161,7 @@
             document.addEventListener('keydown', handleKeyDown);
             initCanvasInteraction();
             document.getElementById('copyBtn').addEventListener('click', copyToClipboard);
-            document.getElementById('resetBtn').addEventListener('click', resetMindMap);
+            document.getElementById('expandAllBtn').addEventListener('click', expandAllNodes);
             document.getElementById('sidebarMiniCopy').addEventListener('click', function(e) {
                 e.stopPropagation();
                 copyToClipboard();
@@ -3364,6 +3441,9 @@
             }
             lineText = lineText.replace(/\n/g, ' ');
             lines.push({ text: lineText, nodeId: node.id });
+
+            // Skip children if node is collapsed
+            if (isNodeCollapsed(node.id)) return;
 
             for (var i = 0; i < node.children.length; i++) {
                 var isLastChild = (i === node.children.length - 1);
@@ -3817,14 +3897,14 @@
 
             var name = document.createElement('span');
             name.className = 'map-item-name';
-            name.textContent = page.name;
             name.title = page.name;
-
-            // Pin icon at end for active page
-            var pinEl = document.createElement('span');
-            pinEl.className = 'map-item-pin';
+            // Name text + inline pin with half-width space
+            name.textContent = page.name;
             if (isActive) {
-                pinEl.textContent = '📌';
+                var pinEl = document.createElement('span');
+                pinEl.className = 'map-item-pin';
+                pinEl.textContent = ' 📌';
+                name.appendChild(pinEl);
             }
 
             var menuBtn = document.createElement('button');
@@ -3833,7 +3913,6 @@
             menuBtn.title = 'メニュー';
 
             item.appendChild(name);
-            item.appendChild(pinEl);
             item.appendChild(menuBtn);
 
             (function(pageId, pageMeta, itemEl, nameEl, menuBtnEl) {
@@ -4353,6 +4432,12 @@
         window.renderMapList = renderMapList;
         window.getDefaultFolderId = getDefaultFolderId;
         window.ensureDefaultFolder = ensureDefaultFolder;
+        window.toggleNodeCollapse = toggleNodeCollapse;
+        window.isNodeCollapsed = isNodeCollapsed;
+        window.getNodeCollapseState = getNodeCollapseState;
+        window.setNodeCollapseState = setNodeCollapseState;
+        window.expandAllNodes = expandAllNodes;
+        window.getVisibleNodesInOrder = getVisibleNodesInOrder;
 
     })();
     </script>
