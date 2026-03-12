@@ -955,6 +955,84 @@
             opacity: 1;
             transform: translateX(-50%) translateY(0);
         }
+
+        /* ========================================
+           Grey-out Node Styles
+           ======================================== */
+        .node.grayed-out {
+            background: #C0B9B0 !important;
+            border-color: #C0B9B0 !important;
+            color: #ffffff !important;
+            box-shadow: none !important;
+        }
+
+        .node.grayed-out .node-text {
+            color: #ffffff !important;
+        }
+
+        .node.grayed-out.selected {
+            background: #B0A99F !important;
+            border-color: #A09890 !important;
+            box-shadow: 0 0 0 3px rgba(192, 185, 176, 0.4) !important;
+        }
+
+        /* ========================================
+           Highlight Node Styles
+           ======================================== */
+        .node.highlighted {
+            background: #F2C94C !important;
+            border-color: #F2C94C !important;
+            color: #37352f !important;
+            box-shadow: none !important;
+        }
+
+        .node.highlighted .node-text {
+            color: #37352f !important;
+        }
+
+        .node.highlighted.selected {
+            background: #E8BF42 !important;
+            border-color: #D4AB38 !important;
+            box-shadow: 0 0 0 3px rgba(242, 201, 76, 0.4) !important;
+        }
+
+        /* Floating bottom-right button area */
+        .canvas-float-btns {
+            position: fixed;
+            bottom: 16px;
+            right: 16px;
+            display: flex;
+            gap: 8px;
+            z-index: 601;
+            transition: right 0.2s ease;
+        }
+
+        .canvas-float-btns .float-action-btn {
+            height: 32px;
+            padding: 0 14px;
+            border: none;
+            border-radius: 6px;
+            background: #37352f;
+            color: #ffffff;
+            font-family: var(--font-family);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+            transition: opacity 0.12s;
+        }
+
+        .canvas-float-btns .float-action-btn:hover {
+            opacity: 0.85;
+        }
+
+        .canvas-float-btns .float-action-btn:active {
+            transform: scale(0.97);
+        }
     </style>
 </head>
 <body>
@@ -1066,6 +1144,12 @@
         </div>
     </div>
 
+    <!-- Floating action buttons (bottom-right of canvas) -->
+    <div class="canvas-float-btns" id="canvasFloatBtns">
+        <button class="float-action-btn" id="grayoutFloatBtn" title="グレーアウト (Option+Cmd+G)">グレーアウト</button>
+        <button class="float-action-btn" id="highlightFloatBtn" title="ハイライト (Option+Cmd+Y)">ハイライト</button>
+    </div>
+
     <!-- Lasso Selection Rectangle -->
     <div class="lasso-rect" id="lassoRect"></div>
 
@@ -1120,6 +1204,103 @@
 
         // Node collapse state: { [nodeId]: true/false } - per map, saved in localStorage
         var NODE_COLLAPSE_KEY_PREFIX = 'mindmap-node-collapse-';
+
+        // Node grey-out state: { [nodeId]: true/false } - per map, saved in localStorage
+        var NODE_GRAYOUT_KEY_PREFIX = 'mindmap-node-grayout-';
+        function getNodeGrayoutState() {
+            if (!currentMapId) return {};
+            try {
+                var raw = localStorage.getItem(NODE_GRAYOUT_KEY_PREFIX + currentMapId);
+                if (raw) return JSON.parse(raw);
+            } catch(e) {}
+            return {};
+        }
+        function setNodeGrayoutState(state) {
+            if (!currentMapId) return;
+            try { localStorage.setItem(NODE_GRAYOUT_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
+        }
+        function isNodeGrayedOut(nodeId) {
+            var state = getNodeGrayoutState();
+            return state[nodeId] === true;
+        }
+        function toggleNodeGrayout(nodeId) {
+            if (!nodeId) return;
+            var grayState = getNodeGrayoutState();
+            if (grayState[nodeId]) {
+                // Already grayed out → remove grayout
+                delete grayState[nodeId];
+                setNodeGrayoutState(grayState);
+                showToast('グレーアウトを解除しました');
+            } else {
+                // Applying grayout → remove highlight if present (mutual exclusion)
+                var hlState = getNodeHighlightState();
+                if (hlState[nodeId]) {
+                    delete hlState[nodeId];
+                    setNodeHighlightState(hlState);
+                }
+                grayState[nodeId] = true;
+                setNodeGrayoutState(grayState);
+                showToast('グレーアウトしました');
+            }
+            render();
+        }
+        // Check if a node is a descendant of any grayed-out node
+        function isDescendantOfGrayedOut(nodeId) {
+            // Walk up the tree from nodeId, check if any ancestor is grayed out
+            var result = findNode(nodeId);
+            if (!result) return false;
+            var parentResult = result.parent;
+            while (parentResult) {
+                if (isNodeGrayedOut(parentResult.id)) return true;
+                var pr = findNode(parentResult.id);
+                parentResult = pr ? pr.parent : null;
+            }
+            return false;
+        }
+        // Check if a node or any of its ancestors is grayed out
+        function isNodeOrAncestorGrayedOut(nodeId) {
+            return isNodeGrayedOut(nodeId) || isDescendantOfGrayedOut(nodeId);
+        }
+
+        // Node highlight state: { [nodeId]: true/false } - per map, saved in localStorage
+        var NODE_HIGHLIGHT_KEY_PREFIX = 'mindmap-node-highlight-';
+        function getNodeHighlightState() {
+            if (!currentMapId) return {};
+            try {
+                var raw = localStorage.getItem(NODE_HIGHLIGHT_KEY_PREFIX + currentMapId);
+                if (raw) return JSON.parse(raw);
+            } catch(e) {}
+            return {};
+        }
+        function setNodeHighlightState(state) {
+            if (!currentMapId) return;
+            try { localStorage.setItem(NODE_HIGHLIGHT_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
+        }
+        function isNodeHighlighted(nodeId) {
+            var state = getNodeHighlightState();
+            return state[nodeId] === true;
+        }
+        function toggleNodeHighlight(nodeId) {
+            if (!nodeId) return;
+            var hlState = getNodeHighlightState();
+            if (hlState[nodeId]) {
+                // Already highlighted → remove highlight
+                delete hlState[nodeId];
+                setNodeHighlightState(hlState);
+                showToast('ハイライトを解除しました');
+            } else {
+                // Applying highlight → remove grayout if present (mutual exclusion)
+                var grayState = getNodeGrayoutState();
+                if (grayState[nodeId]) {
+                    delete grayState[nodeId];
+                    setNodeGrayoutState(grayState);
+                }
+                hlState[nodeId] = true;
+                setNodeHighlightState(hlState);
+                showToast('ハイライトしました');
+            }
+            render();
+        }
         function getNodeCollapseState() {
             if (!currentMapId) return {};
             try {
@@ -2239,6 +2420,9 @@
 
 
         function generateCopyText(node, level, parentContinues, format, useBorder) {
+            // Skip grayed-out nodes and their descendants from copy
+            if (level > 0 && isNodeGrayedOut(node.id)) return '';
+
             var result = '';
             var iconLevel = Math.min(level + 1, 4);
             var icons = levelIcons[format];
@@ -2268,10 +2452,15 @@
                 result = prefix + connector + icon + node.text + '\n';
             }
 
-            // ---- Children (skip if node is collapsed) ----
-            if (!isNodeCollapsed(node.id)) {
-                // Get visible children for correct last-child computation
-                var visibleChildren = node.children;
+            // ---- Children (skip if node is collapsed OR grayed out) ----
+            if (!isNodeCollapsed(node.id) && !isNodeGrayedOut(node.id)) {
+                // Get visible children, excluding grayed-out ones and their descendants
+                var visibleChildren = [];
+                for (var ci = 0; ci < node.children.length; ci++) {
+                    if (!isNodeGrayedOut(node.children[ci].id)) {
+                        visibleChildren.push(node.children[ci]);
+                    }
+                }
                 for (var i = 0; i < visibleChildren.length; i++) {
                     var isLastChild = (i === visibleChildren.length - 1);
                     var newContinues = parentContinues.slice();
@@ -2640,7 +2829,7 @@
             var pos = positions[node.id];
             if (!pos) return;
             var el = document.createElement('div');
-            el.className = 'node' + (node.id === 'root' ? ' root' : '');
+            el.className = 'node' + (node.id === 'root' ? ' root' : '') + (isNodeGrayedOut(node.id) ? ' grayed-out' : '') + (isNodeHighlighted(node.id) ? ' highlighted' : '');
             el.dataset.id = node.id;
             el.style.left = pos.x + 'px';
             el.style.top = pos.y + 'px';
@@ -2899,7 +3088,13 @@
                     if (cmdKey) { e.preventDefault(); undo(); }
                     break;
                 case 'y': case 'Y':
-                    if (cmdKey) { e.preventDefault(); redo(); }
+                    if (e.altKey && cmdKey) {
+                        // Option+Cmd+Y (Mac) or Alt+Ctrl+Y (Windows) – toggle highlight
+                        e.preventDefault();
+                        if (currentId) toggleNodeHighlight(currentId);
+                    } else if (cmdKey) {
+                        e.preventDefault(); redo();
+                    }
                     break;
                 case 'a': case 'A':
                     if (cmdKey) { e.preventDefault(); selectAll(); }
@@ -2917,6 +3112,13 @@
                     if (cmdKey) {
                         e.preventDefault();
                         if (currentId) toggleNodeCollapse(currentId);
+                    }
+                    break;
+                case 'g': case 'G':
+                    // Option+Cmd+G (Mac) or Alt+Ctrl+G (Windows) – toggle grayout
+                    if (e.altKey && cmdKey) {
+                        e.preventDefault();
+                        if (currentId) toggleNodeGrayout(currentId);
                     }
                     break;
                 case 'Escape':
@@ -3162,6 +3364,34 @@
             initCanvasInteraction();
             document.getElementById('copyBtn').addEventListener('click', copyToClipboard);
             document.getElementById('expandAllBtn').addEventListener('click', expandAllNodes);
+
+            // Grey-out floating button
+            var grayoutBtn = document.getElementById('grayoutFloatBtn');
+            if (grayoutBtn) {
+                grayoutBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    var currentId = getSelectedNodeId();
+                    if (currentId) {
+                        toggleNodeGrayout(currentId);
+                    } else {
+                        showToast('ノードを選択してください');
+                    }
+                });
+            }
+
+            // Highlight floating button
+            var highlightBtn = document.getElementById('highlightFloatBtn');
+            if (highlightBtn) {
+                highlightBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    var currentId = getSelectedNodeId();
+                    if (currentId) {
+                        toggleNodeHighlight(currentId);
+                    } else {
+                        showToast('ノードを選択してください');
+                    }
+                });
+            }
             document.getElementById('sidebarMiniCopy').addEventListener('click', function(e) {
                 e.stopPropagation();
                 copyToClipboard();
@@ -3353,6 +3583,16 @@
             } else {
                 floatToggle.classList.remove('hidden');
             }
+            // Shift the floating buttons left when right sidebar is open
+            updateFloatBtnsPosition();
+        }
+
+        function updateFloatBtnsPosition() {
+            var btnsContainer = document.getElementById('canvasFloatBtns');
+            if (!btnsContainer) return;
+            var rightSidebar = document.getElementById('sidebar');
+            var rightW = (rightSidebar && !rightSidebar.classList.contains('collapsed')) ? rightSidebar.offsetWidth : 0;
+            btnsContainer.style.right = (16 + rightW) + 'px';
         }
 
         function adjustCanvasForSidebars() {
@@ -3367,6 +3607,8 @@
                 container.style.right = rightW + 'px';
                 container.style.left = leftW + 'px';
             }
+            // Also shift floating buttons
+            updateFloatBtnsPosition();
         }
 
         function renderSidebarTree() {
@@ -3414,6 +3656,9 @@
         }
 
         function generatePreviewLines(node, level, parentContinues, format, useBorder, lines) {
+            // If this node is grayed out, skip it and all descendants entirely in tree nav
+            if (level > 0 && isNodeGrayedOut(node.id)) return;
+
             var iconLevel = Math.min(level + 1, 4);
             var icons = levelIcons[format];
             var icon = icons ? (icons[iconLevel] + ' ') : '';
@@ -3442,17 +3687,25 @@
             lineText = lineText.replace(/\n/g, ' ');
             lines.push({ text: lineText, nodeId: node.id });
 
-            // Skip children if node is collapsed
-            if (isNodeCollapsed(node.id)) return;
+            // Skip children if node is collapsed OR grayed out (hide grayed-out node and all descendants)
+            if (isNodeCollapsed(node.id) || isNodeGrayedOut(node.id)) return;
 
-            for (var i = 0; i < node.children.length; i++) {
-                var isLastChild = (i === node.children.length - 1);
-                var newContinues = parentContinues.slice();
-                newContinues.push(!isLastChild);
-                generatePreviewLines(node.children[i], level + 1, newContinues, format, useBorder, lines);
+            // Filter out grayed-out children for sidebar display
+            var visibleChildrenForSidebar = [];
+            for (var ci = 0; ci < node.children.length; ci++) {
+                if (!isNodeGrayedOut(node.children[ci].id)) {
+                    visibleChildrenForSidebar.push(node.children[ci]);
+                }
             }
 
-            if (useBorder && level > 0 && node.children.length > 0) {
+            for (var i = 0; i < visibleChildrenForSidebar.length; i++) {
+                var isLastChild = (i === visibleChildrenForSidebar.length - 1);
+                var newContinues = parentContinues.slice();
+                newContinues.push(!isLastChild);
+                generatePreviewLines(visibleChildrenForSidebar[i], level + 1, newContinues, format, useBorder, lines);
+            }
+
+            if (useBorder && level > 0 && visibleChildrenForSidebar.length > 0) {
                 var amILast = (parentContinues[level - 1] === false);
                 if (!amILast) {
                     var sep = '';
@@ -4439,6 +4692,16 @@
         window.setNodeCollapseState = setNodeCollapseState;
         window.expandAllNodes = expandAllNodes;
         window.getVisibleNodesInOrder = getVisibleNodesInOrder;
+        window.isNodeGrayedOut = isNodeGrayedOut;
+        window.getNodeGrayoutState = getNodeGrayoutState;
+        window.setNodeGrayoutState = setNodeGrayoutState;
+        window.toggleNodeGrayout = toggleNodeGrayout;
+        window.isDescendantOfGrayedOut = isDescendantOfGrayedOut;
+        window.isNodeOrAncestorGrayedOut = isNodeOrAncestorGrayedOut;
+        window.isNodeHighlighted = isNodeHighlighted;
+        window.getNodeHighlightState = getNodeHighlightState;
+        window.setNodeHighlightState = setNodeHighlightState;
+        window.toggleNodeHighlight = toggleNodeHighlight;
 
     })();
     </script>
