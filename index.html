@@ -1726,7 +1726,11 @@
 
         function saveState() {
             undoHistory = undoHistory.slice(0, undoIndex + 1);
-            undoHistory.push(deepClone(mindMapData));
+            undoHistory.push({
+                data: deepClone(mindMapData),
+                grayout: deepClone(getNodeGrayoutState()),
+                highlight: deepClone(getNodeHighlightState())
+            });
             if (undoHistory.length > MAX_HISTORY) {
                 undoHistory.shift();
             } else {
@@ -1741,7 +1745,10 @@
         function undo() {
             if (undoIndex > 0) {
                 undoIndex--;
-                mindMapData = deepClone(undoHistory[undoIndex]);
+                var snapshot = undoHistory[undoIndex];
+                mindMapData = deepClone(snapshot.data);
+                setNodeGrayoutState(deepClone(snapshot.grayout || {}));
+                setNodeHighlightState(deepClone(snapshot.highlight || {}));
                 render();
                 showToast('元に戻しました');
             }
@@ -1750,7 +1757,10 @@
         function redo() {
             if (undoIndex < undoHistory.length - 1) {
                 undoIndex++;
-                mindMapData = deepClone(undoHistory[undoIndex]);
+                var snapshot = undoHistory[undoIndex];
+                mindMapData = deepClone(snapshot.data);
+                setNodeGrayoutState(deepClone(snapshot.grayout || {}));
+                setNodeHighlightState(deepClone(snapshot.highlight || {}));
                 render();
                 showToast('やり直しました');
             }
@@ -1811,9 +1821,9 @@
             if (autoEdit === undefined) autoEdit = true;
             var result = findNode(parentId);
             if (!result) return null;
-            saveState();
             var newNode = { id: generateId(), text: text, children: [] };
             result.node.children.push(newNode);
+            saveState();
             render();
             selectNode(newNode.id);
             if (autoEdit) {
@@ -1829,9 +1839,9 @@
             if (!result || !result.parent) {
                 return addChildNode(nodeId, text, autoEdit);
             }
-            saveState();
             var newNode = { id: generateId(), text: text, children: [] };
             result.parent.children.splice(result.index + 1, 0, newNode);
+            saveState();
             render();
             selectNode(newNode.id);
             if (autoEdit) {
@@ -1847,8 +1857,8 @@
             }
             var result = findNode(nodeId);
             if (!result || !result.parent) return false;
-            saveState();
             result.parent.children.splice(result.index, 1);
+            saveState();
             if (result.parent.children.length > 0) {
                 var idx = Math.min(result.index, result.parent.children.length - 1);
                 selectNode(result.parent.children[idx].id);
@@ -1868,7 +1878,6 @@
                 return;
             }
             var filtered = filterTopLevelNodes(ids);
-            saveState();
             var lastParent = null;
             for (var i = 0; i < filtered.length; i++) {
                 var r = findNode(filtered[i]);
@@ -1877,6 +1886,7 @@
                     r.parent.children.splice(r.index, 1);
                 }
             }
+            saveState();
             selectedNodeIds.clear();
             if (lastParent && lastParent.children.length > 0) {
                 selectNode(lastParent.children[0].id);
@@ -1892,19 +1902,19 @@
         function updateNodeText(nodeId, newText) {
             var result = findNode(nodeId);
             if (result && result.node.text !== newText) {
-                saveState();
                 result.node.text = newText;
+                saveState();
             }
         }
 
         function moveNodeUp(nodeId) {
             var result = findNode(nodeId);
             if (result && result.parent && result.index > 0) {
-                saveState();
                 var s = result.parent.children;
                 var tmp = s[result.index - 1];
                 s[result.index - 1] = s[result.index];
                 s[result.index] = tmp;
+                saveState();
                 render();
             }
         }
@@ -1912,11 +1922,11 @@
         function moveNodeDown(nodeId) {
             var result = findNode(nodeId);
             if (result && result.parent && result.index < result.parent.children.length - 1) {
-                saveState();
                 var s = result.parent.children;
                 var tmp = s[result.index];
                 s[result.index] = s[result.index + 1];
                 s[result.index + 1] = tmp;
+                saveState();
                 render();
             }
         }
@@ -1926,9 +1936,9 @@
             if (!result || !result.parent || result.parent.id === 'root') return;
             var gpResult = findNode(result.parent.id);
             if (gpResult && gpResult.parent) {
-                saveState();
                 result.parent.children.splice(result.index, 1);
                 gpResult.parent.children.splice(gpResult.index + 1, 0, result.node);
+                saveState();
                 render();
                 selectNode(nodeId);
             }
@@ -1937,10 +1947,10 @@
         function demoteNode(nodeId) {
             var result = findNode(nodeId);
             if (!result || !result.parent || result.index === 0) return;
-            saveState();
             var prevSibling = result.parent.children[result.index - 1];
             result.parent.children.splice(result.index, 1);
             prevSibling.children.push(result.node);
+            saveState();
             render();
             selectNode(nodeId);
         }
@@ -2281,7 +2291,6 @@
             clipboard = nodes.length === 1 ? nodes[0] : nodes;
             clipboardIsCut = true;
 
-            saveState();
             var lastParent = null;
             for (var i = 0; i < topLevel.length; i++) {
                 var r = findNode(topLevel[i]);
@@ -2290,6 +2299,7 @@
                     r.parent.children.splice(r.index, 1);
                 }
             }
+            saveState();
             selectedNodeIds.clear();
             if (lastParent && lastParent.children.length > 0) {
                 selectNode(lastParent.children[0].id);
@@ -2307,7 +2317,6 @@
             if (!clipboard || !cid) return;
             var r = findNode(cid);
             if (!r) return;
-            saveState();
             function reassignIds(node) {
                 node.id = generateId();
                 if (node.children) {
@@ -2320,12 +2329,14 @@
                     reassignIds(cloned);
                     r.node.children.push(cloned);
                 }
+                saveState();
                 render();
                 showToast(clipboard.length + '個のノードをペーストしました');
             } else {
                 var cloned = deepClone(clipboard);
                 reassignIds(cloned);
                 r.node.children.push(cloned);
+                saveState();
                 render();
                 selectNode(cloned.id);
                 showToast('ペーストしました');
@@ -2618,7 +2629,6 @@
             if (!targetResult) return;
             var filtered = filterTopLevelNodes(nodeIds);
             if (filtered.length === 0) return;
-            saveState();
             var nodesToMove = [];
             for (var i = 0; i < filtered.length; i++) {
                 var nr = findNode(filtered[i]);
@@ -2647,6 +2657,7 @@
                     if (tr && tr.parent) tr.parent.children.splice(tr.index + 1, 0, nodesToMove[i].data);
                 }
             }
+            saveState();
             selectedNodeIds.clear();
             for (var i = 0; i < nodesToMove.length; i++) selectedNodeIds.add(nodesToMove[i].id);
             lastSelectedNodeId = nodesToMove[0] ? nodesToMove[0].id : null;
@@ -3009,7 +3020,9 @@
                     // Shift+Enter: insert line break
                     e.preventDefault();
                     var sel = window.getSelection();
-                    if (sel.rangeCount) {
+                    var nodeEl = document.querySelector('[data-id="' + editingNodeId + '"]');
+                    var textEl = nodeEl ? nodeEl.querySelector('.node-text') : null;
+                    if (sel.rangeCount && textEl && textEl.contains(sel.getRangeAt(0).commonAncestorContainer)) {
                         var range = sel.getRangeAt(0);
                         range.deleteContents();
                         var br = document.createElement('br');
@@ -3091,7 +3104,7 @@
                     if (e.altKey && cmdKey) {
                         // Option+Cmd+Y (Mac) or Alt+Ctrl+Y (Windows) – toggle highlight
                         e.preventDefault();
-                        if (currentId) toggleNodeHighlight(currentId);
+                        if (currentId) { toggleNodeHighlight(currentId); saveState(); }
                     } else if (cmdKey) {
                         e.preventDefault(); redo();
                     }
@@ -3118,7 +3131,7 @@
                     // Option+Cmd+G (Mac) or Alt+Ctrl+G (Windows) – toggle grayout
                     if (e.altKey && cmdKey) {
                         e.preventDefault();
-                        if (currentId) toggleNodeGrayout(currentId);
+                        if (currentId) { toggleNodeGrayout(currentId); saveState(); }
                     }
                     break;
                 case 'Escape':
@@ -3370,9 +3383,26 @@
             if (grayoutBtn) {
                 grayoutBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
-                    var currentId = getSelectedNodeId();
-                    if (currentId) {
-                        toggleNodeGrayout(currentId);
+                    var nodes = getSelectedNodes();
+                    if (nodes.length > 0) {
+                        // 1つでもOFFがあれば全部ON、全部ONなら全部OFF
+                        var allOn = nodes.every(function(node) { return isNodeGrayedOut(node.id); });
+                        var grayState = getNodeGrayoutState();
+                        var hlState = getNodeHighlightState();
+                        nodes.forEach(function(node) {
+                            if (allOn) {
+                                delete grayState[node.id];
+                            } else {
+                                // グレーアウトON時はハイライトを解除（相互排他）
+                                delete hlState[node.id];
+                                grayState[node.id] = true;
+                            }
+                        });
+                        setNodeGrayoutState(grayState);
+                        setNodeHighlightState(hlState);
+                        saveState();
+                        showToast(allOn ? 'グレーアウトを解除しました' : 'グレーアウトしました');
+                        render();
                     } else {
                         showToast('ノードを選択してください');
                     }
@@ -3384,9 +3414,26 @@
             if (highlightBtn) {
                 highlightBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
-                    var currentId = getSelectedNodeId();
-                    if (currentId) {
-                        toggleNodeHighlight(currentId);
+                    var nodes = getSelectedNodes();
+                    if (nodes.length > 0) {
+                        // 1つでもOFFがあれば全部ON、全部ONなら全部OFF
+                        var allOn = nodes.every(function(node) { return isNodeHighlighted(node.id); });
+                        var hlState = getNodeHighlightState();
+                        var grayState = getNodeGrayoutState();
+                        nodes.forEach(function(node) {
+                            if (allOn) {
+                                delete hlState[node.id];
+                            } else {
+                                // ハイライトON時はグレーアウトを解除（相互排他）
+                                delete grayState[node.id];
+                                hlState[node.id] = true;
+                            }
+                        });
+                        setNodeHighlightState(hlState);
+                        setNodeGrayoutState(grayState);
+                        saveState();
+                        showToast(allOn ? 'ハイライトを解除しました' : 'ハイライトしました');
+                        render();
                     } else {
                         showToast('ノードを選択してください');
                     }
@@ -3972,7 +4019,8 @@
             var orderedFolders = regularFolders.concat(defaultFolders);
 
             list.innerHTML = '';
-            var isDndEnabled = (sortMode !== 'alpha');
+            var isDndFolderEnabled = (sortMode !== 'alpha'); // alpha時はフォルダ並び替え不可
+            var isDndPageEnabled = true; // ページ移動は常に有効
 
             for (var fi = 0; fi < orderedFolders.length; fi++) {
                 var folder = orderedFolders[fi];
@@ -3980,7 +4028,7 @@
                 var hasPages = folderPages.length > 0;
                 var isCollapsed = collapseState[folder.id] === true;
 
-                var folderEl = createFolderElement(folder, hasPages, isCollapsed, isDndEnabled);
+                var folderEl = createFolderElement(folder, hasPages, isCollapsed, isDndFolderEnabled);
                 list.appendChild(folderEl);
 
                 // Render pages if not collapsed
@@ -3988,7 +4036,7 @@
                     for (var pi = 0; pi < folderPages.length; pi++) {
                         var page = folderPages[pi];
                         var isPageActive = (page.id === currentMapId);
-                        var pageEl = createPageElement(page, isPageActive, isDndEnabled, folder);
+                        var pageEl = createPageElement(page, isPageActive, isDndPageEnabled, folder);
                         list.appendChild(pageEl);
                     }
                 }
@@ -4652,6 +4700,7 @@
                 e.stopPropagation(); // Prevent global keyboard handler
                 if (e.key === 'Enter') {
                     e.preventDefault();
+                    if (e.isComposing || e.keyCode === 229) return; // 変換中のEnterは無視
                     finish(true);
                 } else if (e.key === 'Escape') {
                     e.preventDefault();
