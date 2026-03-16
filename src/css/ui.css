@@ -1,0 +1,101 @@
+/* ========================================
+   Toast Notification
+   ======================================== */
+.toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: #333;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    z-index: 3000;
+    opacity: 0;
+    transition: all 0.3s;
+    pointer-events: none;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* ========================================
+   Grey-out Node Styles
+   ======================================== */
+.node.grayed-out {
+    background: #C0B9B0 !important;
+    border-color: #C0B9B0 !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
+}
+
+.node.grayed-out .node-text {
+    color: #ffffff !important;
+}
+
+.node.grayed-out.selected {
+    background: #B0A99F !important;
+    border-color: #A09890 !important;
+    box-shadow: 0 0 0 3px rgba(192, 185, 176, 0.4) !important;
+}
+
+/* ========================================
+   Highlight Node Styles
+   ======================================== */
+.node.highlighted {
+    background: #F2C94C !important;
+    border-color: #F2C94C !important;
+    color: #37352f !important;
+    box-shadow: none !important;
+}
+
+.node.highlighted .node-text {
+    color: #37352f !important;
+}
+
+.node.highlighted.selected {
+    background: #E8BF42 !important;
+    border-color: #D4AB38 !important;
+    box-shadow: 0 0 0 3px rgba(242, 201, 76, 0.4) !important;
+}
+
+/* Floating bottom-right button area */
+.canvas-float-btns {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    display: flex;
+    gap: 8px;
+    z-index: 601;
+    transition: right 0.2s ease;
+}
+
+.canvas-float-btns .float-action-btn {
+    height: 32px;
+    padding: 0 14px;
+    border: none;
+    border-radius: 6px;
+    background: #37352f;
+    color: #ffffff;
+    font-family: var(--font-family);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+    transition: opacity 0.12s;
+}
+
+.canvas-float-btns .float-action-btn:hover {
+    opacity: 0.85;
+}
+
+.canvas-float-btns .float-action-btn:active {
+    transform: scale(0.97);
+}

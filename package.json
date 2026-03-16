@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "build": "node build.js",
+    "dev": "node build.js && node -e \"const fs=require('fs');let t;fs.watch('src',{recursive:true},()=>{clearTimeout(t);t=setTimeout(()=>{try{require('child_process').execSync('node build.js',{stdio:'inherit'})}catch(e){}},150)});console.log('Watching src/ ... (Ctrl+C to stop)')\""
+  },
   "dependencies": {
     "playwright": "^1.58.2"
   }

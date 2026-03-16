@@ -1,0 +1,4774 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>マインドマップ</title>
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAJsklEQVR4nO2Ye3AV1R3HP+fs7r1JIAnFEAgUaUdAU0CkoKiodUapdsRHVdRaKIjFVtqK1YqObX3805kKOGLro3YUcNqOjkCphZbpVEe0KmAdQRgpAmJFJUiAhOSS3MeeX/84Z3dv+iDBoP7R/c7c2b1zXr/n9/c7CylSpEiRIkWKFClSpEiRIkWKFP9nUJ/0AVs2b5JtW7fStGcPYgz1gwZxYuNJjD1l/Cd+dk/wiQjR0tIiDyy4j+W/X8H7+1uhoobKfv1RStF5qIVS2wEG1/bl0kunMPfWeTQ0DP7MjOEf6w2XLXtGxo4eRbH/55kwdS5TJp1H7XED0ZkMSinCYoG2A/t4e8OLPPn0r3li6RiWLlksM2Ze95kY4ZgeunD+fXLr7Xdyxb0PcfaVsygWS3S0t2NMEUQQQGuN1j6ZPn3wMwFvrlnO0ttmcvvNc/j5/Ps/dSMcswOXLlksM2bNZu5vn2fI2DNob96LVgq0tooLKGWPFBHEhIhAdV09TTu2sPCqs1j4s3u45dZ5n6oRjslh7+3eLScMO56p83/DqRddw8E976MyGfAUGiAExFlAAZIcXCzm6VffwPb1z/PodReybds/GDhoEL9buoRXX3mZPU1NZLMZGk9q5IKLLmLyV792TA10TDb79szp8tfte/nBE3+mtelDvCBAEEQr63kDAqDEHioKAUSJ5YVCger6wSy/50Y+XLsSv09fWr1qho2bxMBhXyDf2cm7m19n76Z1nDJiGA8+8gjjvzzhmMjeaxLcv79ZRgwfztWLllHM5dBKIyIorVAGEKsoSoEoGwmQmN6Ap30Kba2ce93NLP9gN2dMncUp51+KQeNMh1KKjoP7WP3Izzh94umsWvVHmTLl4l4bodcG+NvaFyhWfo6hjeMp5HIoz+Y8pus8ERsAShTixLYGEpTSlAp5KmvruOHhFYSlkEP7mwFLnMqljAoCrrr7Fww98WQuv+zrbNr0howdO65XRui1AV7bsJ76ExrJVPUhfziH1h4A4nJeuZy3GoBo3LgLAg0GQaEgDMkdPADakqdCoUgixpiQgx/s5pxps9n55mvcMGtmb8VH93aD5uZmauob0FpjlPWYpX2rrCinv9NYRCwJihtTuPKgEBT4nv2pyP9leyiN9n32N+3jgjl3snnnbjasf0V6I//HNsA77+yQNatXyeaNG5FSAYMN78jbkVRKrEGEKA3KBiEekMhAUZVwFUNiCV0saJsudQ1DaRh9GiuXP/NxVQA+RgqsWP6MLLp/IRPPOAtTUU1ldS2nj5tIvrMDpTTOzTbijVivKuVcLrHyYpsCaxD7gihXNqNpZWWznEy1I9T+w0by9rbtn54Bpn3japk++3uMn3oD0+ddwXFDjkd8HykZirl2lBcleOJl0S7Xbd1LnC82VKRLyDiDQZcqYbtIFc8TFPlSibqGwax+8GFOGz9ORjc2cu2MGZw/+YKjIsUeTz737EmyqamNW5b8icr+gzh8qJWwVLCaGYXSytb1SJmo3GkQ5+WYELGcILEETgzHCwqXCiZ6t9GRGFJQvkc+18reHVs58FET29evZdfLa7jwnDP51eNPMKBuQI9069Gkud+fI4v/8BfuePZ1SsUSpfxhtPaJPRflLk5yl/hKKcRYUpeI1ES54STnozSQyEjxsN3LxFkSH4ISQfsBfkUFyvfwgoCOfXtYfNv16A/eYv3rGxlQV9etft1O2Lr1LWkcNZqbnn6VwcNHkWtrwfN9t9i6NCKuJL+dkF3YMJbddcWS8IDrFJWOKka0QOKo+vf+KdnLxIfrbAVVtf14bPYlHK9aeW7ty93q120VWLRgPiO/MoWhY04ld+igbXMF1+gIaFutMUnUI2K9FckGyRqJ+DxRPtIsapasYknbjEmaIRdbiLiyqTVKe2jtE+bzdLS08K35i3lu3UZWrljWbYns1gAvvvQSY86/DIoFe7MTsUJG+kUljLicU14Hxf1XXXxnx1VkRBVTXCJVWR8QLUleBKUEtMT7CuB5PqV8nmxtHWd/cw4PPbioO/WObIB9+z6SA+05GkZ+ic5CJ9q1uVIezpEHdSJkRGKio5x2E+PGh/hddGS5xGAREUZVwpKgSyoXQeJCIjaSe1daYTo6GDnpPN7avrN3Bsi1tZEvGSr7ViPGxCQVdXjg+nqtyjxfxvhO90QxSUgunmPXlBeDxPFRD+EixuVI7AAT/ZeEgpSiUMzTb+BgOkPh3V07j5gGRzRA35oaAq3Itbbi4dk8j2W0DK2USvLb1WyiRxkvxIQY84J06QyT/sBaS6IbVTkvKIk7w5g7yngn+q+UwoQhGkWQyRxJxSMboK5ugDquug/NO7cSZLKIGBuCXcjNWE9El4C49ycO10ippIxZxeNySERs0VikdaJ8jC4NVRJO0V5iDEGmgqZd26nO+gwZMvSIlaBbEpw8eTIbVj2FzviISVylEHeLKxMw6Wpd307XXCjL/66cmOyjkjpoy18Zb9hqY+todFeIL1JuXCQkqKzkzTXLOOvMid2p130fsGPHdhkxYgQ3Pvkcw04+k/aWZlQmiBXtskkcjirOVSVlYzruf4ibh8gFRiVhI112tYQX3THEcVBkIDekRDClIn3r6tn1xjoenXYuW7ZsZvToMb2LgOHDR6h77vopj990LZ3tB6io6YcUC2BMXJv/w4y6rGhHykeXIVxnF7G4iPWq5Xt7X5KovBrEEYkYgzEhRkL7NCFhqYSYEiIhoqC6voH2Pe/x2Hcu4967f9yt8v9N9P+Jq6+8XFa+sI65jz/L4Mbx5NrbKOU7LQeIYIzEHy8iho8/Zzgmj5sZT3dthqJqHjF+NF/bpycKtId4Gq01nlJ4KinJAhRzh1j37FOsnn87P/zu9Sy4/4Ee6dZjAwDcMe9H8stHH+OL51zChIuvYeiJowj6VOP7GXw/AHcbjLwqJsQY47xnn/ZzuEFEMGGIMYIxoZtTwpRCwrBIGJYIC3lK+QLFjsN0dh6m0JGj83A7nW1t5NtbKRxuJ9fWwqF9e2n959sMqvL4yV13MW36jB7rdVQGAFi/fp0sWnAfr274O4cKISaowMtUElRWov0AQYMYTKlIqZBHwiISGiQsubAOSb4LOEJzTxGDRuK2wtcevqcJAo9sJkM2CKiqrKCqqoqqqiqqq/tSW1PLwIEDmTDxNKZccvlR63PUC8qxedMbsndvE60tLbS1tdHZ0UEYGnzfI5PNks1myWYryGQzZDNZ/MDH9wN838fzPDzfw/d8vOi/5+EHAUFg52QzWYJslprqml7JmSJFihQpUqRIkSJFihQpUqRIkaIM/wItfqmNOho25QAAAABJRU5ErkJggg==" />
+<style>
+/* ========================================
+   CSS Variables & Reset
+   ======================================== */
+:root {
+    --primary-color: #4a90d9;
+    --primary-hover: #357abd;
+    --bg-color: #f5f7fa;
+    --node-bg: #ffffff;
+    --node-border: #4a90d9;
+    --node-selected: #e3f2fd;
+    --text-color: #333333;
+    --line-color: #999999;
+    --shadow: 0 2px 8px rgba(0,0,0,0.1);
+    --font-family: 'Meiryo UI', 'メイリオ', Meiryo, sans-serif;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    font-family: var(--font-family);
+    background: var(--bg-color);
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
+}
+
+
+/* ========================================
+   Canvas Container (Full Screen - No Toolbar)
+   ======================================== */
+.canvas-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    background: var(--bg-color);
+    background-image:
+        radial-gradient(circle, #ddd 1px, transparent 1px);
+    background-size: 20px 20px;
+    transition: left 0.15s ease, right 0.15s ease;
+}
+
+.canvas {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    cursor: default;
+}
+
+.canvas.panning {
+    cursor: grabbing;
+}
+
+.canvas-inner {
+    position: absolute;
+    transform-origin: 0 0;
+}
+
+/* ========================================
+   SVG Lines
+   ======================================== */
+.lines-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 10000px;
+    height: 10000px;
+    overflow: visible;
+    transform: translate(-5000px, -5000px);
+    pointer-events: none;
+}
+
+.connection-line {
+    fill: none;
+    stroke: var(--line-color);
+    stroke-width: 2;
+    stroke-linecap: round;
+    pointer-events: none;
+}
+
+/* ========================================
+   Node Styles
+   ======================================== */
+.node {
+    position: absolute;
+    min-width: 120px;
+    padding: 10px 16px;
+    background: var(--node-bg);
+    border: 2px solid var(--node-border);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    user-select: none;
+    transition: box-shadow 0.2s;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+.node:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.node.selected {
+    background: var(--node-selected);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.3);
+}
+
+.node.root {
+    font-size: 16px;
+    font-weight: bold;
+    border-width: 3px;
+}
+
+.node.editing {
+    cursor: text;
+}
+
+.node.dragging {
+    opacity: 0.4;
+    z-index: 1000;
+}
+
+.node.drag-over-child {
+    box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.5);
+    border-color: #4caf50;
+}
+
+.node.drag-over-before {
+    border-top: 4px solid #2196f3;
+}
+
+.node.drag-over-after {
+    border-bottom: 4px solid #2196f3;
+}
+
+/* Collapse indicator circle – absolute-positioned at junction (right edge of node) */
+.node-collapse-indicator {
+    position: absolute;
+    top: 50%;
+    right: -4px;
+    transform: translate(100%, -50%);
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #37352f;
+    cursor: pointer;
+    z-index: 10;
+    transition: transform 0.12s, opacity 0.12s;
+    pointer-events: auto;
+}
+
+.node-collapse-indicator:hover {
+    transform: translate(100%, -50%) scale(1.25);
+    opacity: 0.75;
+}
+
+/* Clickable hit area at the connection-line junction (right side of node) */
+.node-junction-hitarea {
+    position: absolute;
+    top: 50%;
+    right: -6px;
+    transform: translate(100%, -50%);
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    z-index: 9;
+    border-radius: 50%;
+    pointer-events: auto;
+}
+
+.node-text {
+    outline: none;
+    min-width: 50px;
+    display: block;
+    white-space: pre;
+}
+
+.node-text[contenteditable="true"] {
+    cursor: text;
+    background: rgba(255,255,255,0.8);
+    padding: 2px 4px;
+    margin: -2px -4px;
+    border-radius: 3px;
+}
+
+/* ========================================
+   Drag Ghost
+   ======================================== */
+.drag-ghost {
+    position: fixed;
+    pointer-events: none;
+    z-index: 2000;
+    opacity: 0.8;
+    transform: rotate(2deg);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+
+/* ========================================
+   Lasso Selection Rectangle
+   ======================================== */
+.lasso-rect {
+    position: fixed;
+    border: 2px dashed var(--primary-color);
+    background: rgba(74, 144, 217, 0.08);
+    pointer-events: none;
+    z-index: 900;
+    display: none;
+}
+
+
+/* ========================================
+   Left Sidebar (My Maps) – Notion style
+   ======================================== */
+.left-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: #f7f7f5;
+    z-index: 600;
+    display: flex;
+    flex-direction: row;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.left-sidebar.collapsed {
+    transform: translateX(-100%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.left-sidebar.collapsed.peek {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+    box-shadow: 4px 0 16px rgba(0,0,0,0.1);
+}
+
+/* Invisible hover zone on the left edge to trigger peek */
+.left-sidebar-hover-zone {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 8px;
+    height: 100%;
+    z-index: 599;
+}
+
+.left-sidebar-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+    order: 1;
+}
+
+.left-sidebar-resize-handle {
+    width: 4px;
+    cursor: col-resize;
+    background: transparent;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+    transition: background 0.15s;
+    order: 2;
+}
+
+.left-sidebar-resize-handle:hover,
+.left-sidebar-resize-handle.dragging {
+    background: rgba(0,0,0,0.08);
+}
+
+.left-sidebar-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    font-size: 14px;
+    color: #91918e;
+    flex-shrink: 0;
+    transition: background 0.12s;
+}
+
+.left-sidebar-toggle-btn:hover {
+    background: rgba(0,0,0,0.06);
+}
+
+.left-sidebar-header {
+    padding: 12px 12px 0 12px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.left-sidebar-header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.left-sidebar-header-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #91918e;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.left-sidebar-sort-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.left-sidebar-new-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    padding: 4px 8px;
+    margin: 0 0 4px 0;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    font-family: var(--font-family);
+    font-size: 13px;
+    color: #91918e;
+    cursor: pointer;
+    transition: background 0.12s;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.left-sidebar-new-btn:hover {
+    background: rgba(0,0,0,0.03);
+    color: #37352f;
+}
+
+.left-sidebar-separator {
+    border-top: 1px solid rgba(0,0,0,0.06);
+    margin: 2px 0 4px 0;
+}
+
+.left-sidebar-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2px 0;
+    margin-top: 4px;
+}
+
+.map-item {
+    display: flex;
+    align-items: center;
+    height: 28px;
+    padding: 0 8px 0 12px;
+    margin: 1px 4px;
+    cursor: pointer;
+    transition: background 0.08s;
+    gap: 6px;
+    position: relative;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #37352f;
+}
+
+.map-item:hover {
+    background: rgba(0,0,0,0.03);
+}
+
+.map-item.active {
+    background: rgba(0,0,0,0.06);
+}
+
+.map-item-icon {
+    flex-shrink: 0;
+    font-size: 13px;
+    line-height: 1;
+    width: auto;
+    overflow: hidden;
+}
+
+.map-item-icon:empty {
+    width: 0;
+}
+
+.map-item-pin {
+    display: inline;
+    font-size: 11px;
+    line-height: 1;
+}
+
+.map-item-name {
+    flex: 1;
+    font-size: 13px;
+    color: #37352f;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+.map-item-name[contenteditable="true"] {
+    background: #fff;
+    border: 1px solid var(--primary-color);
+    border-radius: 3px;
+    padding: 1px 4px;
+    outline: none;
+    white-space: nowrap;
+    overflow: visible;
+}
+
+.map-item-menu-btn {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: #91918e;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.08s, background 0.08s;
+}
+
+.map-item:hover .map-item-menu-btn,
+.map-item-menu-btn.open {
+    opacity: 1;
+}
+
+.map-item-menu-btn:hover {
+    background: rgba(0,0,0,0.06);
+}
+
+/* Floating toggle when sidebar is collapsed – hidden by default, shown via JS */
+.left-sidebar-float-toggle {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 4px;
+    background: rgba(0,0,0,0.04);
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: #91918e;
+    z-index: 601;
+    transition: background 0.12s, opacity 0.2s;
+}
+
+.left-sidebar-float-toggle:hover {
+    background: rgba(0,0,0,0.08);
+}
+
+.left-sidebar-float-toggle.show {
+    display: flex;
+}
+
+/* Page indentation (inside folder) */
+.map-item.page-item {
+    padding-left: 28px;
+}
+
+.map-item.default-folder {
+    /* 未分類 folder cannot be dragged */
+    cursor: default;
+}
+
+/* Folder expand/collapse toggle */
+.map-item-toggle {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    border: none;
+    border-radius: 3px;
+    background: transparent;
+    cursor: pointer;
+    font-size: 10px;
+    color: #91918e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: background 0.08s;
+}
+
+.map-item-toggle:hover {
+    background: rgba(0,0,0,0.06);
+}
+
+/* Map item inline rename input */
+.map-item-rename-input {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    font-family: var(--font-family);
+    color: #37352f;
+    border: 1px solid var(--primary-color);
+    border-radius: 3px;
+    padding: 1px 4px;
+    outline: none;
+    background: #fff;
+}
+
+/* Sort toggle in My Maps header */
+.left-sidebar-sort-toggle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-right: 4px;
+}
+
+.left-sidebar-sort-label {
+    font-size: 11px;
+    color: #91918e;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.sort-toggle-switch {
+    position: relative;
+    width: 32px;
+    height: 16px;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.sort-toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+
+.sort-toggle-slider {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #d4d4d4;
+    border-radius: 8px;
+    transition: background 0.2s ease;
+}
+
+.sort-toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    left: 2px;
+    top: 2px;
+    background: #ffffff;
+    border-radius: 50%;
+    transition: transform 0.2s ease;
+}
+
+.sort-toggle-switch input:checked + .sort-toggle-slider {
+    background: #37352f;
+}
+
+.sort-toggle-switch input:checked + .sort-toggle-slider::before {
+    transform: translateX(16px);
+}
+
+/* Drag-over indicators for My Maps list items */
+.map-item.drag-over-above {
+    border-top: 2px solid var(--primary-color);
+}
+
+.map-item.drag-over-below {
+    border-bottom: 2px solid var(--primary-color);
+}
+
+.map-item.drag-over-into {
+    background: rgba(74, 144, 217, 0.12);
+}
+
+.map-item.map-dragging {
+    opacity: 0.4;
+}
+
+/* Context menu – Notion style */
+.ctx-menu {
+    position: fixed;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 6px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+    z-index: 5000;
+    min-width: 160px;
+    padding: 4px 0;
+    display: none;
+}
+
+.ctx-menu.show {
+    display: block;
+}
+
+.ctx-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px;
+    height: 28px;
+    font-size: 13px;
+    font-family: var(--font-family);
+    color: #37352f;
+    cursor: pointer;
+    transition: background 0.08s;
+    white-space: nowrap;
+}
+
+.ctx-menu-item:hover {
+    background: rgba(0,0,0,0.03);
+}
+
+.ctx-menu-item.danger {
+    color: #e53935;
+}
+
+.ctx-menu-item.danger:hover {
+    background: rgba(229,57,53,0.04);
+}
+
+
+/* ========================================
+   Right Sidebar – Notion style
+   ======================================== */
+.sidebar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100%;
+    background: #f7f7f5;
+    border-left: 1px solid rgba(0,0,0,0.06);
+    z-index: 600;
+    display: flex;
+    flex-direction: row;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.sidebar.collapsed {
+    transform: translateX(100%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Old toggle btn is hidden; replaced by floating 🌲 button */
+.sidebar-toggle-btn {
+    display: none;
+}
+
+.sidebar-resize-handle {
+    width: 4px;
+    cursor: col-resize;
+    background: transparent;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+    transition: background 0.15s;
+}
+
+.sidebar-resize-handle:hover,
+.sidebar-resize-handle.dragging {
+    background: rgba(0,0,0,0.08);
+}
+
+.sidebar-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+}
+
+/* Hidden – backward compat selects */
+.sidebar-controls select {
+    display: none;
+}
+
+/* ---- Bottom panel (toggles + buttons) ---- */
+.sidebar-bottom-panel {
+    flex-shrink: 0;
+}
+
+.sidebar-bottom-separator {
+    border-top: 1px solid #e8e8e8;
+    margin: 0 12px;
+}
+
+.sidebar-toggle-area {
+    padding: 12px 16px 8px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sidebar-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.sidebar-toggle-label {
+    font-size: 13px;
+    color: #37352f;
+    font-family: var(--font-family);
+    user-select: none;
+}
+
+/* iOS-style capsule toggle */
+.toggle-switch {
+    position: relative;
+    width: 40px;
+    height: 20px;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+
+.toggle-slider {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #d4d4d4;
+    border-radius: 10px;
+    transition: background 0.2s ease;
+}
+
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    left: 2px;
+    top: 2px;
+    background: #ffffff;
+    border-radius: 50%;
+    transition: transform 0.2s ease;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background: #37352f;
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+    transform: translateX(20px);
+}
+
+.sidebar-button-area {
+    padding: 0 16px 12px 16px;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+
+.sidebar-btn-copy,
+.sidebar-btn-expand-all {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100px;
+    min-width: 100px;
+    max-width: 100px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    background: #37352f;
+    color: #ffffff;
+    font-family: var(--font-family);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    flex-grow: 0;
+    flex-shrink: 0;
+    transition: opacity 0.12s;
+    white-space: nowrap;
+}
+
+.sidebar-btn-copy:hover,
+.sidebar-btn-expand-all:hover {
+    opacity: 0.85;
+}
+
+.sidebar-btn-copy:active,
+.sidebar-btn-expand-all:active {
+    transform: scale(0.97);
+}
+
+.sidebar-tree {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: auto;
+    padding: 8px 0;
+}
+
+.sidebar-preview {
+    position: relative;
+    font-family: 'Menlo', 'Consolas', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.3;
+    padding: 0;
+    margin: 0;
+    white-space: pre;
+    min-width: max-content;
+}
+
+.sidebar-preview-line {
+    display: block;
+    min-height: 24px;
+    line-height: 1.3;
+    padding: 2px 8px;
+    margin: 0;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.08s;
+}
+
+.sidebar-preview-line:hover {
+    background: #f7f7f5;
+}
+
+.sidebar-preview-line.active {
+    background: rgba(0,0,0,0.06);
+    font-weight: bold;
+}
+
+/* Hidden – no longer used */
+.sidebar-mini-btn {
+    display: none !important;
+}
+
+/* Floating 🌲 toggle button (top-right, fixed size) */
+.sidebar-float-toggle {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    z-index: 601;
+    transition: background 0.12s;
+}
+
+.sidebar-float-toggle:hover {
+    background: #f0f0ee;
+}
+
+.sidebar-float-toggle.hidden {
+    display: none;
+}
+
+/* Close button inside right sidebar header */
+.sidebar-close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    font-size: 16px;
+    color: #91918e;
+    flex-shrink: 0;
+    transition: background 0.12s;
+    margin-left: auto;
+}
+
+.sidebar-close-btn:hover {
+    background: rgba(0,0,0,0.06);
+}
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    padding: 8px 8px 0 12px;
+    flex-shrink: 0;
+}
+
+.sidebar-header-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #91918e;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+
+/* ========================================
+   Toast Notification
+   ======================================== */
+.toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: #333;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    z-index: 3000;
+    opacity: 0;
+    transition: all 0.3s;
+    pointer-events: none;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* ========================================
+   Grey-out Node Styles
+   ======================================== */
+.node.grayed-out {
+    background: #C0B9B0 !important;
+    border-color: #C0B9B0 !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
+}
+
+.node.grayed-out .node-text {
+    color: #ffffff !important;
+}
+
+.node.grayed-out.selected {
+    background: #B0A99F !important;
+    border-color: #A09890 !important;
+    box-shadow: 0 0 0 3px rgba(192, 185, 176, 0.4) !important;
+}
+
+/* ========================================
+   Highlight Node Styles
+   ======================================== */
+.node.highlighted {
+    background: #F2C94C !important;
+    border-color: #F2C94C !important;
+    color: #37352f !important;
+    box-shadow: none !important;
+}
+
+.node.highlighted .node-text {
+    color: #37352f !important;
+}
+
+.node.highlighted.selected {
+    background: #E8BF42 !important;
+    border-color: #D4AB38 !important;
+    box-shadow: 0 0 0 3px rgba(242, 201, 76, 0.4) !important;
+}
+
+/* Floating bottom-right button area */
+.canvas-float-btns {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    display: flex;
+    gap: 8px;
+    z-index: 601;
+    transition: right 0.2s ease;
+}
+
+.canvas-float-btns .float-action-btn {
+    height: 32px;
+    padding: 0 14px;
+    border: none;
+    border-radius: 6px;
+    background: #37352f;
+    color: #ffffff;
+    font-family: var(--font-family);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+    transition: opacity 0.12s;
+}
+
+.canvas-float-btns .float-action-btn:hover {
+    opacity: 0.85;
+}
+
+.canvas-float-btns .float-action-btn:active {
+    transform: scale(0.97);
+}
+</style>
+</head>
+<body>
+
+    <!-- Left Sidebar Hover Zone (for peek when collapsed) -->
+    <div class="left-sidebar-hover-zone" id="leftSidebarHoverZone"></div>
+
+    <!-- Floating toggle to re-open left sidebar when collapsed -->
+    <button class="left-sidebar-float-toggle" id="leftSidebarFloatToggle" title="マイマップを開く">☰</button>
+
+    <!-- Left Sidebar (My Maps) -->
+    <div class="left-sidebar" id="leftSidebar">
+        <div class="left-sidebar-content" id="leftSidebarContent">
+            <div class="left-sidebar-header">
+                <div class="left-sidebar-header-top">
+                    <span class="left-sidebar-header-label">マイマップ</span>
+                    <div class="left-sidebar-toggle-btn" id="leftSidebarToggle" title="サイドバーを閉じる">«</div>
+                </div>
+                <div class="left-sidebar-sort-row">
+                    <span class="left-sidebar-sort-label">アルファベット順</span>
+                    <label class="sort-toggle-switch" id="sortToggle">
+                        <input type="checkbox" id="sortToggleInput">
+                        <span class="sort-toggle-slider"></span>
+                    </label>
+                </div>
+                <button class="left-sidebar-new-btn" id="newMapBtn">＋ 新規作成</button>
+                <div class="left-sidebar-separator"></div>
+            </div>
+            <div class="left-sidebar-list" id="mapList"></div>
+        </div>
+        <div class="left-sidebar-resize-handle" id="leftSidebarResizeHandle"></div>
+    </div>
+
+    <!-- Context Menu for Page Items -->
+    <div class="ctx-menu" id="ctxMenu">
+        <div class="ctx-menu-item" data-action="rename">✏️ 名前変更</div>
+        <div class="ctx-menu-item" data-action="duplicate">📑 複製</div>
+        <div class="ctx-menu-item danger" data-action="delete">🗑 削除</div>
+    </div>
+
+    <!-- Context Menu for Folder Items -->
+    <div class="ctx-menu" id="ctxMenuFolder">
+        <div class="ctx-menu-item" data-action="folder-rename">✏️ 名前変更</div>
+        <div class="ctx-menu-item" data-action="folder-add-page">📄 ページを追加</div>
+        <div class="ctx-menu-item danger" data-action="folder-delete">🗑 削除</div>
+    </div>
+
+    <!-- Context Menu for empty area / creating folder -->
+    <div class="ctx-menu" id="ctxMenuArea">
+        <div class="ctx-menu-item" data-action="create-folder">📁 フォルダを作成</div>
+    </div>
+
+    <!-- Canvas Container (Full Screen) -->
+    <div class="canvas-container" id="canvasContainer">
+        <div class="canvas" id="canvas">
+            <div class="canvas-inner" id="canvasInner">
+                <svg class="lines-svg" id="linesSvg"></svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating 🌲 toggle for right sidebar (always visible unless sidebar is open) -->
+    <button class="sidebar-float-toggle" id="sidebarFloatToggle" title="ツリーナビを開く">🌲</button>
+
+    <!-- Right Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-toggle-btn" id="sidebarToggle" title="サイドバー開閉">◀</div>
+        <div class="sidebar-resize-handle" id="sidebarResizeHandle"></div>
+        <button class="sidebar-mini-btn" id="sidebarMiniCopy" title="コピー">📋</button>
+        <div class="sidebar-content" id="sidebarContent">
+            <div class="sidebar-header">
+                <span class="sidebar-header-label">ツリーナビ</span>
+                <button class="sidebar-close-btn" id="sidebarCloseBtn" title="閉じる">✕</button>
+            </div>
+            <div class="sidebar-tree" id="sidebarTree"></div>
+            <!-- Bottom panel: toggles + buttons -->
+            <div class="sidebar-bottom-panel">
+                <div class="sidebar-bottom-separator"></div>
+                <div class="sidebar-toggle-area">
+                    <div class="sidebar-toggle-row">
+                        <span class="sidebar-toggle-label">🐣 ひよこモード</span>
+                        <label class="toggle-switch" id="toggleHiyoko">
+                            <input type="checkbox" id="toggleHiyokoInput">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="sidebar-toggle-row">
+                        <span class="sidebar-toggle-label">罫線</span>
+                        <label class="toggle-switch" id="toggleBorder">
+                            <input type="checkbox" id="toggleBorderInput" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="sidebar-button-area">
+                    <button class="sidebar-btn-copy" id="copyBtn" title="クリップボードにコピー">コピー</button>
+                    <button class="sidebar-btn-expand-all" id="expandAllBtn" title="すべてのノードを展開">すべて開く</button>
+                </div>
+            </div>
+            <!-- Hidden selects for backward compatibility -->
+            <select id="copyFormat" style="display:none">
+                <option value="simple">シンプル</option>
+                <option value="hiyoko">ひよこモード</option>
+            </select>
+            <select id="copyBorder" style="display:none">
+                <option value="none">罫線なし</option>
+                <option value="border" selected>罫線あり</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Floating action buttons (bottom-right of canvas) -->
+    <div class="canvas-float-btns" id="canvasFloatBtns">
+        <button class="float-action-btn" id="grayoutFloatBtn" title="グレーアウト (Option+Cmd+G)">グレーアウト</button>
+        <button class="float-action-btn" id="highlightFloatBtn" title="ハイライト (Option+Cmd+Y)">ハイライト</button>
+    </div>
+
+    <!-- Lasso Selection Rectangle -->
+    <div class="lasso-rect" id="lassoRect"></div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+
+<script>
+    (function() {
+        'use strict';
+
+// ========================================
+// Global State
+// ========================================
+
+const levelIcons = {
+    hiyoko: { 1: '🐔', 2: '🐤', 3: '🐣', 4: '🥚' }
+    // family mode removed
+};
+
+let mindMapData = {
+    root: {
+        id: 'root',
+        text: '中心テーマ',
+        children: []
+    }
+};
+
+let currentMapId = null; // Currently active map ID
+
+let selectedNodeIds = new Set();
+let lastSelectedNodeId = null;
+let selectionAnchorId = null; // Anchor node for Shift+Arrow range selection
+let editingNodeId = null;
+
+let viewState = {
+    zoom: 1,
+    panX: 0,
+    panY: 0,
+    isPanning: false,
+    startX: 0,
+    startY: 0
+};
+
+let undoHistory = [];
+let undoIndex = -1;
+const MAX_HISTORY = 50;
+
+let clipboard = null;
+let clipboardIsCut = false;
+
+let nodeIdCounter = 0;
+
+// Node collapse state: { [nodeId]: true/false } - per map, saved in localStorage
+var NODE_COLLAPSE_KEY_PREFIX = 'mindmap-node-collapse-';
+
+// Node grey-out state: { [nodeId]: true/false } - per map, saved in localStorage
+var NODE_GRAYOUT_KEY_PREFIX = 'mindmap-node-grayout-';
+function getNodeGrayoutState() {
+    if (!currentMapId) return {};
+    try {
+        var raw = localStorage.getItem(NODE_GRAYOUT_KEY_PREFIX + currentMapId);
+        if (raw) return JSON.parse(raw);
+    } catch(e) {}
+    return {};
+}
+function setNodeGrayoutState(state) {
+    if (!currentMapId) return;
+    try { localStorage.setItem(NODE_GRAYOUT_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
+}
+function isNodeGrayedOut(nodeId) {
+    var state = getNodeGrayoutState();
+    return state[nodeId] === true;
+}
+function toggleNodeGrayout(nodeId) {
+    if (!nodeId) return;
+    var grayState = getNodeGrayoutState();
+    if (grayState[nodeId]) {
+        // Already grayed out → remove grayout
+        delete grayState[nodeId];
+        setNodeGrayoutState(grayState);
+        showToast('グレーアウトを解除しました');
+    } else {
+        // Applying grayout → remove highlight if present (mutual exclusion)
+        var hlState = getNodeHighlightState();
+        if (hlState[nodeId]) {
+            delete hlState[nodeId];
+            setNodeHighlightState(hlState);
+        }
+        grayState[nodeId] = true;
+        setNodeGrayoutState(grayState);
+        showToast('グレーアウトしました');
+    }
+    render();
+}
+// Check if a node is a descendant of any grayed-out node
+function isDescendantOfGrayedOut(nodeId) {
+    // Walk up the tree from nodeId, check if any ancestor is grayed out
+    var result = findNode(nodeId);
+    if (!result) return false;
+    var parentResult = result.parent;
+    while (parentResult) {
+        if (isNodeGrayedOut(parentResult.id)) return true;
+        var pr = findNode(parentResult.id);
+        parentResult = pr ? pr.parent : null;
+    }
+    return false;
+}
+// Check if a node or any of its ancestors is grayed out
+function isNodeOrAncestorGrayedOut(nodeId) {
+    return isNodeGrayedOut(nodeId) || isDescendantOfGrayedOut(nodeId);
+}
+
+// Node highlight state: { [nodeId]: true/false } - per map, saved in localStorage
+var NODE_HIGHLIGHT_KEY_PREFIX = 'mindmap-node-highlight-';
+function getNodeHighlightState() {
+    if (!currentMapId) return {};
+    try {
+        var raw = localStorage.getItem(NODE_HIGHLIGHT_KEY_PREFIX + currentMapId);
+        if (raw) return JSON.parse(raw);
+    } catch(e) {}
+    return {};
+}
+function setNodeHighlightState(state) {
+    if (!currentMapId) return;
+    try { localStorage.setItem(NODE_HIGHLIGHT_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
+}
+function isNodeHighlighted(nodeId) {
+    var state = getNodeHighlightState();
+    return state[nodeId] === true;
+}
+function toggleNodeHighlight(nodeId) {
+    if (!nodeId) return;
+    var hlState = getNodeHighlightState();
+    if (hlState[nodeId]) {
+        // Already highlighted → remove highlight
+        delete hlState[nodeId];
+        setNodeHighlightState(hlState);
+        showToast('ハイライトを解除しました');
+    } else {
+        // Applying highlight → remove grayout if present (mutual exclusion)
+        var grayState = getNodeGrayoutState();
+        if (grayState[nodeId]) {
+            delete grayState[nodeId];
+            setNodeGrayoutState(grayState);
+        }
+        hlState[nodeId] = true;
+        setNodeHighlightState(hlState);
+        showToast('ハイライトしました');
+    }
+    render();
+}
+function getNodeCollapseState() {
+    if (!currentMapId) return {};
+    try {
+        var raw = localStorage.getItem(NODE_COLLAPSE_KEY_PREFIX + currentMapId);
+        if (raw) return JSON.parse(raw);
+    } catch(e) {}
+    return {};
+}
+function setNodeCollapseState(state) {
+    if (!currentMapId) return;
+    try { localStorage.setItem(NODE_COLLAPSE_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
+}
+function isNodeCollapsed(nodeId) {
+    var state = getNodeCollapseState();
+    return state[nodeId] === true;
+}
+function toggleNodeCollapse(nodeId) {
+    if (nodeId === 'root') return; // root cannot be collapsed
+    var node = findNode(nodeId);
+    if (!node || !node.node.children || node.node.children.length === 0) return; // only nodes with children
+    var state = getNodeCollapseState();
+    state[nodeId] = !state[nodeId];
+    setNodeCollapseState(state);
+    render();
+}
+function expandAllNodes() {
+    setNodeCollapseState({});
+    render();
+    showToast('すべてのノードを展開しました');
+}
+
+// Drag reparenting state
+let nodeDragState = {
+    isDragging: false,
+    didDrag: false,
+    nodeId: null,
+    draggedNodeIds: null,
+    targetNodeId: null,
+    targetPosition: null
+};
+
+// Lasso selection state
+let lassoState = {
+    active: false,
+    didSelect: false,
+    startX: 0,
+    startY: 0,
+    currentX: 0,
+    currentY: 0
+};
+
+// Context menu state
+let ctxMenuTargetMapId = null;
+
+
+// ========================================
+// Utility Functions
+// ========================================
+
+function generateId() {
+    return 'node_' + (++nodeIdCounter) + '_' + Date.now();
+}
+
+function deepClone(obj) {
+    return JSON.parse(JSON.stringify(obj));
+}
+
+function showToast(message, duration) {
+    duration = duration || 2000;
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.classList.add('show');
+    clearTimeout(toast._tid);
+    toast._tid = setTimeout(function() {
+        toast.classList.remove('show');
+    }, duration);
+}
+
+
+// ========================================
+// Multi-Map Storage Layer
+// ========================================
+
+var META_KEY = 'mindmap-meta';
+var ID_COUNTER_KEY = 'mindmap-id-counter';
+var LAST_ACTIVE_KEY = 'mindmap-last-active-id';
+var OLD_STORAGE_KEY = 'mindmap_data_v2'; // legacy key for migration
+
+function getMapDataKey(mapId) {
+    return 'mindmap-data-' + mapId;
+}
+
+function getMetaList() {
+    try {
+        var raw = localStorage.getItem(META_KEY);
+        if (raw) return JSON.parse(raw);
+    } catch(e) {}
+    return [];
+}
+
+function saveMetaList(metaList) {
+    try { localStorage.setItem(META_KEY, JSON.stringify(metaList)); } catch(e) {}
+}
+
+function getNextMapId() {
+    var counter = parseInt(localStorage.getItem(ID_COUNTER_KEY), 10) || 0;
+    counter++;
+    try { localStorage.setItem(ID_COUNTER_KEY, String(counter)); } catch(e) {}
+    return counter;
+}
+
+function setLastActiveId(mapId) {
+    try { localStorage.setItem(LAST_ACTIVE_KEY, String(mapId)); } catch(e) {}
+}
+
+function getLastActiveId() {
+    return parseInt(localStorage.getItem(LAST_ACTIVE_KEY), 10) || null;
+}
+
+function findMetaById(mapId) {
+    var list = getMetaList();
+    for (var i = 0; i < list.length; i++) {
+        if (list[i].id === mapId) return list[i];
+    }
+    return null;
+}
+
+function nowISO() {
+    return new Date().toISOString();
+}
+
+var SORT_MODE_KEY = 'mindmap-sort-mode';
+var COLLAPSE_STATE_KEY = 'mindmap-collapse-state';
+
+function getSortMode() {
+    return localStorage.getItem(SORT_MODE_KEY) || 'none';
+}
+function setSortMode(mode) {
+    try { localStorage.setItem(SORT_MODE_KEY, mode); } catch(e) {}
+}
+function getCollapseState() {
+    try {
+        var raw = localStorage.getItem(COLLAPSE_STATE_KEY);
+        if (raw) return JSON.parse(raw);
+    } catch(e) {}
+    return {};
+}
+function setCollapseState(state) {
+    try { localStorage.setItem(COLLAPSE_STATE_KEY, JSON.stringify(state)); } catch(e) {}
+}
+
+// ---- Helper: ensure 未分類 folder exists ----
+function ensureDefaultFolder(metaList) {
+    var hasDefault = false;
+    for (var i = 0; i < metaList.length; i++) {
+        if (metaList[i].type === 'folder' && metaList[i].isDefault) {
+            hasDefault = true;
+            break;
+        }
+    }
+    if (!hasDefault) {
+        var folderId = getNextMapId();
+        var now = nowISO();
+        metaList.push({
+            id: folderId,
+            name: '未分類',
+            type: 'folder',
+            order: 999999, // always last
+            createdAt: now,
+            updatedAt: now,
+            isDefault: true
+        });
+    }
+    return metaList;
+}
+
+function getDefaultFolderId(metaList) {
+    if (!metaList) metaList = getMetaList();
+    for (var i = 0; i < metaList.length; i++) {
+        if (metaList[i].type === 'folder' && metaList[i].isDefault) return metaList[i].id;
+    }
+    return null;
+}
+
+// ---- Migration from old single-map storage ----
+function migrateIfNeeded() {
+    // v4 migration: convert old parentId/order schema to folder/page schema
+    var existing = getMetaList();
+    if (existing.length > 0 && !localStorage.getItem('mindmap-migrated-v4')) {
+        // Detect old schema: entries without 'type' field
+        var needsMigration = false;
+        for (var i = 0; i < existing.length; i++) {
+            if (!existing[i].type) { needsMigration = true; break; }
+        }
+
+        if (needsMigration) {
+            var now = nowISO();
+            var newMeta = [];
+
+            // Identify old parents (parentId === null with children) and children
+            var parentIds = {};
+            var childrenOf = {};
+            for (var i = 0; i < existing.length; i++) {
+                var m = existing[i];
+                if (m.parentId === undefined || m.parentId === null) {
+                    parentIds[m.id] = m;
+                } else {
+                    if (!childrenOf[m.parentId]) childrenOf[m.parentId] = [];
+                    childrenOf[m.parentId].push(m);
+                }
+            }
+
+            // Create 未分類 folder first
+            var defaultFolderId = getNextMapId();
+            newMeta.push({
+                id: defaultFolderId,
+                name: '未分類',
+                type: 'folder',
+                order: 999999,
+                createdAt: now,
+                updatedAt: now,
+                isDefault: true
+            });
+
+            var folderOrder = 0;
+            for (var pid in parentIds) {
+                var pm = parentIds[pid];
+                var hadChildren = childrenOf[pid] && childrenOf[pid].length > 0;
+
+                if (hadChildren) {
+                    // Old parent with children: convert to folder
+                    // Check if parent itself has mindmap data
+                    var parentData = loadMapData(pm.id);
+                    var folderId;
+
+                    // Create folder from the old parent
+                    folderId = getNextMapId();
+                    newMeta.push({
+                        id: folderId,
+                        name: pm.name || '新しいフォルダ',
+                        type: 'folder',
+                        order: folderOrder++,
+                        createdAt: pm.createdAt || now,
+                        updatedAt: pm.updatedAt || now
+                    });
+
+                    // If parent had mindmap data, also create a page for it inside the folder
+                    if (parentData && parentData.root) {
+                        var pageId = getNextMapId();
+                        newMeta.push({
+                            id: pageId,
+                            name: pm.name || '無題のマップ',
+                            type: 'page',
+                            folderId: folderId,
+                            order: 0,
+                            createdAt: pm.createdAt || now,
+                            updatedAt: pm.updatedAt || now
+                        });
+                        // Copy the mindmap data to new page ID
+                        try { localStorage.setItem(getMapDataKey(pageId), JSON.stringify(parentData)); } catch(e) {}
+                    }
+                    // Remove old parent's mindmap data key
+                    try { localStorage.removeItem(getMapDataKey(pm.id)); } catch(e) {}
+
+                    // Convert children to pages in this folder
+                    var children = childrenOf[pid];
+                    for (var ci = 0; ci < children.length; ci++) {
+                        var cm = children[ci];
+                        newMeta.push({
+                            id: cm.id,
+                            name: cm.name || '無題のマップ',
+                            type: 'page',
+                            folderId: folderId,
+                            order: (parentData ? 1 : 0) + ci,
+                            createdAt: cm.createdAt || now,
+                            updatedAt: cm.updatedAt || now
+                        });
+                    }
+                } else {
+                    // Old parent without children: convert to page in 未分類
+                    newMeta.push({
+                        id: pm.id,
+                        name: pm.name || '無題のマップ',
+                        type: 'page',
+                        folderId: defaultFolderId,
+                        order: folderOrder++,
+                        createdAt: pm.createdAt || now,
+                        updatedAt: pm.updatedAt || now
+                    });
+                }
+            }
+
+            // Handle orphan children (whose parentId doesn't match any parent)
+            for (var cpid in childrenOf) {
+                if (!parentIds[cpid]) {
+                    var orphans = childrenOf[cpid];
+                    for (var oi = 0; oi < orphans.length; oi++) {
+                        newMeta.push({
+                            id: orphans[oi].id,
+                            name: orphans[oi].name || '無題のマップ',
+                            type: 'page',
+                            folderId: defaultFolderId,
+                            order: 1000 + oi,
+                            createdAt: orphans[oi].createdAt || now,
+                            updatedAt: orphans[oi].updatedAt || now
+                        });
+                    }
+                }
+            }
+
+            saveMetaList(newMeta);
+            setSortMode('none');
+        }
+
+        try { localStorage.setItem('mindmap-migrated-v4', '1'); } catch(e) {}
+        return; // skip old migration below
+    }
+
+    // v4 flag already set but ensure schema is correct
+    if (localStorage.getItem('mindmap-migrated-v4') && existing.length > 0) {
+        // Ensure all entries have type field and 未分類 exists
+        var needsRepair = false;
+        for (var i = 0; i < existing.length; i++) {
+            if (!existing[i].type) {
+                existing[i].type = 'page';
+                needsRepair = true;
+            }
+        }
+        existing = ensureDefaultFolder(existing);
+        // Ensure all pages have a folderId
+        var defId = getDefaultFolderId(existing);
+        for (var i = 0; i < existing.length; i++) {
+            if (existing[i].type === 'page' && !existing[i].folderId) {
+                existing[i].folderId = defId;
+                needsRepair = true;
+            }
+        }
+        if (needsRepair) saveMetaList(existing);
+        return;
+    }
+
+    // If meta already exists (with v4 flag), skip old migration
+    if (localStorage.getItem(META_KEY)) return;
+
+    var oldData = null;
+    try {
+        var raw = localStorage.getItem(OLD_STORAGE_KEY);
+        if (raw) {
+            var parsed = JSON.parse(raw);
+            if (parsed && parsed.root && parsed.root.id === 'root') {
+                oldData = parsed;
+            }
+        }
+    } catch(e) {}
+
+    var now = nowISO();
+    var initialMeta = [];
+
+    // Create 未分類 folder
+    var defaultFolderId = getNextMapId();
+    initialMeta.push({
+        id: defaultFolderId,
+        name: '未分類',
+        type: 'folder',
+        order: 999999,
+        createdAt: now,
+        updatedAt: now,
+        isDefault: true
+    });
+
+    if (oldData) {
+        // Migrate existing data as page in 未分類
+        var mapId = getNextMapId();
+        var mapName = oldData.root.text || '無題のマップ';
+        initialMeta.push({ id: mapId, name: mapName, type: 'page', folderId: defaultFolderId, order: 0, createdAt: now, updatedAt: now });
+        saveMetaList(initialMeta);
+        try { localStorage.setItem(getMapDataKey(mapId), JSON.stringify(oldData)); } catch(e) {}
+        setLastActiveId(mapId);
+        try { localStorage.removeItem(OLD_STORAGE_KEY); } catch(e) {}
+    } else {
+        // No existing data: create initial empty page in 未分類
+        var mapId = getNextMapId();
+        var defaultData = { root: { id: 'root', text: '中心テーマ', children: [] } };
+        initialMeta.push({ id: mapId, name: '無題のマップ', type: 'page', folderId: defaultFolderId, order: 0, createdAt: now, updatedAt: now });
+        saveMetaList(initialMeta);
+        try { localStorage.setItem(getMapDataKey(mapId), JSON.stringify(defaultData)); } catch(e) {}
+        setLastActiveId(mapId);
+    }
+    try { localStorage.setItem('mindmap-migrated-v4', '1'); } catch(e) {}
+}
+
+// ---- Save / Load for current map ----
+function saveToLocalStorage() {
+    if (!currentMapId) return;
+    try {
+        localStorage.setItem(getMapDataKey(currentMapId), JSON.stringify(mindMapData));
+    } catch(e) {}
+    // Update meta updatedAt
+    var metaList = getMetaList();
+    for (var i = 0; i < metaList.length; i++) {
+        if (metaList[i].id === currentMapId) {
+            metaList[i].updatedAt = nowISO();
+            break;
+        }
+    }
+    saveMetaList(metaList);
+}
+
+function loadMapData(mapId) {
+    try {
+        var raw = localStorage.getItem(getMapDataKey(mapId));
+        if (raw) {
+            var parsed = JSON.parse(raw);
+            if (parsed && parsed.root && parsed.root.id === 'root') {
+                return parsed;
+            }
+        }
+    } catch(e) {}
+    return null;
+}
+
+
+// ========================================
+// History Management (Undo/Redo)
+// ========================================
+
+function saveState() {
+    undoHistory = undoHistory.slice(0, undoIndex + 1);
+    undoHistory.push({
+        data: deepClone(mindMapData),
+        grayout: deepClone(getNodeGrayoutState()),
+        highlight: deepClone(getNodeHighlightState())
+    });
+    if (undoHistory.length > MAX_HISTORY) {
+        undoHistory.shift();
+    } else {
+        undoIndex++;
+    }
+}
+
+function resetMindMap() {
+    // Function removed - no longer needed
+}
+
+function undo() {
+    if (undoIndex > 0) {
+        undoIndex--;
+        var snapshot = undoHistory[undoIndex];
+        mindMapData = deepClone(snapshot.data);
+        setNodeGrayoutState(deepClone(snapshot.grayout || {}));
+        setNodeHighlightState(deepClone(snapshot.highlight || {}));
+        render();
+        showToast('元に戻しました');
+    }
+}
+
+function redo() {
+    if (undoIndex < undoHistory.length - 1) {
+        undoIndex++;
+        var snapshot = undoHistory[undoIndex];
+        mindMapData = deepClone(snapshot.data);
+        setNodeGrayoutState(deepClone(snapshot.grayout || {}));
+        setNodeHighlightState(deepClone(snapshot.highlight || {}));
+        render();
+        showToast('やり直しました');
+    }
+}
+
+
+// ========================================
+// Node Operations
+// ========================================
+
+function findNode(id, node, parent, index) {
+    if (node === undefined) node = mindMapData.root;
+    if (parent === undefined) parent = null;
+    if (index === undefined) index = 0;
+    if (node.id === id) return { node: node, parent: parent, index: index };
+    for (var i = 0; i < node.children.length; i++) {
+        var result = findNode(id, node.children[i], node, i);
+        if (result) return result;
+    }
+    return null;
+}
+
+function getNodeLevel(id, node, level) {
+    if (node === undefined) node = mindMapData.root;
+    if (level === undefined) level = 1;
+    if (node.id === id) return level;
+    for (var i = 0; i < node.children.length; i++) {
+        var result = getNodeLevel(id, node.children[i], level + 1);
+        if (result) return result;
+    }
+    return null;
+}
+
+function getAllNodesInOrder(node, result) {
+    if (node === undefined) node = mindMapData.root;
+    if (result === undefined) result = [];
+    result.push(node);
+    for (var i = 0; i < node.children.length; i++) {
+        getAllNodesInOrder(node.children[i], result);
+    }
+    return result;
+}
+
+// Get only visible nodes (respecting collapse state)
+function getVisibleNodesInOrder(node, result) {
+    if (node === undefined) node = mindMapData.root;
+    if (result === undefined) result = [];
+    result.push(node);
+    if (!isNodeCollapsed(node.id)) {
+        for (var i = 0; i < node.children.length; i++) {
+            getVisibleNodesInOrder(node.children[i], result);
+        }
+    }
+    return result;
+}
+
+function addChildNode(parentId, text, autoEdit) {
+    if (text === undefined) text = '新しいノード';
+    if (autoEdit === undefined) autoEdit = true;
+    var result = findNode(parentId);
+    if (!result) return null;
+    var newNode = { id: generateId(), text: text, children: [] };
+    result.node.children.push(newNode);
+    saveState();
+    render();
+    selectNode(newNode.id);
+    if (autoEdit) {
+        setTimeout(function() { startEditing(newNode.id); }, 50);
+    }
+    return newNode;
+}
+
+function addSiblingNode(nodeId, text, autoEdit) {
+    if (text === undefined) text = '新しいノード';
+    if (autoEdit === undefined) autoEdit = true;
+    var result = findNode(nodeId);
+    if (!result || !result.parent) {
+        return addChildNode(nodeId, text, autoEdit);
+    }
+    var newNode = { id: generateId(), text: text, children: [] };
+    result.parent.children.splice(result.index + 1, 0, newNode);
+    saveState();
+    render();
+    selectNode(newNode.id);
+    if (autoEdit) {
+        setTimeout(function() { startEditing(newNode.id); }, 50);
+    }
+    return newNode;
+}
+
+function deleteNode(nodeId) {
+    if (nodeId === 'root') {
+        showToast('ルートノードは削除できません');
+        return false;
+    }
+    var result = findNode(nodeId);
+    if (!result || !result.parent) return false;
+    result.parent.children.splice(result.index, 1);
+    saveState();
+    if (result.parent.children.length > 0) {
+        var idx = Math.min(result.index, result.parent.children.length - 1);
+        selectNode(result.parent.children[idx].id);
+    } else {
+        selectNode(result.parent.id);
+    }
+    render();
+    return true;
+}
+
+function deleteSelectedNodes() {
+    if (selectedNodeIds.size === 0) return;
+    var ids = [];
+    selectedNodeIds.forEach(function(id) { if (id !== 'root') ids.push(id); });
+    if (ids.length === 0) {
+        showToast('ルートノードは削除できません');
+        return;
+    }
+    var filtered = filterTopLevelNodes(ids);
+    var lastParent = null;
+    for (var i = 0; i < filtered.length; i++) {
+        var r = findNode(filtered[i]);
+        if (r && r.parent) {
+            lastParent = r.parent;
+            r.parent.children.splice(r.index, 1);
+        }
+    }
+    saveState();
+    selectedNodeIds.clear();
+    if (lastParent && lastParent.children.length > 0) {
+        selectNode(lastParent.children[0].id);
+    } else if (lastParent) {
+        selectNode(lastParent.id);
+    } else {
+        selectNode('root');
+    }
+    render();
+    showToast(filtered.length + '個のノードを削除しました');
+}
+
+function updateNodeText(nodeId, newText) {
+    var result = findNode(nodeId);
+    if (result && result.node.text !== newText) {
+        result.node.text = newText;
+        saveState();
+    }
+}
+
+function moveNodeUp(nodeId) {
+    var result = findNode(nodeId);
+    if (result && result.parent && result.index > 0) {
+        var s = result.parent.children;
+        var tmp = s[result.index - 1];
+        s[result.index - 1] = s[result.index];
+        s[result.index] = tmp;
+        saveState();
+        render();
+    }
+}
+
+function moveNodeDown(nodeId) {
+    var result = findNode(nodeId);
+    if (result && result.parent && result.index < result.parent.children.length - 1) {
+        var s = result.parent.children;
+        var tmp = s[result.index];
+        s[result.index] = s[result.index + 1];
+        s[result.index + 1] = tmp;
+        saveState();
+        render();
+    }
+}
+
+function promoteNode(nodeId) {
+    var result = findNode(nodeId);
+    if (!result || !result.parent || result.parent.id === 'root') return;
+    var gpResult = findNode(result.parent.id);
+    if (gpResult && gpResult.parent) {
+        result.parent.children.splice(result.index, 1);
+        gpResult.parent.children.splice(gpResult.index + 1, 0, result.node);
+        saveState();
+        render();
+        selectNode(nodeId);
+    }
+}
+
+function demoteNode(nodeId) {
+    var result = findNode(nodeId);
+    if (!result || !result.parent || result.index === 0) return;
+    var prevSibling = result.parent.children[result.index - 1];
+    result.parent.children.splice(result.index, 1);
+    prevSibling.children.push(result.node);
+    saveState();
+    render();
+    selectNode(nodeId);
+}
+
+
+// ========================================
+// Selection & Navigation
+// ========================================
+
+function selectNode(nodeId) {
+    clearSelection();
+    if (nodeId) {
+        selectedNodeIds.add(nodeId);
+        lastSelectedNodeId = nodeId;
+        selectionAnchorId = nodeId;
+        updateSelectionDisplay();
+        scrollNodeIntoView(nodeId);
+    }
+}
+
+function clearSelection() {
+    selectedNodeIds.clear();
+    lastSelectedNodeId = null;
+    selectionAnchorId = null;
+    document.querySelectorAll('.node.selected').forEach(function(el) {
+        el.classList.remove('selected');
+    });
+    document.querySelectorAll('.sidebar-preview-line.active').forEach(function(el) {
+        el.classList.remove('active');
+    });
+}
+
+function updateSelectionDisplay() {
+    document.querySelectorAll('.node').forEach(function(el) {
+        el.classList.toggle('selected', selectedNodeIds.has(el.dataset.id));
+    });
+    // Sync sidebar preview highlight
+    document.querySelectorAll('.sidebar-preview-line').forEach(function(el) {
+        el.classList.toggle('active', selectedNodeIds.has(el.getAttribute('data-sid')));
+    });
+}
+
+function toggleSelectNode(nodeId) {
+    if (selectedNodeIds.has(nodeId)) {
+        selectedNodeIds.delete(nodeId);
+    } else {
+        selectedNodeIds.add(nodeId);
+    }
+    lastSelectedNodeId = nodeId;
+    updateSelectionDisplay();
+}
+
+function rangeSelectNode(nodeId) {
+    if (!lastSelectedNodeId) { selectNode(nodeId); return; }
+    // Preserve the anchor: if no anchor yet, use lastSelectedNodeId
+    if (!selectionAnchorId) selectionAnchorId = lastSelectedNodeId;
+    var allNodes = getAllNodesInOrder();
+    var si = -1, ei = -1;
+    for (var i = 0; i < allNodes.length; i++) {
+        if (allNodes[i].id === selectionAnchorId) si = i;
+        if (allNodes[i].id === nodeId) ei = i;
+    }
+    if (si === -1 || ei === -1) { selectNode(nodeId); return; }
+    var mn = Math.min(si, ei), mx = Math.max(si, ei);
+    selectedNodeIds.clear();
+    for (var i = mn; i <= mx; i++) {
+        selectedNodeIds.add(allNodes[i].id);
+    }
+    lastSelectedNodeId = nodeId;
+    // Keep selectionAnchorId unchanged so further Shift+clicks extend from original anchor
+    updateSelectionDisplay();
+}
+
+function getSelectedNodeId() {
+    if (selectedNodeIds.size === 0) return null;
+    return lastSelectedNodeId || selectedNodeIds.values().next().value;
+}
+
+function getSelectedNodes() {
+    var nodes = [];
+    selectedNodeIds.forEach(function(id) {
+        var r = findNode(id);
+        if (r) nodes.push(r.node);
+    });
+    return nodes;
+}
+
+// Collect all nodes at a given depth level in tree-walk (visual) order
+function getNodesAtLevel(targetLevel, node, currentLevel) {
+    if (node === undefined) node = mindMapData.root;
+    if (currentLevel === undefined) currentLevel = 1;
+    var result = [];
+    if (currentLevel === targetLevel) {
+        result.push(node);
+        return result;
+    }
+    for (var i = 0; i < node.children.length; i++) {
+        var childResults = getNodesAtLevel(targetLevel, node.children[i], currentLevel + 1);
+        for (var j = 0; j < childResults.length; j++) {
+            result.push(childResults[j]);
+        }
+    }
+    return result;
+}
+
+// Navigate UP: cross-parent, same depth level
+function navigateUp() {
+    var cid = getSelectedNodeId();
+    if (!cid) { selectNode('root'); return; }
+    var level = getNodeLevel(cid);
+    if (!level || level <= 1) return; // root has no same-level peers
+    var nodesAtLevel = getNodesAtLevel(level);
+    var idx = -1;
+    for (var i = 0; i < nodesAtLevel.length; i++) {
+        if (nodesAtLevel[i].id === cid) { idx = i; break; }
+    }
+    if (idx > 0) {
+        selectNode(nodesAtLevel[idx - 1].id);
+    }
+}
+
+// Navigate DOWN: cross-parent, same depth level
+function navigateDown() {
+    var cid = getSelectedNodeId();
+    if (!cid) { selectNode('root'); return; }
+    var level = getNodeLevel(cid);
+    if (!level || level <= 1) return;
+    var nodesAtLevel = getNodesAtLevel(level);
+    var idx = -1;
+    for (var i = 0; i < nodesAtLevel.length; i++) {
+        if (nodesAtLevel[i].id === cid) { idx = i; break; }
+    }
+    if (idx >= 0 && idx < nodesAtLevel.length - 1) {
+        selectNode(nodesAtLevel[idx + 1].id);
+    }
+}
+
+// Shift+Arrow range selection: extend/shrink from anchor along same depth
+function shiftNavigateUp() {
+    var cid = getSelectedNodeId();
+    if (!cid) return;
+    if (!selectionAnchorId) selectionAnchorId = cid;
+    var level = getNodeLevel(cid);
+    if (!level || level <= 1) return;
+    var nodesAtLevel = getNodesAtLevel(level);
+    var curIdx = -1;
+    for (var i = 0; i < nodesAtLevel.length; i++) {
+        if (nodesAtLevel[i].id === cid) { curIdx = i; break; }
+    }
+    if (curIdx <= 0) return;
+    var newEndId = nodesAtLevel[curIdx - 1].id;
+    applyRangeAtLevel(nodesAtLevel, selectionAnchorId, newEndId);
+    lastSelectedNodeId = newEndId;
+    scrollNodeIntoView(newEndId);
+}
+
+function shiftNavigateDown() {
+    var cid = getSelectedNodeId();
+    if (!cid) return;
+    if (!selectionAnchorId) selectionAnchorId = cid;
+    var level = getNodeLevel(cid);
+    if (!level || level <= 1) return;
+    var nodesAtLevel = getNodesAtLevel(level);
+    var curIdx = -1;
+    for (var i = 0; i < nodesAtLevel.length; i++) {
+        if (nodesAtLevel[i].id === cid) { curIdx = i; break; }
+    }
+    if (curIdx < 0 || curIdx >= nodesAtLevel.length - 1) return;
+    var newEndId = nodesAtLevel[curIdx + 1].id;
+    applyRangeAtLevel(nodesAtLevel, selectionAnchorId, newEndId);
+    lastSelectedNodeId = newEndId;
+    scrollNodeIntoView(newEndId);
+}
+
+// Select all nodes between anchor and end within the given level-node list
+function applyRangeAtLevel(nodesAtLevel, anchorId, endId) {
+    var ai = -1, ei = -1;
+    for (var i = 0; i < nodesAtLevel.length; i++) {
+        if (nodesAtLevel[i].id === anchorId) ai = i;
+        if (nodesAtLevel[i].id === endId) ei = i;
+    }
+    if (ai === -1 || ei === -1) return;
+    var mn = Math.min(ai, ei), mx = Math.max(ai, ei);
+    selectedNodeIds.clear();
+    for (var i = mn; i <= mx; i++) {
+        selectedNodeIds.add(nodesAtLevel[i].id);
+    }
+    updateSelectionDisplay();
+}
+
+// Navigate LEFT: go to parent
+function navigateLeft() {
+    var cid = getSelectedNodeId();
+    if (!cid) { selectNode('root'); return; }
+    var r = findNode(cid);
+    if (r && r.parent) selectNode(r.parent.id);
+}
+
+// Navigate RIGHT: go to first child
+function navigateRight() {
+    var cid = getSelectedNodeId();
+    if (!cid) { selectNode('root'); return; }
+    var r = findNode(cid);
+    if (r && r.node.children.length > 0) {
+        selectNode(r.node.children[0].id);
+    }
+}
+
+function goToParent() {
+    var cid = getSelectedNodeId();
+    if (!cid || cid === 'root') return;
+    var r = findNode(cid);
+    if (r && r.parent) selectNode(r.parent.id);
+}
+
+function scrollNodeIntoView(nodeId) {
+    var nodeEl = document.querySelector('[data-id="' + nodeId + '"]');
+    if (!nodeEl) return;
+    var container = document.getElementById('canvasContainer');
+    var rect = nodeEl.getBoundingClientRect();
+    var cRect = container.getBoundingClientRect();
+    var margin = 60;
+    var dx = 0, dy = 0;
+    if (rect.left < cRect.left + margin) dx = cRect.left + margin - rect.left;
+    else if (rect.right > cRect.right - margin) dx = cRect.right - margin - rect.right;
+    if (rect.top < cRect.top + margin) dy = cRect.top + margin - rect.top;
+    else if (rect.bottom > cRect.bottom - margin - 80) dy = cRect.bottom - margin - 80 - rect.bottom;
+    if (dx !== 0 || dy !== 0) {
+        viewState.panX += dx;
+        viewState.panY += dy;
+        updateView();
+    }
+}
+
+
+// ========================================
+// Edit Mode
+// ========================================
+
+function startEditing(nodeId) {
+    if (editingNodeId === nodeId) return;
+    if (editingNodeId) finishEditing();
+    editingNodeId = nodeId;
+    // Select without clearing other selection state, just ensure this node is selected
+    if (!selectedNodeIds.has(nodeId)) {
+        selectNode(nodeId);
+    }
+    var nodeEl = document.querySelector('[data-id="' + nodeId + '"]');
+    var textEl = nodeEl ? nodeEl.querySelector('.node-text') : null;
+    if (textEl) {
+        nodeEl.classList.add('editing');
+        // Remove fixed width so node grows/shrinks with text in real-time
+        nodeEl.style.width = 'auto';
+        textEl.contentEditable = 'true';
+        textEl.focus();
+        var range = document.createRange();
+        range.selectNodeContents(textEl);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+    }
+}
+
+function finishEditing() {
+    if (!editingNodeId) return;
+    var prevEditingId = editingNodeId;
+    var nodeEl = document.querySelector('[data-id="' + editingNodeId + '"]');
+    var textEl = nodeEl ? nodeEl.querySelector('.node-text') : null;
+    var textChanged = false;
+    if (textEl) {
+        // Convert innerHTML <br> tags to \n for storage
+        var html = textEl.innerHTML;
+        // Replace <br> variants with \n
+        var newText = html.replace(/<br\s*\/?>/gi, '\n');
+        // Strip any other HTML tags
+        var tmp = document.createElement('div');
+        tmp.innerHTML = newText;
+        newText = tmp.textContent.replace(/\u200B/g, '').trim() || '空のノード';
+        var result = findNode(editingNodeId);
+        if (result && result.node.text !== newText) {
+            textChanged = true;
+        }
+        updateNodeText(editingNodeId, newText);
+        textEl.contentEditable = 'false';
+        nodeEl.classList.remove('editing');
+    }
+    editingNodeId = null;
+    // Re-render to recalculate layout when text changed
+    if (textChanged) {
+        render();
+        // Re-select the previously edited node
+        selectNode(prevEditingId);
+    }
+}
+
+
+// ========================================
+// Copy, Cut & Paste
+// ========================================
+
+function copySelectedNodes() {
+    if (selectedNodeIds.size === 0) return;
+    if (selectedNodeIds.size === 1) {
+        var id = getSelectedNodeId();
+        var r = findNode(id);
+        if (r) {
+            clipboard = deepClone(r.node);
+            clipboardIsCut = false;
+            showToast('コピーしました');
+        }
+    } else {
+        var topLevel = filterTopLevelNodes(Array.from(selectedNodeIds));
+        var nodes = [];
+        for (var i = 0; i < topLevel.length; i++) {
+            var r = findNode(topLevel[i]);
+            if (r) nodes.push(deepClone(r.node));
+        }
+        if (nodes.length > 0) {
+            clipboard = nodes;
+            clipboardIsCut = false;
+            showToast(nodes.length + '個のノードをコピーしました');
+        }
+    }
+}
+
+function cutSelectedNodes() {
+    if (selectedNodeIds.size === 0) return;
+    var ids = [];
+    selectedNodeIds.forEach(function(id) { if (id !== 'root') ids.push(id); });
+    if (ids.length === 0) {
+        showToast('ルートノードは切り取れません');
+        return;
+    }
+    var topLevel = filterTopLevelNodes(ids);
+    var nodes = [];
+    for (var i = 0; i < topLevel.length; i++) {
+        var r = findNode(topLevel[i]);
+        if (r) nodes.push(deepClone(r.node));
+    }
+    if (nodes.length === 0) return;
+    clipboard = nodes.length === 1 ? nodes[0] : nodes;
+    clipboardIsCut = true;
+
+    var lastParent = null;
+    for (var i = 0; i < topLevel.length; i++) {
+        var r = findNode(topLevel[i]);
+        if (r && r.parent) {
+            lastParent = r.parent;
+            r.parent.children.splice(r.index, 1);
+        }
+    }
+    saveState();
+    selectedNodeIds.clear();
+    if (lastParent && lastParent.children.length > 0) {
+        selectNode(lastParent.children[0].id);
+    } else if (lastParent) {
+        selectNode(lastParent.id);
+    } else {
+        selectNode('root');
+    }
+    render();
+    showToast(topLevel.length + '個のノードを切り取りました');
+}
+
+function pasteNode() {
+    var cid = getSelectedNodeId();
+    if (!clipboard || !cid) return;
+    var r = findNode(cid);
+    if (!r) return;
+    function reassignIds(node) {
+        node.id = generateId();
+        if (node.children) {
+            for (var i = 0; i < node.children.length; i++) reassignIds(node.children[i]);
+        }
+    }
+    if (Array.isArray(clipboard)) {
+        for (var i = 0; i < clipboard.length; i++) {
+            var cloned = deepClone(clipboard[i]);
+            reassignIds(cloned);
+            r.node.children.push(cloned);
+        }
+        saveState();
+        render();
+        showToast(clipboard.length + '個のノードをペーストしました');
+    } else {
+        var cloned = deepClone(clipboard);
+        reassignIds(cloned);
+        r.node.children.push(cloned);
+        saveState();
+        render();
+        selectNode(cloned.id);
+        showToast('ペーストしました');
+    }
+    if (clipboardIsCut) {
+        clipboard = null;
+        clipboardIsCut = false;
+    }
+}
+
+function selectAll() {
+    var allNodes = getAllNodesInOrder();
+    if (selectedNodeIds.size === allNodes.length) {
+        clearSelection();
+    } else {
+        finishEditing();
+        selectedNodeIds.clear();
+        for (var i = 0; i < allNodes.length; i++) {
+            selectedNodeIds.add(allNodes[i].id);
+        }
+        lastSelectedNodeId = allNodes[0] ? allNodes[0].id : null;
+        updateSelectionDisplay();
+    }
+}
+
+function filterTopLevelNodes(nodeIds) {
+    var result = [];
+    for (var i = 0; i < nodeIds.length; i++) {
+        var nid = nodeIds[i];
+        if (nid === 'root') continue;
+        var hasAncestor = false;
+        for (var j = 0; j < nodeIds.length; j++) {
+            if (nodeIds[j] !== nid && isDescendant(nodeIds[j], nid)) {
+                hasAncestor = true;
+                break;
+            }
+        }
+        if (!hasAncestor) result.push(nid);
+    }
+    return result;
+}
+
+function isDescendant(ancestorId, nodeId) {
+    var r = findNode(ancestorId);
+    if (!r) return false;
+    function check(node) {
+        for (var i = 0; i < node.children.length; i++) {
+            if (node.children[i].id === nodeId) return true;
+            if (check(node.children[i])) return true;
+        }
+        return false;
+    }
+    return check(r.node);
+}
+
+// ========================================
+// Copy to Clipboard (Floating Button)
+// ========================================
+
+function getCurrentCopyText() {
+    var format = document.getElementById('copyFormat').value;
+    var border = document.getElementById('copyBorder').value;
+    var useBorder = (border === 'border');
+    return generateCopyText(mindMapData.root, 0, [], format, useBorder);
+}
+
+function copyToClipboard() {
+    var text = getCurrentCopyText();
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function() {
+            showToast('✅ コピーしました');
+        }).catch(function() {
+            fallbackCopy(text);
+        });
+    } else {
+        fallbackCopy(text);
+    }
+}
+
+function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0;left:-9999px;';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch(e) {}
+    document.body.removeChild(ta);
+    showToast('✅ コピーしました');
+}
+
+
+
+function generateCopyText(node, level, parentContinues, format, useBorder) {
+    // Skip grayed-out nodes and their descendants from copy
+    if (level > 0 && isNodeGrayedOut(node.id)) return '';
+
+    var result = '';
+    var iconLevel = Math.min(level + 1, 4);
+    var icons = levelIcons[format];
+    var icon = icons ? (icons[iconLevel] + ' ') : '';
+
+    // ---- Root (level 0) ----
+    if (level === 0) {
+        result = icon + node.text + '\n';
+    } else {
+        // Build the prefix from ancestor continuation info
+        var prefix = '';
+        for (var i = 0; i < level - 1; i++) {
+            if (useBorder) {
+                prefix += parentContinues[i] ? '│  ' : '   ';
+            } else {
+                prefix += '  ';
+            }
+        }
+        // Connector for this node
+        var isLast = (parentContinues[level - 1] === false);
+        var connector;
+        if (useBorder) {
+            connector = isLast ? '└─ ' : '├─ ';
+        } else {
+            connector = '  ';
+        }
+        result = prefix + connector + icon + node.text + '\n';
+    }
+
+    // ---- Children (skip if node is collapsed OR grayed out) ----
+    if (!isNodeCollapsed(node.id) && !isNodeGrayedOut(node.id)) {
+        // Get visible children, excluding grayed-out ones and their descendants
+        var visibleChildren = [];
+        for (var ci = 0; ci < node.children.length; ci++) {
+            if (!isNodeGrayedOut(node.children[ci].id)) {
+                visibleChildren.push(node.children[ci]);
+            }
+        }
+        for (var i = 0; i < visibleChildren.length; i++) {
+            var isLastChild = (i === visibleChildren.length - 1);
+            var newContinues = parentContinues.slice();
+            newContinues.push(!isLastChild);
+            result += generateCopyText(visibleChildren[i], level + 1, newContinues, format, useBorder);
+        }
+
+        // ---- Separator blank line between sibling groups (border mode only) ----
+        if (useBorder && level > 0 && visibleChildren.length > 0) {
+            var amILast = (parentContinues[level - 1] === false);
+            if (!amILast) {
+                var sep = '';
+                for (var i = 0; i < level - 1; i++) {
+                    sep += parentContinues[i] ? '│  ' : '   ';
+                }
+                sep += '│';
+                result += sep + '\n';
+            }
+        }
+    }
+    return result;
+}
+
+
+// ========================================
+// Node Drag & Drop (Reparenting)
+// ========================================
+
+function startNodeDrag(nodeId, clientX, clientY, nodeEl) {
+    if (nodeId === 'root') return;
+    var startTime = Date.now();
+    nodeDragState.didDrag = false;
+
+    function onMouseMove(e) {
+        var moved = Math.abs(e.clientX - clientX) > 5 || Math.abs(e.clientY - clientY) > 5;
+        var elapsed = Date.now() - startTime;
+        if (moved && elapsed > 150 && !nodeDragState.isDragging) {
+            nodeDragState.isDragging = true;
+            nodeDragState.didDrag = true;
+            nodeDragState.nodeId = nodeId;
+            if (selectedNodeIds.has(nodeId) && selectedNodeIds.size > 1) {
+                var ids = [];
+                selectedNodeIds.forEach(function(id) { if (id !== 'root') ids.push(id); });
+                nodeDragState.draggedNodeIds = ids;
+            } else {
+                nodeDragState.draggedNodeIds = [nodeId];
+            }
+            createDragGhost(nodeEl, e.clientX, e.clientY, nodeDragState.draggedNodeIds.length);
+            nodeDragState.draggedNodeIds.forEach(function(id) {
+                var el = document.querySelector('[data-id="' + id + '"]');
+                if (el) el.classList.add('dragging');
+            });
+        }
+        if (nodeDragState.isDragging) {
+            updateNodeDrag(e.clientX, e.clientY);
+        }
+    }
+
+    function onMouseUp(e) {
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+        if (nodeDragState.isDragging) {
+            endNodeDrag();
+        }
+    }
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+}
+
+function createDragGhost(nodeEl, clientX, clientY, count) {
+    var existing = document.querySelector('.drag-ghost');
+    if (existing) existing.remove();
+    var ghost = nodeEl.cloneNode(true);
+    ghost.classList.add('drag-ghost');
+    ghost.classList.remove('selected', 'dragging');
+    ghost.style.left = clientX + 'px';
+    ghost.style.top = clientY + 'px';
+    ghost.style.transform = 'translate(-50%, -50%)';
+    ghost.style.position = 'fixed';
+    ghost.style.width = nodeEl.offsetWidth + 'px';
+    if (count > 1) {
+        var badge = document.createElement('span');
+        badge.style.cssText = 'position:absolute;top:-8px;right:-8px;background:#e53935;color:white;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;';
+        badge.textContent = count;
+        ghost.appendChild(badge);
+    }
+    document.body.appendChild(ghost);
+}
+
+function updateNodeDrag(clientX, clientY) {
+    if (!nodeDragState.isDragging) return;
+    var ghost = document.querySelector('.drag-ghost');
+    if (ghost) { ghost.style.left = clientX + 'px'; ghost.style.top = clientY + 'px'; }
+    document.querySelectorAll('.node').forEach(function(el) {
+        el.classList.remove('drag-over-child', 'drag-over-before', 'drag-over-after');
+    });
+    var target = getDropTarget(clientX, clientY);
+    nodeDragState.targetNodeId = target ? target.nodeId : null;
+    nodeDragState.targetPosition = target ? target.position : null;
+    if (target) {
+        var tEl = document.querySelector('[data-id="' + target.nodeId + '"]');
+        if (tEl) tEl.classList.add('drag-over-' + target.position);
+    }
+}
+
+function getDropTarget(clientX, clientY) {
+    var elements = document.elementsFromPoint(clientX, clientY);
+    var draggedIds = nodeDragState.draggedNodeIds || [nodeDragState.nodeId];
+    for (var i = 0; i < elements.length; i++) {
+        var el = elements[i];
+        if (!el.classList.contains('node') || el.classList.contains('drag-ghost')) continue;
+        var tid = el.dataset.id;
+        if (draggedIds.indexOf(tid) >= 0) continue;
+        var isDesc = false;
+        for (var j = 0; j < draggedIds.length; j++) {
+            if (isDescendant(draggedIds[j], tid)) { isDesc = true; break; }
+        }
+        if (isDesc) continue;
+        var rect = el.getBoundingClientRect();
+        var relY = clientY - rect.top;
+        var h = rect.height;
+        if (tid === 'root') return { nodeId: tid, position: 'child' };
+        if (relY < h * 0.25) return { nodeId: tid, position: 'before' };
+        if (relY > h * 0.75) return { nodeId: tid, position: 'after' };
+        return { nodeId: tid, position: 'child' };
+    }
+    return null;
+}
+
+function endNodeDrag() {
+    if (!nodeDragState.isDragging) return;
+    var ghost = document.querySelector('.drag-ghost');
+    if (ghost) ghost.remove();
+    document.querySelectorAll('.node').forEach(function(el) {
+        el.classList.remove('dragging', 'drag-over-child', 'drag-over-before', 'drag-over-after');
+    });
+    if (nodeDragState.targetNodeId && nodeDragState.targetPosition) {
+        moveNodes(
+            nodeDragState.draggedNodeIds || [nodeDragState.nodeId],
+            nodeDragState.targetNodeId,
+            nodeDragState.targetPosition
+        );
+    }
+    nodeDragState.isDragging = false;
+    nodeDragState.nodeId = null;
+    nodeDragState.draggedNodeIds = null;
+    nodeDragState.targetNodeId = null;
+    nodeDragState.targetPosition = null;
+    render();
+}
+
+function moveNodes(nodeIds, targetId, position) {
+    if (!nodeIds || nodeIds.length === 0) return;
+    var targetResult = findNode(targetId);
+    if (!targetResult) return;
+    var filtered = filterTopLevelNodes(nodeIds);
+    if (filtered.length === 0) return;
+    var nodesToMove = [];
+    for (var i = 0; i < filtered.length; i++) {
+        var nr = findNode(filtered[i]);
+        if (nr && nr.parent) nodesToMove.push({ id: filtered[i], data: nr.node, parent: nr.parent, index: nr.index });
+    }
+    nodesToMove.sort(function(a, b) { return a.parent === b.parent ? b.index - a.index : 0; });
+    for (var i = 0; i < nodesToMove.length; i++) {
+        var cur = findNode(nodesToMove[i].id);
+        if (cur && cur.parent) cur.parent.children.splice(cur.index, 1);
+    }
+    nodesToMove.reverse();
+    if (position === 'child') {
+        for (var i = 0; i < nodesToMove.length; i++) {
+            var tr = findNode(targetId);
+            if (tr) tr.node.children.push(nodesToMove[i].data);
+        }
+    } else if (position === 'before') {
+        for (var i = 0; i < nodesToMove.length; i++) {
+            var tr = findNode(targetId);
+            if (tr && tr.parent) tr.parent.children.splice(tr.index, 0, nodesToMove[i].data);
+        }
+    } else if (position === 'after') {
+        nodesToMove.reverse();
+        for (var i = 0; i < nodesToMove.length; i++) {
+            var tr = findNode(targetId);
+            if (tr && tr.parent) tr.parent.children.splice(tr.index + 1, 0, nodesToMove[i].data);
+        }
+    }
+    saveState();
+    selectedNodeIds.clear();
+    for (var i = 0; i < nodesToMove.length; i++) selectedNodeIds.add(nodesToMove[i].id);
+    lastSelectedNodeId = nodesToMove[0] ? nodesToMove[0].id : null;
+}
+
+
+// ========================================
+// Lasso (Rectangle) Selection
+// ========================================
+
+function startLasso(clientX, clientY) {
+    lassoState.active = true;
+    lassoState.didSelect = false;
+    lassoState.startX = clientX;
+    lassoState.startY = clientY;
+    lassoState.currentX = clientX;
+    lassoState.currentY = clientY;
+    var rect = document.getElementById('lassoRect');
+    rect.style.display = 'block';
+    rect.style.left = clientX + 'px';
+    rect.style.top = clientY + 'px';
+    rect.style.width = '0px';
+    rect.style.height = '0px';
+}
+
+function updateLasso(clientX, clientY) {
+    if (!lassoState.active) return;
+    lassoState.currentX = clientX;
+    lassoState.currentY = clientY;
+    var x = Math.min(lassoState.startX, clientX);
+    var y = Math.min(lassoState.startY, clientY);
+    var w = Math.abs(clientX - lassoState.startX);
+    var h = Math.abs(clientY - lassoState.startY);
+    var rect = document.getElementById('lassoRect');
+    rect.style.left = x + 'px';
+    rect.style.top = y + 'px';
+    rect.style.width = w + 'px';
+    rect.style.height = h + 'px';
+}
+
+function endLasso() {
+    if (!lassoState.active) return;
+    lassoState.active = false;
+    var rect = document.getElementById('lassoRect');
+    rect.style.display = 'none';
+
+    var x1 = Math.min(lassoState.startX, lassoState.currentX);
+    var y1 = Math.min(lassoState.startY, lassoState.currentY);
+    var x2 = Math.max(lassoState.startX, lassoState.currentX);
+    var y2 = Math.max(lassoState.startY, lassoState.currentY);
+
+    // Require minimum size to avoid treating clicks as lasso
+    if (Math.abs(x2 - x1) < 8 && Math.abs(y2 - y1) < 8) return;
+
+    clearSelection();
+    document.querySelectorAll('.node').forEach(function(el) {
+        var r = el.getBoundingClientRect();
+        var cx = r.left + r.width / 2;
+        var cy = r.top + r.height / 2;
+        if (cx >= x1 && cx <= x2 && cy >= y1 && cy <= y2) {
+            selectedNodeIds.add(el.dataset.id);
+        }
+    });
+    if (selectedNodeIds.size > 0) {
+        lastSelectedNodeId = selectedNodeIds.values().next().value;
+        updateSelectionDisplay();
+        lassoState.didSelect = true;
+        showToast(selectedNodeIds.size + '個のノードを選択しました');
+    }
+}
+
+
+// ========================================
+// Rendering
+// ========================================
+
+function render() {
+    var container = document.getElementById('canvasInner');
+    var svg = document.getElementById('linesSvg');
+    container.querySelectorAll('.node').forEach(function(n) { n.remove(); });
+    svg.innerHTML = '';
+
+    // Pass 1: Measure actual node dimensions by creating temporary elements
+    var nodeDims = measureNodeDimensions(mindMapData.root, container);
+
+    // Pass 2: Layout with actual dimensions
+    var positions = {};
+    layoutNodes(mindMapData.root, positions, 0, 0, 1, nodeDims);
+
+    // Pass 3: Render nodes and lines
+    renderNodes(mindMapData.root, container, positions);
+    renderLines(mindMapData.root, svg, positions);
+    updateSelectionDisplay();
+    updateView();
+    // Auto-save to localStorage after every render (post-mutation state)
+    saveToLocalStorage();
+    // Update sidebar tree in real-time
+    renderSidebarTree();
+}
+
+// Measure actual rendered width AND height of each node's text
+function measureNodeDimensions(rootNode, container) {
+    var dims = {};
+    // Create a measurer that exactly mirrors the .node DOM structure
+    var measurer = document.createElement('div');
+    measurer.className = 'node';
+    measurer.style.position = 'absolute';
+    measurer.style.visibility = 'hidden';
+    measurer.style.pointerEvents = 'none';
+    // Don't set transform since we just need dimensions
+    var measurerText = document.createElement('span');
+    measurerText.className = 'node-text';
+    measurer.appendChild(measurerText);
+    container.appendChild(measurer);
+
+    function measure(node) {
+        // Render \n as <br> for accurate measurement
+        if (node.text.indexOf('\n') >= 0) {
+            measurerText.innerHTML = node.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+        } else {
+            measurerText.textContent = node.text;
+        }
+        // Root nodes have larger font
+        if (node.id === 'root') {
+            measurer.classList.add('root');
+        } else {
+            measurer.classList.remove('root');
+        }
+        // Collapse indicator is now outside the node (absolute-positioned), no extra space needed
+        dims[node.id] = { width: measurer.offsetWidth, height: measurer.offsetHeight };
+        for (var i = 0; i < node.children.length; i++) {
+            measure(node.children[i]);
+        }
+    }
+    measure(rootNode);
+    container.removeChild(measurer);
+    return dims;
+}
+
+function layoutNodes(node, positions, x, y, level, nodeDims) {
+    if (x === undefined) x = 0;
+    if (y === undefined) y = 0;
+    if (level === undefined) level = 1;
+    var dims = (nodeDims && nodeDims[node.id]) ? nodeDims[node.id] : { width: 150, height: 40 };
+    var nodeWidth = dims.width;
+    var nodeHeight = dims.height;
+    var hGap = 40, vGap = 16;
+    var collapsed = isNodeCollapsed(node.id);
+    var visibleChildren = collapsed ? [] : node.children;
+    var totalH = 0, childHeights = [];
+    for (var i = 0; i < visibleChildren.length; i++) {
+        var ch = calcSubtreeHeight(visibleChildren[i], vGap, nodeDims);
+        childHeights.push(ch);
+        totalH += ch;
+    }
+    if (visibleChildren.length > 1) totalH += (visibleChildren.length - 1) * vGap;
+    positions[node.id] = { x: x, y: y, width: nodeWidth, height: nodeHeight, level: level };
+    var childX = x + nodeWidth + hGap;
+    var childY = y - totalH / 2;
+    for (var i = 0; i < visibleChildren.length; i++) {
+        var ch = childHeights[i];
+        var centerY = childY + ch / 2;
+        layoutNodes(visibleChildren[i], positions, childX, centerY, level + 1, nodeDims);
+        childY += ch + vGap;
+    }
+    return positions;
+}
+
+function calcSubtreeHeight(node, gap, nodeDims) {
+    var dims = (nodeDims && nodeDims[node.id]) ? nodeDims[node.id] : { width: 150, height: 40 };
+    var nodeHeight = dims.height;
+    if (node.children.length === 0 || isNodeCollapsed(node.id)) return nodeHeight;
+    var total = 0;
+    for (var i = 0; i < node.children.length; i++) {
+        total += calcSubtreeHeight(node.children[i], gap, nodeDims);
+    }
+    total += (node.children.length - 1) * gap;
+    return Math.max(nodeHeight, total);
+}
+
+function renderNodes(node, container, positions) {
+    var pos = positions[node.id];
+    if (!pos) return;
+    var el = document.createElement('div');
+    el.className = 'node' + (node.id === 'root' ? ' root' : '') + (isNodeGrayedOut(node.id) ? ' grayed-out' : '') + (isNodeHighlighted(node.id) ? ' highlighted' : '');
+    el.dataset.id = node.id;
+    el.style.left = pos.x + 'px';
+    el.style.top = pos.y + 'px';
+    el.style.width = pos.width + 'px';
+    el.style.transform = 'translateY(-50%)';
+    var textEl = document.createElement('span');
+    textEl.className = 'node-text';
+    // Render \n as <br> for display
+    if (node.text.indexOf('\n') >= 0) {
+        textEl.innerHTML = node.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+    } else {
+        textEl.textContent = node.text;
+    }
+    el.appendChild(textEl);
+
+    // Collapse indicator (shown only when collapsed) and junction hit area
+    // Both are absolute-positioned at the right edge of the node (connection junction)
+    if (node.id !== 'root' && node.children.length > 0) {
+        if (isNodeCollapsed(node.id)) {
+            // Show collapse indicator dot when collapsed
+            var collapseIndicator = document.createElement('span');
+            collapseIndicator.className = 'node-collapse-indicator';
+            collapseIndicator.title = '展開 (Cmd+.)';
+            collapseIndicator.addEventListener('click', function(e) {
+                e.stopPropagation();
+                toggleNodeCollapse(node.id);
+            });
+            el.appendChild(collapseIndicator);
+        }
+
+        // Always add a hit area at the junction for click-to-toggle
+        var hitArea = document.createElement('span');
+        hitArea.className = 'node-junction-hitarea';
+        hitArea.title = isNodeCollapsed(node.id) ? '展開 (Cmd+.)' : '折りたたむ (Cmd+.)';
+        hitArea.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleNodeCollapse(node.id);
+        });
+        el.appendChild(hitArea);
+    }
+
+    // Use a closure to capture node reference
+    (function(nodeData, nodeElement) {
+
+        // Click handler: default to editing mode
+        nodeElement.addEventListener('click', function(e) {
+            e.stopPropagation();
+
+            // If a drag just occurred, suppress click
+            if (nodeDragState.didDrag) {
+                nodeDragState.didDrag = false;
+                return;
+            }
+
+            var isMac = /Mac/.test(navigator.platform);
+            var cmdKey = isMac ? e.metaKey : e.ctrlKey;
+
+            if (cmdKey && e.shiftKey) {
+                finishEditing();
+                var allNodes = getAllNodesInOrder();
+                var si = -1, ei = -1;
+                for (var i = 0; i < allNodes.length; i++) {
+                    if (allNodes[i].id === lastSelectedNodeId) si = i;
+                    if (allNodes[i].id === nodeData.id) ei = i;
+                }
+                if (si !== -1 && ei !== -1) {
+                    var mn = Math.min(si, ei), mx = Math.max(si, ei);
+                    for (var i = mn; i <= mx; i++) selectedNodeIds.add(allNodes[i].id);
+                    lastSelectedNodeId = nodeData.id;
+                    updateSelectionDisplay();
+                }
+            } else if (e.shiftKey) {
+                finishEditing();
+                rangeSelectNode(nodeData.id);
+            } else if (cmdKey) {
+                finishEditing();
+                toggleSelectNode(nodeData.id);
+            } else {
+                // Normal click -> enter edit mode directly
+                if (editingNodeId === nodeData.id) return;
+                finishEditing();
+                selectNode(nodeData.id);
+                startEditing(nodeData.id);
+            }
+        });
+
+        // Double-click: enter edit mode (for when already selected but not editing)
+        nodeElement.addEventListener('dblclick', function(e) {
+            e.stopPropagation();
+            startEditing(nodeData.id);
+        });
+
+        // Mousedown: start potential drag (only left button, no modifiers, not editing)
+        nodeElement.addEventListener('mousedown', function(e) {
+            if (e.button !== 0) return;
+            if (editingNodeId) return;
+            if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+            e.preventDefault();
+            e.stopPropagation();
+            startNodeDrag(nodeData.id, e.clientX, e.clientY, nodeElement);
+        });
+
+    })(node, el);
+
+    container.appendChild(el);
+    var collapsed = isNodeCollapsed(node.id);
+    var visibleChildren = collapsed ? [] : node.children;
+    for (var i = 0; i < visibleChildren.length; i++) {
+        renderNodes(visibleChildren[i], container, positions);
+    }
+}
+
+function renderLines(node, svg, positions) {
+    var pp = positions[node.id];
+    if (!pp) return;
+    var off = 5000;
+    var collapsed = isNodeCollapsed(node.id);
+    var visibleChildren = collapsed ? [] : node.children;
+    for (var i = 0; i < visibleChildren.length; i++) {
+        var child = visibleChildren[i];
+        var cp = positions[child.id];
+        if (!cp) continue;
+        var sx = pp.x + pp.width + off, sy = pp.y + off;
+        var ex = cp.x + off, ey = cp.y + off;
+        var mx = sx + (ex - sx) / 2;
+        var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M ' + sx + ' ' + sy + ' C ' + mx + ' ' + sy + ', ' + mx + ' ' + ey + ', ' + ex + ' ' + ey);
+        path.setAttribute('class', 'connection-line');
+        svg.appendChild(path);
+        renderLines(child, svg, positions);
+    }
+}
+
+// ========================================
+// View Controls
+// ========================================
+
+function updateView() {
+    var inner = document.getElementById('canvasInner');
+    inner.style.transform = 'translate(' + viewState.panX + 'px, ' + viewState.panY + 'px) scale(' + viewState.zoom + ')';
+}
+
+function resetView() {
+    var container = document.getElementById('canvasContainer');
+    viewState.zoom = 1;
+    viewState.panX = container.clientWidth / 2 - 75;
+    viewState.panY = container.clientHeight / 2;
+    updateView();
+}
+
+
+// ========================================
+// Keyboard Handler
+// ========================================
+
+function handleKeyDown(e) {
+    var isMac = /Mac/.test(navigator.platform);
+    var cmdKey = isMac ? e.metaKey : e.ctrlKey;
+
+    // If focus is in a rename input field in My Maps sidebar, do NOT handle shortcuts
+    var activeEl = document.activeElement;
+    if (activeEl && (activeEl.classList.contains('map-item-rename-input') ||
+        (activeEl.classList.contains('map-item-name') && activeEl.contentEditable === 'true'))) {
+        // Allow default behavior for the rename input
+        // Only handle Enter/Escape which are handled by the input's own listener
+        return;
+    }
+
+    // While editing
+    if (editingNodeId) {
+        // IME入力中（ローマ字→日本語変換）のキーは無視する
+        if (e.isComposing || e.keyCode === 229) return;
+
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            finishEditing();
+        } else if (e.key === 'Enter' && e.shiftKey) {
+            // Shift+Enter: insert line break
+            e.preventDefault();
+            var sel = window.getSelection();
+            var nodeEl = document.querySelector('[data-id="' + editingNodeId + '"]');
+            var textEl = nodeEl ? nodeEl.querySelector('.node-text') : null;
+            if (sel.rangeCount && textEl && textEl.contains(sel.getRangeAt(0).commonAncestorContainer)) {
+                var range = sel.getRangeAt(0);
+                range.deleteContents();
+                var br = document.createElement('br');
+                range.insertNode(br);
+                // Insert a zero-width space after <br> so cursor has a text node to land in
+                var textNode = document.createTextNode('\u200B');
+                br.parentNode.insertBefore(textNode, br.nextSibling);
+                // Move cursor into the text node after <br>
+                range = document.createRange();
+                range.setStart(textNode, 1);
+                range.setEnd(textNode, 1);
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            finishEditing();
+        } else if (e.key === 'Tab') {
+            e.preventDefault();
+            finishEditing();
+            if (e.shiftKey) { goToParent(); }
+            else { var cid = getSelectedNodeId(); if (cid) addChildNode(cid); }
+        } else if (cmdKey && (e.key === 'z' || e.key === 'Z')) {
+            e.preventDefault(); finishEditing(); undo();
+        } else if (cmdKey && (e.key === 'y' || e.key === 'Y')) {
+            e.preventDefault(); finishEditing(); redo();
+        }
+        return;
+    }
+
+    var currentId = getSelectedNodeId();
+
+    switch (e.key) {
+        case 'Enter':
+            e.preventDefault();
+            if (currentId) addSiblingNode(currentId);
+            break;
+        case 'Tab':
+            e.preventDefault();
+            if (e.shiftKey) goToParent();
+            else if (currentId) addChildNode(currentId);
+            break;
+        case 'Delete':
+        case 'Backspace':
+            e.preventDefault();
+            if (selectedNodeIds.size > 1) deleteSelectedNodes();
+            else if (currentId && currentId !== 'root') deleteNode(currentId);
+            break;
+        case 'F2':
+            e.preventDefault();
+            if (currentId) startEditing(currentId);
+            break;
+        case 'ArrowUp':
+            e.preventDefault();
+            if (cmdKey) { if (currentId) moveNodeUp(currentId); }
+            else if (e.shiftKey) { shiftNavigateUp(); }
+            else navigateUp();
+            break;
+        case 'ArrowDown':
+            e.preventDefault();
+            if (cmdKey) { if (currentId) moveNodeDown(currentId); }
+            else if (e.shiftKey) { shiftNavigateDown(); }
+            else navigateDown();
+            break;
+        case 'ArrowLeft':
+            e.preventDefault();
+            if (cmdKey) { if (currentId) promoteNode(currentId); }
+            else navigateLeft();
+            break;
+        case 'ArrowRight':
+            e.preventDefault();
+            if (cmdKey) { if (currentId) demoteNode(currentId); }
+            else navigateRight();
+            break;
+        case 'z': case 'Z':
+            if (cmdKey) { e.preventDefault(); undo(); }
+            break;
+        case 'y': case 'Y':
+            if (e.altKey && cmdKey) {
+                // Option+Cmd+Y (Mac) or Alt+Ctrl+Y (Windows) – toggle highlight
+                e.preventDefault();
+                if (currentId) { toggleNodeHighlight(currentId); saveState(); }
+            } else if (cmdKey) {
+                e.preventDefault(); redo();
+            }
+            break;
+        case 'a': case 'A':
+            if (cmdKey) { e.preventDefault(); selectAll(); }
+            break;
+        case 'c': case 'C':
+            if (cmdKey) { e.preventDefault(); copySelectedNodes(); }
+            break;
+        case 'v': case 'V':
+            if (cmdKey) { e.preventDefault(); pasteNode(); }
+            break;
+        case 'x': case 'X':
+            if (cmdKey) { e.preventDefault(); cutSelectedNodes(); }
+            break;
+        case '.':
+            if (cmdKey) {
+                e.preventDefault();
+                if (currentId) toggleNodeCollapse(currentId);
+            }
+            break;
+        case 'g': case 'G':
+            // Option+Cmd+G (Mac) or Alt+Ctrl+G (Windows) – toggle grayout
+            if (e.altKey && cmdKey) {
+                e.preventDefault();
+                if (currentId) { toggleNodeGrayout(currentId); saveState(); }
+            }
+            break;
+        case 'Escape':
+            clearSelection();
+            break;
+    }
+}
+
+
+// ========================================
+// Canvas Interaction: Pan, Zoom, Lasso
+// ========================================
+
+function initCanvasInteraction() {
+    var canvas = document.getElementById('canvas');
+
+    // --- Mousedown ---
+    canvas.addEventListener('mousedown', function(e) {
+        if (nodeDragState.isDragging) return;
+
+        var isBackground = (e.target === canvas ||
+            e.target.id === 'canvasInner' ||
+            e.target.tagName === 'svg' ||
+            e.target.classList.contains('lines-svg'));
+
+        if (!isBackground) return;
+
+        // Right-click or middle-click: pan
+        if (e.button === 2 || e.button === 1) {
+            e.preventDefault();
+            viewState.isPanning = true;
+            viewState.startX = e.clientX - viewState.panX;
+            viewState.startY = e.clientY - viewState.panY;
+            canvas.classList.add('panning');
+            return;
+        }
+
+        // Left-click on background: start lasso
+        if (e.button === 0) {
+            finishEditing();
+            startLasso(e.clientX, e.clientY);
+        }
+    });
+
+    // --- Mousemove ---
+    canvas.addEventListener('mousemove', function(e) {
+        if (nodeDragState.isDragging) return;
+        if (viewState.isPanning) {
+            viewState.panX = e.clientX - viewState.startX;
+            viewState.panY = e.clientY - viewState.startY;
+            updateView();
+            return;
+        }
+        if (lassoState.active) {
+            updateLasso(e.clientX, e.clientY);
+        }
+    });
+
+    // --- Mouseup ---
+    canvas.addEventListener('mouseup', function(e) {
+        if (viewState.isPanning) {
+            viewState.isPanning = false;
+            canvas.classList.remove('panning');
+            return;
+        }
+        if (lassoState.active) {
+            endLasso();
+        }
+    });
+
+    // --- Click on background: clear selection ---
+    canvas.addEventListener('click', function(e) {
+        var isBackground = (e.target === canvas ||
+            e.target.id === 'canvasInner' ||
+            e.target.tagName === 'svg' ||
+            e.target.classList.contains('lines-svg'));
+
+        if (!isBackground) return;
+
+        // Don't clear if lasso just selected nodes
+        if (lassoState.didSelect) {
+            lassoState.didSelect = false;
+            return;
+        }
+        finishEditing();
+        clearSelection();
+    });
+
+    // --- Mouseleave ---
+    canvas.addEventListener('mouseleave', function() {
+        if (viewState.isPanning) {
+            viewState.isPanning = false;
+            canvas.classList.remove('panning');
+        }
+        if (lassoState.active) endLasso();
+        if (nodeDragState.isDragging) endNodeDrag();
+    });
+
+    // --- Context menu prevention ---
+    canvas.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+    });
+
+    // --- Wheel: zoom (mouse scroll wheel) / pan (trackpad 2-finger) ---
+    canvas.addEventListener('wheel', function(e) {
+        e.preventDefault();
+        var container = document.getElementById('canvasContainer');
+        var rect = container.getBoundingClientRect();
+        var mouseX = e.clientX - rect.left;
+        var mouseY = e.clientY - rect.top;
+
+        // ctrlKey is set by browser during trackpad pinch gesture
+        if (e.ctrlKey) {
+            // Pinch zoom
+            var zoomDelta = -e.deltaY * 0.01;
+            applyZoom(mouseX, mouseY, zoomDelta);
+            return;
+        }
+
+        // Trackpad 2-finger scroll → pan
+        // Mouse scroll wheel → zoom (deltaMode = 1 for line-based, or large deltaY)
+        if (e.deltaMode === 0 && (Math.abs(e.deltaX) > 1 || Math.abs(e.deltaY) < 80)) {
+            // Likely trackpad: pan
+            viewState.panX -= e.deltaX;
+            viewState.panY -= e.deltaY;
+            updateView();
+        } else {
+            // Mouse scroll wheel: zoom
+            var zoomDelta = e.deltaY > 0 ? -0.1 : 0.1;
+            applyZoom(mouseX, mouseY, zoomDelta);
+        }
+    }, { passive: false });
+
+    // --- Touch events for pinch-zoom ---
+    var lastTouchDist = 0;
+    var lastTouchCenter = { x: 0, y: 0 };
+
+    canvas.addEventListener('touchstart', function(e) {
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            var t1 = e.touches[0], t2 = e.touches[1];
+            lastTouchDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+            lastTouchCenter = { x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 };
+        }
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', function(e) {
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            var t1 = e.touches[0], t2 = e.touches[1];
+            var dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+            var center = { x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 };
+            var scale = dist / lastTouchDist;
+            var oldZoom = viewState.zoom;
+            var newZoom = Math.max(0.2, Math.min(3, oldZoom * scale));
+            var actualScale = newZoom / oldZoom;
+            viewState.panX = center.x - actualScale * (center.x - viewState.panX);
+            viewState.panY = center.y - actualScale * (center.y - viewState.panY);
+            viewState.zoom = newZoom;
+            viewState.panX += center.x - lastTouchCenter.x;
+            viewState.panY += center.y - lastTouchCenter.y;
+            lastTouchDist = dist;
+            lastTouchCenter = center;
+            updateView();
+        }
+    }, { passive: false });
+}
+
+function applyZoom(mouseX, mouseY, zoomDelta) {
+    var oldZoom = viewState.zoom;
+    var newZoom = Math.max(0.2, Math.min(3, oldZoom + zoomDelta));
+    var scale = newZoom / oldZoom;
+    viewState.panX = mouseX - scale * (mouseX - viewState.panX);
+    viewState.panY = mouseY - scale * (mouseY - viewState.panY);
+    viewState.zoom = newZoom;
+    updateView();
+}
+
+// ========================================
+// Toggle Button Sync
+// ========================================
+
+function syncToggleButtons() {
+    var formatEl = document.getElementById('copyFormat');
+    var borderEl = document.getElementById('copyBorder');
+    var hiyokoInput = document.getElementById('toggleHiyokoInput');
+    var borderInput = document.getElementById('toggleBorderInput');
+    if (hiyokoInput) {
+        hiyokoInput.checked = (formatEl.value === 'hiyoko');
+    }
+    if (borderInput) {
+        borderInput.checked = (borderEl.value === 'border');
+    }
+}
+
+
+// ========================================
+// Initialization
+// ========================================
+
+function init() {
+    // Run migration from old storage format
+    migrateIfNeeded();
+
+    // Determine which map to load (only pages can be loaded)
+    var urlParams = new URLSearchParams(window.location.search);
+    var requestedId = urlParams.get('id') ? parseInt(urlParams.get('id'), 10) : null;
+    var lastId = getLastActiveId();
+    var metaList = getMetaList();
+    var pages = metaList.filter(function(m) { return m.type === 'page'; });
+
+    if (requestedId && findMetaById(requestedId) && findMetaById(requestedId).type === 'page') {
+        currentMapId = requestedId;
+    } else if (lastId && findMetaById(lastId) && findMetaById(lastId).type === 'page') {
+        currentMapId = lastId;
+    } else if (pages.length > 0) {
+        // Sort by updatedAt desc, pick first
+        pages.sort(function(a, b) { return (b.updatedAt || '').localeCompare(a.updatedAt || ''); });
+        currentMapId = pages[0].id;
+    } else {
+        // No pages exist at all, create one in 未分類
+        metaList = ensureDefaultFolder(metaList);
+        saveMetaList(metaList);
+        var defFolderId = getDefaultFolderId(metaList);
+        var newId = getNextMapId();
+        var now = nowISO();
+        var defaultData = { root: { id: 'root', text: '中心テーマ', children: [] } };
+        metaList.push({ id: newId, name: '無題のマップ', type: 'page', folderId: defFolderId, order: 0, createdAt: now, updatedAt: now });
+        saveMetaList(metaList);
+        try { localStorage.setItem(getMapDataKey(newId), JSON.stringify(defaultData)); } catch(e) {}
+        currentMapId = newId;
+    }
+
+    // Load map data
+    var saved = loadMapData(currentMapId);
+    if (saved) {
+        mindMapData = saved;
+    }
+    setLastActiveId(currentMapId);
+    updateUrlParam(currentMapId);
+    updatePageTitle();
+
+    saveState();
+    document.addEventListener('keydown', handleKeyDown);
+    initCanvasInteraction();
+    document.getElementById('copyBtn').addEventListener('click', copyToClipboard);
+    document.getElementById('expandAllBtn').addEventListener('click', expandAllNodes);
+
+    // Grey-out floating button
+    var grayoutBtn = document.getElementById('grayoutFloatBtn');
+    if (grayoutBtn) {
+        grayoutBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var nodes = getSelectedNodes();
+            if (nodes.length > 0) {
+                // 1つでもOFFがあれば全部ON、全部ONなら全部OFF
+                var allOn = nodes.every(function(node) { return isNodeGrayedOut(node.id); });
+                var grayState = getNodeGrayoutState();
+                var hlState = getNodeHighlightState();
+                nodes.forEach(function(node) {
+                    if (allOn) {
+                        delete grayState[node.id];
+                    } else {
+                        // グレーアウトON時はハイライトを解除（相互排他）
+                        delete hlState[node.id];
+                        grayState[node.id] = true;
+                    }
+                });
+                setNodeGrayoutState(grayState);
+                setNodeHighlightState(hlState);
+                saveState();
+                showToast(allOn ? 'グレーアウトを解除しました' : 'グレーアウトしました');
+                render();
+            } else {
+                showToast('ノードを選択してください');
+            }
+        });
+    }
+
+    // Highlight floating button
+    var highlightBtn = document.getElementById('highlightFloatBtn');
+    if (highlightBtn) {
+        highlightBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var nodes = getSelectedNodes();
+            if (nodes.length > 0) {
+                // 1つでもOFFがあれば全部ON、全部ONなら全部OFF
+                var allOn = nodes.every(function(node) { return isNodeHighlighted(node.id); });
+                var hlState = getNodeHighlightState();
+                var grayState = getNodeGrayoutState();
+                nodes.forEach(function(node) {
+                    if (allOn) {
+                        delete hlState[node.id];
+                    } else {
+                        // ハイライトON時はグレーアウトを解除（相互排他）
+                        delete grayState[node.id];
+                        hlState[node.id] = true;
+                    }
+                });
+                setNodeHighlightState(hlState);
+                setNodeGrayoutState(grayState);
+                saveState();
+                showToast(allOn ? 'ハイライトを解除しました' : 'ハイライトしました');
+                render();
+            } else {
+                showToast('ノードを選択してください');
+            }
+        });
+    }
+    document.getElementById('sidebarMiniCopy').addEventListener('click', function(e) {
+        e.stopPropagation();
+        copyToClipboard();
+    });
+
+    // Persist format/border selection – now driven by toggle buttons
+    var savedFormat = localStorage.getItem('mindmap_copyFormat');
+    var savedBorder = localStorage.getItem('mindmap_copyBorder');
+    // family mode has been removed – fall back to simple
+    if (savedFormat === 'family') savedFormat = 'simple';
+    // Apply saved state to hidden selects
+    if (savedFormat) document.getElementById('copyFormat').value = savedFormat;
+    document.getElementById('copyBorder').value = savedBorder || 'border';
+    // Sync toggle button UI with saved state
+    syncToggleButtons();
+
+    // Sort toggle
+    var sortInput = document.getElementById('sortToggleInput');
+    if (sortInput) {
+        sortInput.checked = (getSortMode() === 'alpha');
+        sortInput.addEventListener('change', function() {
+            setSortMode(this.checked ? 'alpha' : 'none');
+            renderMapList();
+        });
+    }
+
+    // Toggle switch: ひよこ ON/OFF
+    document.getElementById('toggleHiyokoInput').addEventListener('change', function() {
+        var formatEl = document.getElementById('copyFormat');
+        formatEl.value = this.checked ? 'hiyoko' : 'simple';
+        try { localStorage.setItem('mindmap_copyFormat', formatEl.value); } catch(e) {}
+        renderSidebarTree();
+    });
+
+    // Toggle switch: 罫線 ON/OFF
+    document.getElementById('toggleBorderInput').addEventListener('change', function() {
+        var borderEl = document.getElementById('copyBorder');
+        borderEl.value = this.checked ? 'border' : 'none';
+        try { localStorage.setItem('mindmap_copyBorder', borderEl.value); } catch(e) {}
+        renderSidebarTree();
+    });
+
+    // Keep hidden selects in sync (for backward compat / API)
+    document.getElementById('copyFormat').addEventListener('change', function() {
+        try { localStorage.setItem('mindmap_copyFormat', this.value); } catch(e) {}
+        syncToggleButtons();
+        renderSidebarTree();
+    });
+    document.getElementById('copyBorder').addEventListener('change', function() {
+        try { localStorage.setItem('mindmap_copyBorder', this.value); } catch(e) {}
+        syncToggleButtons();
+        renderSidebarTree();
+    });
+
+    // Right sidebar resize & toggle
+    initSidebar();
+    // Left sidebar
+    initLeftSidebar();
+    // Adjust canvas for both sidebars
+    adjustCanvasForSidebars();
+    resetView();
+    render();
+    renderMapList();
+    selectNode('root');
+    setTimeout(function() { startEditing('root'); }, 100);
+
+    // Close context menus on any click outside
+    document.addEventListener('click', function(e) {
+        var menus = ['ctxMenu', 'ctxMenuFolder', 'ctxMenuArea'];
+        for (var mi = 0; mi < menus.length; mi++) {
+            var cm = document.getElementById(menus[mi]);
+            if (cm && !cm.contains(e.target)) {
+                cm.classList.remove('show');
+            }
+        }
+        if (!e.target.closest('.ctx-menu')) {
+            ctxMenuTargetMapId = null;
+        }
+    });
+}
+
+function updateUrlParam(mapId) {
+    var url = new URL(window.location);
+    url.searchParams.set('id', mapId);
+    history.replaceState(null, '', url);
+}
+
+function updatePageTitle() {
+    var meta = findMetaById(currentMapId);
+    document.title = meta ? meta.name + ' - マインドマップ' : 'マインドマップ';
+}
+
+document.addEventListener('DOMContentLoaded', init);
+
+
+// ========================================
+// Right Sidebar: Resize, Tree Rendering, Focus
+// ========================================
+
+var SIDEBAR_OPEN_MIN = 200;
+var SIDEBAR_DEFAULT = 260;
+var SIDEBAR_KEY = 'mindmap_sidebar_width';
+var sidebarIsOpen = false;
+
+function initSidebar() {
+    var sidebar = document.getElementById('sidebar');
+    var handle = document.getElementById('sidebarResizeHandle');
+    var floatToggle = document.getElementById('sidebarFloatToggle');
+    var closeBtn = document.getElementById('sidebarCloseBtn');
+
+    // Start collapsed
+    sidebar.classList.add('collapsed');
+    sidebar.style.width = SIDEBAR_DEFAULT + 'px';
+    sidebarIsOpen = false;
+    updateSidebarFloatToggle();
+
+    // Floating 🌲 button opens the sidebar
+    if (floatToggle) {
+        floatToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            openRightSidebar();
+        });
+    }
+
+    // Close button inside sidebar header
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            closeRightSidebar();
+        });
+    }
+
+    // Resize handle
+    var dragging = false;
+    handle.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        dragging = true;
+        handle.classList.add('dragging');
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+    });
+    document.addEventListener('mousemove', function(e) {
+        if (!dragging) return;
+        var w = window.innerWidth - e.clientX;
+        if (w < SIDEBAR_OPEN_MIN) {
+            w = SIDEBAR_OPEN_MIN;
+        } else if (w > window.innerWidth * 0.6) {
+            w = Math.floor(window.innerWidth * 0.6);
+        }
+        sidebar.style.width = w + 'px';
+        adjustCanvasForSidebars();
+    });
+    document.addEventListener('mouseup', function() {
+        if (!dragging) return;
+        dragging = false;
+        handle.classList.remove('dragging');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        var currentW = parseInt(sidebar.style.width, 10) || SIDEBAR_DEFAULT;
+        try { localStorage.setItem(SIDEBAR_KEY, currentW); } catch(e) {}
+        renderSidebarTree();
+    });
+}
+
+function openRightSidebar() {
+    var sidebar = document.getElementById('sidebar');
+    var savedW = parseInt(localStorage.getItem(SIDEBAR_KEY), 10);
+    var w = (savedW && savedW >= SIDEBAR_OPEN_MIN) ? savedW : SIDEBAR_DEFAULT;
+    sidebar.style.width = w + 'px';
+    sidebar.classList.remove('collapsed');
+    sidebarIsOpen = true;
+    updateSidebarFloatToggle();
+    adjustCanvasForSidebars();
+    renderSidebarTree();
+}
+
+function closeRightSidebar() {
+    var sidebar = document.getElementById('sidebar');
+    sidebar.classList.add('collapsed');
+    sidebarIsOpen = false;
+    updateSidebarFloatToggle();
+    adjustCanvasForSidebars();
+}
+
+function updateSidebarFloatToggle() {
+    var floatToggle = document.getElementById('sidebarFloatToggle');
+    if (!floatToggle) return;
+    if (sidebarIsOpen) {
+        floatToggle.classList.add('hidden');
+    } else {
+        floatToggle.classList.remove('hidden');
+    }
+    // Shift the floating buttons left when right sidebar is open
+    updateFloatBtnsPosition();
+}
+
+function updateFloatBtnsPosition() {
+    var btnsContainer = document.getElementById('canvasFloatBtns');
+    if (!btnsContainer) return;
+    var rightSidebar = document.getElementById('sidebar');
+    var rightW = (rightSidebar && !rightSidebar.classList.contains('collapsed')) ? rightSidebar.offsetWidth : 0;
+    btnsContainer.style.right = (16 + rightW) + 'px';
+}
+
+function adjustCanvasForSidebars() {
+    var rightSidebar = document.getElementById('sidebar');
+    var leftSidebar = document.getElementById('leftSidebar');
+    var container = document.getElementById('canvasContainer');
+    if (container) {
+        // Right sidebar: only counts when open (not collapsed)
+        var rightW = (rightSidebar && !rightSidebar.classList.contains('collapsed')) ? rightSidebar.offsetWidth : 0;
+        // Left sidebar: only counts when open (not collapsed)
+        var leftW = (leftSidebar && !leftSidebar.classList.contains('collapsed')) ? leftSidebar.offsetWidth : 0;
+        container.style.right = rightW + 'px';
+        container.style.left = leftW + 'px';
+    }
+    // Also shift floating buttons
+    updateFloatBtnsPosition();
+}
+
+function renderSidebarTree() {
+    var tree = document.getElementById('sidebarTree');
+    if (!tree) return;
+    var sidebar = document.getElementById('sidebar');
+    if (sidebar && sidebar.classList.contains('collapsed')) {
+        tree.innerHTML = '';
+        return;
+    }
+
+    var format = document.getElementById('copyFormat').value;
+    var border = document.getElementById('copyBorder').value;
+    var useBorder = (border === 'border');
+    var lines = [];
+    generatePreviewLines(mindMapData.root, 0, [], format, useBorder, lines);
+
+    var displayLines = [];
+    for (var i = 0; i < lines.length; i++) {
+        if (!lines[i].isSep) displayLines.push(lines[i]);
+    }
+
+    var html = '<pre class="sidebar-preview">';
+    for (var i = 0; i < displayLines.length; i++) {
+        var line = displayLines[i];
+        var isSelected = selectedNodeIds.has(line.nodeId);
+        var cls = 'sidebar-preview-line' + (isSelected ? ' active' : '');
+        var escaped = line.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        html += '<span class="' + cls + '" data-sid="' + line.nodeId + '">' + escaped + '</span>';
+    }
+    html += '</pre>';
+    tree.innerHTML = html;
+
+    tree.querySelectorAll('.sidebar-preview-line').forEach(function(el) {
+        el.addEventListener('click', function() {
+            var nid = el.getAttribute('data-sid');
+            if (nid) focusNodeFromSidebar(nid);
+        });
+    });
+
+    var activeEl = tree.querySelector('.sidebar-preview-line.active');
+    if (activeEl) {
+        activeEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+}
+
+function generatePreviewLines(node, level, parentContinues, format, useBorder, lines) {
+    // If this node is grayed out, skip it and all descendants entirely in tree nav
+    if (level > 0 && isNodeGrayedOut(node.id)) return;
+
+    var iconLevel = Math.min(level + 1, 4);
+    var icons = levelIcons[format];
+    var icon = icons ? (icons[iconLevel] + ' ') : '';
+
+    var lineText = '';
+    if (level === 0) {
+        lineText = icon + node.text;
+    } else {
+        var prefix = '';
+        for (var i = 0; i < level - 1; i++) {
+            if (useBorder) {
+                prefix += parentContinues[i] ? '│  ' : '   ';
+            } else {
+                prefix += '  ';
+            }
+        }
+        var isLast = (parentContinues[level - 1] === false);
+        var connector;
+        if (useBorder) {
+            connector = isLast ? '└─ ' : '├─ ';
+        } else {
+            connector = '  ';
+        }
+        lineText = prefix + connector + icon + node.text;
+    }
+    lineText = lineText.replace(/\n/g, ' ');
+    lines.push({ text: lineText, nodeId: node.id });
+
+    // Skip children if node is collapsed OR grayed out (hide grayed-out node and all descendants)
+    if (isNodeCollapsed(node.id) || isNodeGrayedOut(node.id)) return;
+
+    // Filter out grayed-out children for sidebar display
+    var visibleChildrenForSidebar = [];
+    for (var ci = 0; ci < node.children.length; ci++) {
+        if (!isNodeGrayedOut(node.children[ci].id)) {
+            visibleChildrenForSidebar.push(node.children[ci]);
+        }
+    }
+
+    for (var i = 0; i < visibleChildrenForSidebar.length; i++) {
+        var isLastChild = (i === visibleChildrenForSidebar.length - 1);
+        var newContinues = parentContinues.slice();
+        newContinues.push(!isLastChild);
+        generatePreviewLines(visibleChildrenForSidebar[i], level + 1, newContinues, format, useBorder, lines);
+    }
+
+    if (useBorder && level > 0 && visibleChildrenForSidebar.length > 0) {
+        var amILast = (parentContinues[level - 1] === false);
+        if (!amILast) {
+            var sep = '';
+            for (var i = 0; i < level - 1; i++) {
+                sep += parentContinues[i] ? '│  ' : '   ';
+            }
+            sep += '│';
+            lines.push({ text: sep, nodeId: '', isSep: true });
+        }
+    }
+}
+
+function focusNodeFromSidebar(nodeId) {
+    selectNode(nodeId);
+    var nodeEl = document.querySelector('[data-id="' + nodeId + '"]');
+    if (!nodeEl) return;
+    var container = document.getElementById('canvasContainer');
+    var sidebar = document.getElementById('sidebar');
+    var sidebarW = sidebar ? sidebar.offsetWidth : 0;
+    var rect = nodeEl.getBoundingClientRect();
+    var cRect = container.getBoundingClientRect();
+    var availableW = cRect.width - sidebarW;
+    var targetX = cRect.left + availableW / 2;
+    var targetY = cRect.top + cRect.height / 2;
+    var dx = targetX - (rect.left + rect.width / 2);
+    var dy = targetY - (rect.top + rect.height / 2);
+    viewState.panX += dx;
+    viewState.panY += dy;
+    updateView();
+    renderSidebarTree();
+}
+
+
+// ========================================
+// Left Sidebar: My Maps Management
+// ========================================
+
+var LEFT_SIDEBAR_OPEN_MIN = 200;
+var LEFT_SIDEBAR_DEFAULT = 240;
+var LEFT_SIDEBAR_KEY = 'mindmap_left_sidebar_width';
+var leftSidebarIsOpen = false;
+var leftSidebarPeekTimeout = null;
+
+function initLeftSidebar() {
+    var sidebar = document.getElementById('leftSidebar');
+    var handle = document.getElementById('leftSidebarResizeHandle');
+    var hoverZone = document.getElementById('leftSidebarHoverZone');
+    var floatToggle = document.getElementById('leftSidebarFloatToggle');
+
+    // Determine initial state: open by default (240px), or use saved width
+    var savedW = parseInt(localStorage.getItem(LEFT_SIDEBAR_KEY), 10);
+    if (savedW && savedW >= LEFT_SIDEBAR_OPEN_MIN) {
+        openLeftSidebar(savedW);
+    } else if (savedW === 0) {
+        // Explicitly closed before
+        closeLeftSidebar();
+    } else {
+        // First time: open at default width and save
+        openLeftSidebar(LEFT_SIDEBAR_DEFAULT);
+        try { localStorage.setItem(LEFT_SIDEBAR_KEY, LEFT_SIDEBAR_DEFAULT); } catch(ex) {}
+    }
+
+    // Toggle button «/» inside the header closes sidebar
+    var toggleBtn = document.getElementById('leftSidebarToggle');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (leftSidebarIsOpen) {
+                closeLeftSidebar();
+                try { localStorage.setItem(LEFT_SIDEBAR_KEY, '0'); } catch(ex) {}
+            } else {
+                openLeftSidebar(LEFT_SIDEBAR_DEFAULT);
+                try { localStorage.setItem(LEFT_SIDEBAR_KEY, LEFT_SIDEBAR_DEFAULT); } catch(ex) {}
+            }
+            renderMapList();
+        });
+    }
+
+    // Floating ☰ button re-opens the sidebar
+    if (floatToggle) {
+        floatToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            openLeftSidebar(LEFT_SIDEBAR_DEFAULT);
+            try { localStorage.setItem(LEFT_SIDEBAR_KEY, LEFT_SIDEBAR_DEFAULT); } catch(ex) {}
+            renderMapList();
+        });
+    }
+
+    // Hover zone: when sidebar is collapsed, hovering near left edge peeks it in
+    if (hoverZone) {
+        hoverZone.addEventListener('mouseenter', function() {
+            if (leftSidebarIsOpen) return;
+            leftSidebarPeekTimeout = setTimeout(function() {
+                sidebar.classList.add('peek');
+            }, 200);
+        });
+        hoverZone.addEventListener('mouseleave', function() {
+            clearTimeout(leftSidebarPeekTimeout);
+        });
+    }
+
+    // Remove peek when mouse leaves the sidebar area
+    sidebar.addEventListener('mouseleave', function() {
+        if (!leftSidebarIsOpen) {
+            sidebar.classList.remove('peek');
+        }
+    });
+
+    // New map button
+    document.getElementById('newMapBtn').addEventListener('click', function(e) {
+        e.stopPropagation();
+        createNewMap();
+    });
+
+    // Context menu actions for pages
+    document.getElementById('ctxMenu').addEventListener('click', function(e) {
+        var action = e.target.getAttribute('data-action');
+        if (!action || !ctxMenuTargetMapId) return;
+        var cm = document.getElementById('ctxMenu');
+        cm.classList.remove('show');
+        var targetId = ctxMenuTargetMapId;
+        ctxMenuTargetMapId = null;
+
+        if (action === 'rename') {
+            startInlineRename(targetId);
+        } else if (action === 'duplicate') {
+            duplicateMap(targetId);
+        } else if (action === 'delete') {
+            deleteMap(targetId);
+        }
+    });
+
+    // Context menu actions for folders
+    document.getElementById('ctxMenuFolder').addEventListener('click', function(e) {
+        var action = e.target.getAttribute('data-action');
+        if (!ctxMenuTargetMapId) return;
+        var cm = document.getElementById('ctxMenuFolder');
+        cm.classList.remove('show');
+        var targetId = ctxMenuTargetMapId;
+        ctxMenuTargetMapId = null;
+
+        if (action === 'folder-rename') {
+            startInlineRename(targetId);
+        } else if (action === 'folder-add-page') {
+            createPageInFolder(targetId);
+        } else if (action === 'folder-delete') {
+            deleteFolder(targetId);
+        }
+    });
+
+    // Context menu for empty area
+    document.getElementById('ctxMenuArea').addEventListener('click', function(e) {
+        var action = e.target.getAttribute('data-action');
+        var cm = document.getElementById('ctxMenuArea');
+        cm.classList.remove('show');
+        if (action === 'create-folder') {
+            createFolder();
+        }
+    });
+
+    // Right-click on map list empty area to create folder
+    document.getElementById('mapList').addEventListener('contextmenu', function(e) {
+        // Only trigger if clicking on the list background itself
+        if (e.target === document.getElementById('mapList')) {
+            e.preventDefault();
+            showAreaContextMenu(e.clientX, e.clientY);
+        }
+    });
+
+    // Resize handle
+    var dragging = false;
+    handle.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        dragging = true;
+        handle.classList.add('dragging');
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+    });
+    document.addEventListener('mousemove', function(e) {
+        if (!dragging) return;
+        var w = e.clientX;
+        if (w < LEFT_SIDEBAR_OPEN_MIN) {
+            w = LEFT_SIDEBAR_OPEN_MIN;
+        } else if (w > window.innerWidth * 0.4) {
+            w = Math.floor(window.innerWidth * 0.4);
+        }
+        sidebar.style.width = w + 'px';
+        adjustCanvasForSidebars();
+    });
+    document.addEventListener('mouseup', function() {
+        if (!dragging) return;
+        dragging = false;
+        handle.classList.remove('dragging');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        var currentW = parseInt(sidebar.style.width, 10) || LEFT_SIDEBAR_DEFAULT;
+        try { localStorage.setItem(LEFT_SIDEBAR_KEY, currentW); } catch(e) {}
+    });
+}
+
+function openLeftSidebar(width) {
+    var sidebar = document.getElementById('leftSidebar');
+    var floatToggle = document.getElementById('leftSidebarFloatToggle');
+    var toggleBtn = document.getElementById('leftSidebarToggle');
+    var w = width || LEFT_SIDEBAR_DEFAULT;
+    sidebar.style.width = w + 'px';
+    sidebar.classList.remove('collapsed', 'peek');
+    leftSidebarIsOpen = true;
+    if (floatToggle) floatToggle.classList.remove('show');
+    if (toggleBtn) toggleBtn.textContent = '«';
+    adjustCanvasForSidebars();
+}
+
+function closeLeftSidebar() {
+    var sidebar = document.getElementById('leftSidebar');
+    var floatToggle = document.getElementById('leftSidebarFloatToggle');
+    var toggleBtn = document.getElementById('leftSidebarToggle');
+    sidebar.classList.add('collapsed');
+    sidebar.classList.remove('peek');
+    leftSidebarIsOpen = false;
+    if (floatToggle) floatToggle.classList.add('show');
+    if (toggleBtn) toggleBtn.textContent = '»';
+    adjustCanvasForSidebars();
+}
+
+// ---- Render Map List (Folder → Page Tree) ----
+function renderMapList() {
+    var list = document.getElementById('mapList');
+    if (!list) return;
+    var metaList = getMetaList();
+    metaList = ensureDefaultFolder(metaList);
+    saveMetaList(metaList);
+    var sortMode = getSortMode();
+    var collapseState = getCollapseState();
+
+    // Separate folders and pages
+    var folders = metaList.filter(function(m) { return m.type === 'folder'; });
+    var pages = metaList.filter(function(m) { return m.type === 'page'; });
+
+    // Build page map: folderId -> [pages]
+    var pageMap = {};
+    for (var i = 0; i < pages.length; i++) {
+        var fid = pages[i].folderId || getDefaultFolderId(metaList);
+        if (!pageMap[fid]) pageMap[fid] = [];
+        pageMap[fid].push(pages[i]);
+    }
+
+    // Sort folders: 未分類 always last, others by order or alpha
+    var defaultFolders = folders.filter(function(f) { return f.isDefault; });
+    var regularFolders = folders.filter(function(f) { return !f.isDefault; });
+
+    if (sortMode === 'alpha') {
+        regularFolders.sort(function(a, b) { return (a.name || '').localeCompare(b.name || ''); });
+        for (var fid in pageMap) {
+            pageMap[fid].sort(function(a, b) { return (a.name || '').localeCompare(b.name || ''); });
+        }
+    } else {
+        regularFolders.sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
+        for (var fid in pageMap) {
+            pageMap[fid].sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
+        }
+    }
+
+    // Final folder order: regular folders + 未分類 at bottom
+    var orderedFolders = regularFolders.concat(defaultFolders);
+
+    list.innerHTML = '';
+    var isDndFolderEnabled = (sortMode !== 'alpha'); // alpha時はフォルダ並び替え不可
+    var isDndPageEnabled = true; // ページ移動は常に有効
+
+    for (var fi = 0; fi < orderedFolders.length; fi++) {
+        var folder = orderedFolders[fi];
+        var folderPages = pageMap[folder.id] || [];
+        var hasPages = folderPages.length > 0;
+        var isCollapsed = collapseState[folder.id] === true;
+
+        var folderEl = createFolderElement(folder, hasPages, isCollapsed, isDndFolderEnabled);
+        list.appendChild(folderEl);
+
+        // Render pages if not collapsed
+        if (!isCollapsed) {
+            for (var pi = 0; pi < folderPages.length; pi++) {
+                var page = folderPages[pi];
+                var isPageActive = (page.id === currentMapId);
+                var pageEl = createPageElement(page, isPageActive, isDndPageEnabled, folder);
+                list.appendChild(pageEl);
+            }
+        }
+    }
+}
+
+function createFolderElement(folder, hasPages, isCollapsed, isDndEnabled) {
+    var item = document.createElement('div');
+    item.className = 'map-item folder-item' + (folder.isDefault ? ' default-folder' : '');
+    item.dataset.mapId = folder.id;
+    item.dataset.itemType = 'folder';
+    item.dataset.isDefault = folder.isDefault ? '1' : '';
+
+    if (isDndEnabled && !folder.isDefault) {
+        item.draggable = true;
+    }
+
+    // Expand/collapse toggle
+    var toggle = document.createElement('button');
+    toggle.className = 'map-item-toggle';
+    if (hasPages) {
+        toggle.textContent = isCollapsed ? '►' : '▼';
+        toggle.title = isCollapsed ? '展開' : '折りたたむ';
+    } else {
+        toggle.textContent = '►';
+        toggle.style.visibility = 'hidden';
+    }
+    toggle.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (!hasPages) return;
+        var cs = getCollapseState();
+        cs[folder.id] = !isCollapsed;
+        setCollapseState(cs);
+        renderMapList();
+    });
+    item.appendChild(toggle);
+
+    var name = document.createElement('span');
+    name.className = 'map-item-name';
+    name.textContent = '\uD83D\uDCC1 ' + folder.name;
+    name.title = folder.name;
+
+    var menuBtn = document.createElement('button');
+    menuBtn.className = 'map-item-menu-btn';
+    menuBtn.textContent = '⋯';
+    menuBtn.title = 'メニュー';
+
+    item.appendChild(name);
+    item.appendChild(menuBtn);
+
+    (function(folderId, folderMeta, itemEl, nameEl, menuBtnEl) {
+        // Click on folder: toggle expand/collapse
+        itemEl.addEventListener('click', function(e) {
+            if (e.target === menuBtnEl || e.target.classList.contains('map-item-menu-btn')) return;
+            if (e.target.contentEditable === 'true') return;
+            if (e.target.tagName === 'INPUT') return;
+            if (e.target.classList.contains('map-item-toggle')) return;
+            // Toggle expand/collapse on folder click
+            var cs = getCollapseState();
+            cs[folderId] = !cs[folderId];
+            setCollapseState(cs);
+            renderMapList();
+        });
+
+        // Right-click on folder shows folder context menu
+        itemEl.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            showFolderContextMenu(folderId, menuBtnEl);
+        });
+
+        menuBtnEl.addEventListener('click', function(e) {
+            e.stopPropagation();
+            showFolderContextMenu(folderId, menuBtnEl);
+        });
+
+        // Double-click to rename (not for 未分類)
+        if (!folderMeta.isDefault) {
+            nameEl.addEventListener('dblclick', function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                startInlineRename(folderId);
+            });
+        }
+
+        // Drag & Drop for folders
+        if (isDndEnabled && !folderMeta.isDefault) {
+            itemEl.addEventListener('dragstart', function(e) {
+                e.dataTransfer.setData('text/plain', String(folderId));
+                e.dataTransfer.setData('item-type', 'folder');
+                e.dataTransfer.effectAllowed = 'move';
+                itemEl.classList.add('map-dragging');
+                mapDragState.draggingId = folderId;
+                mapDragState.draggingType = 'folder';
+            });
+            itemEl.addEventListener('dragend', function(e) {
+                itemEl.classList.remove('map-dragging');
+                clearMapDragIndicators();
+                mapDragState.draggingId = null;
+                mapDragState.draggingType = null;
+            });
+        }
+
+        // Drop target for folders (accept pages dropped onto folder, or folder reorder)
+        itemEl.addEventListener('dragover', function(e) {
+            if (!mapDragState.draggingId) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            clearMapDragIndicators();
+            if (mapDragState.draggingId === folderId) return;
+
+            var rect = itemEl.getBoundingClientRect();
+            var relY = e.clientY - rect.top;
+            var h = rect.height;
+
+            if (mapDragState.draggingType === 'folder') {
+                // Folder reordering: above or below only (no nesting), but NOT on 未分類
+                if (folderMeta.isDefault) return;
+                if (relY < h * 0.5) {
+                    itemEl.classList.add('drag-over-above');
+                    mapDragState.dropTarget = { id: folderId, position: 'above', type: 'folder' };
+                } else {
+                    itemEl.classList.add('drag-over-below');
+                    mapDragState.dropTarget = { id: folderId, position: 'below', type: 'folder' };
+                }
+            } else {
+                // Page dropped onto folder: move page into this folder
+                itemEl.classList.add('drag-over-into');
+                mapDragState.dropTarget = { id: folderId, position: 'into', type: 'folder' };
+            }
+        });
+        itemEl.addEventListener('dragleave', function(e) {
+            itemEl.classList.remove('drag-over-above', 'drag-over-below', 'drag-over-into');
+        });
+        itemEl.addEventListener('drop', function(e) {
+            e.preventDefault();
+            clearMapDragIndicators();
+            if (!mapDragState.draggingId || !mapDragState.dropTarget) return;
+            handleMapDrop(mapDragState.draggingId, mapDragState.dropTarget.id, mapDragState.dropTarget.position, mapDragState.draggingType);
+            mapDragState.draggingId = null;
+            mapDragState.dropTarget = null;
+            mapDragState.draggingType = null;
+        });
+    })(folder.id, folder, item, name, menuBtn);
+
+    return item;
+}
+
+function createPageElement(page, isActive, isDndEnabled, parentFolder) {
+    var item = document.createElement('div');
+    item.className = 'map-item page-item' + (isActive ? ' active' : '');
+    item.dataset.mapId = page.id;
+    item.dataset.itemType = 'page';
+    item.dataset.folderId = page.folderId || '';
+
+    if (isDndEnabled) {
+        item.draggable = true;
+    }
+
+    var name = document.createElement('span');
+    name.className = 'map-item-name';
+    name.title = page.name;
+    // Name text + inline pin with half-width space
+    name.textContent = page.name;
+    if (isActive) {
+        var pinEl = document.createElement('span');
+        pinEl.className = 'map-item-pin';
+        pinEl.textContent = ' 📌';
+        name.appendChild(pinEl);
+    }
+
+    var menuBtn = document.createElement('button');
+    menuBtn.className = 'map-item-menu-btn';
+    menuBtn.textContent = '⋯';
+    menuBtn.title = 'メニュー';
+
+    item.appendChild(name);
+    item.appendChild(menuBtn);
+
+    (function(pageId, pageMeta, itemEl, nameEl, menuBtnEl) {
+        // Click on page -> switch to that map
+        itemEl.addEventListener('click', function(e) {
+            if (e.target === menuBtnEl || e.target.classList.contains('map-item-menu-btn')) return;
+            if (e.target.contentEditable === 'true') return;
+            if (e.target.tagName === 'INPUT') return;
+            switchToMap(pageId);
+        });
+
+        menuBtnEl.addEventListener('click', function(e) {
+            e.stopPropagation();
+            showContextMenu(pageId, menuBtnEl);
+        });
+
+        // Double-click to rename
+        nameEl.addEventListener('dblclick', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            startInlineRename(pageId);
+        });
+
+        // Drag & Drop for pages
+        if (isDndEnabled) {
+            itemEl.addEventListener('dragstart', function(e) {
+                e.dataTransfer.setData('text/plain', String(pageId));
+                e.dataTransfer.setData('item-type', 'page');
+                e.dataTransfer.effectAllowed = 'move';
+                itemEl.classList.add('map-dragging');
+                mapDragState.draggingId = pageId;
+                mapDragState.draggingType = 'page';
+            });
+            itemEl.addEventListener('dragend', function(e) {
+                itemEl.classList.remove('map-dragging');
+                clearMapDragIndicators();
+                mapDragState.draggingId = null;
+                mapDragState.draggingType = null;
+            });
+            itemEl.addEventListener('dragover', function(e) {
+                if (!mapDragState.draggingId) return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                clearMapDragIndicators();
+                if (mapDragState.draggingId === pageId) return;
+
+                // Only pages can be placed above/below other pages
+                if (mapDragState.draggingType !== 'page') return;
+
+                var rect = itemEl.getBoundingClientRect();
+                var relY = e.clientY - rect.top;
+                var h = rect.height;
+
+                if (relY < h * 0.5) {
+                    itemEl.classList.add('drag-over-above');
+                    mapDragState.dropTarget = { id: pageId, position: 'above', type: 'page' };
+                } else {
+                    itemEl.classList.add('drag-over-below');
+                    mapDragState.dropTarget = { id: pageId, position: 'below', type: 'page' };
+                }
+            });
+            itemEl.addEventListener('dragleave', function(e) {
+                itemEl.classList.remove('drag-over-above', 'drag-over-below');
+            });
+            itemEl.addEventListener('drop', function(e) {
+                e.preventDefault();
+                clearMapDragIndicators();
+                if (!mapDragState.draggingId || !mapDragState.dropTarget) return;
+                handleMapDrop(mapDragState.draggingId, mapDragState.dropTarget.id, mapDragState.dropTarget.position, mapDragState.draggingType);
+                mapDragState.draggingId = null;
+                mapDragState.dropTarget = null;
+                mapDragState.draggingType = null;
+            });
+        }
+    })(page.id, page, item, name, menuBtn);
+
+    return item;
+}
+
+// ---- Map Drag & Drop State ----
+var mapDragState = {
+    draggingId: null,
+    draggingType: null, // 'folder' or 'page'
+    dropTarget: null
+};
+
+function clearMapDragIndicators() {
+    document.querySelectorAll('.map-item').forEach(function(el) {
+        el.classList.remove('drag-over-above', 'drag-over-below', 'drag-over-into');
+    });
+}
+
+function handleMapDrop(dragId, targetId, position, dragType) {
+    if (dragId === targetId) return;
+    var metaList = getMetaList();
+    var dragMeta = null, targetMeta = null;
+    for (var i = 0; i < metaList.length; i++) {
+        if (metaList[i].id === dragId) dragMeta = metaList[i];
+        if (metaList[i].id === targetId) targetMeta = metaList[i];
+    }
+    if (!dragMeta || !targetMeta) return;
+
+    if (dragType === 'folder') {
+        // Folder reordering among folders only
+        if (targetMeta.type !== 'folder' || targetMeta.isDefault) return;
+        var allFolders = metaList.filter(function(m) { return m.type === 'folder' && !m.isDefault && m.id !== dragId; });
+        allFolders.sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
+        var targetIdx = -1;
+        for (var i = 0; i < allFolders.length; i++) {
+            if (allFolders[i].id === targetId) { targetIdx = i; break; }
+        }
+        if (targetIdx === -1) return;
+        if (position === 'below') targetIdx++;
+        allFolders.splice(targetIdx, 0, dragMeta);
+        for (var i = 0; i < allFolders.length; i++) {
+            allFolders[i].order = i;
+        }
+    } else if (dragType === 'page') {
+        if (position === 'into' && targetMeta.type === 'folder') {
+            // Move page into folder
+            dragMeta.folderId = targetId;
+            var pagesInFolder = metaList.filter(function(m) { return m.type === 'page' && m.folderId === targetId; });
+            dragMeta.order = pagesInFolder.length > 0 ? Math.max.apply(null, pagesInFolder.map(function(m) { return m.order || 0; })) + 1 : 0;
+            // Expand the target folder
+            var cs = getCollapseState();
+            cs[targetId] = false;
+            setCollapseState(cs);
+        } else if (targetMeta.type === 'page') {
+            // Reorder page among siblings in same folder, or move to different folder
+            var targetFolderId = targetMeta.folderId;
+            dragMeta.folderId = targetFolderId;
+
+            var siblings = metaList.filter(function(m) {
+                return m.type === 'page' && m.folderId === targetFolderId && m.id !== dragId;
+            });
+            siblings.sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
+
+            var targetIdx = -1;
+            for (var i = 0; i < siblings.length; i++) {
+                if (siblings[i].id === targetId) { targetIdx = i; break; }
+            }
+            if (targetIdx === -1) targetIdx = siblings.length - 1;
+            if (position === 'below') targetIdx++;
+            siblings.splice(targetIdx, 0, dragMeta);
+            for (var i = 0; i < siblings.length; i++) {
+                siblings[i].order = i;
+            }
+        }
+    }
+
+    saveMetaList(metaList);
+    renderMapList();
+}
+
+// ---- Context Menus ----
+function showContextMenu(mapId, anchorEl) {
+    hideAllContextMenus();
+    ctxMenuTargetMapId = mapId;
+    var cm = document.getElementById('ctxMenu');
+    var rect = anchorEl.getBoundingClientRect();
+    cm.style.top = rect.bottom + 4 + 'px';
+    cm.style.left = rect.left + 'px';
+    cm.classList.add('show');
+    var cmRect = cm.getBoundingClientRect();
+    if (cmRect.right > window.innerWidth) cm.style.left = (window.innerWidth - cmRect.width - 8) + 'px';
+    if (cmRect.bottom > window.innerHeight) cm.style.top = (rect.top - cmRect.height - 4) + 'px';
+    document.querySelectorAll('.map-item-menu-btn.open').forEach(function(el) { el.classList.remove('open'); });
+    anchorEl.classList.add('open');
+}
+
+function showFolderContextMenu(folderId, anchorEl) {
+    hideAllContextMenus();
+    ctxMenuTargetMapId = folderId;
+    var meta = findMetaById(folderId);
+    var cm = document.getElementById('ctxMenuFolder');
+    // Hide rename and delete for 未分類
+    var renameItem = cm.querySelector('[data-action="folder-rename"]');
+    var deleteItem = cm.querySelector('[data-action="folder-delete"]');
+    if (renameItem) renameItem.style.display = (meta && meta.isDefault) ? 'none' : '';
+    if (deleteItem) deleteItem.style.display = (meta && meta.isDefault) ? 'none' : '';
+
+    var rect = anchorEl.getBoundingClientRect();
+    cm.style.top = rect.bottom + 4 + 'px';
+    cm.style.left = rect.left + 'px';
+    cm.classList.add('show');
+    var cmRect = cm.getBoundingClientRect();
+    if (cmRect.right > window.innerWidth) cm.style.left = (window.innerWidth - cmRect.width - 8) + 'px';
+    if (cmRect.bottom > window.innerHeight) cm.style.top = (rect.top - cmRect.height - 4) + 'px';
+    document.querySelectorAll('.map-item-menu-btn.open').forEach(function(el) { el.classList.remove('open'); });
+    anchorEl.classList.add('open');
+}
+
+function showAreaContextMenu(clientX, clientY) {
+    hideAllContextMenus();
+    var cm = document.getElementById('ctxMenuArea');
+    cm.style.top = clientY + 'px';
+    cm.style.left = clientX + 'px';
+    cm.classList.add('show');
+    var cmRect = cm.getBoundingClientRect();
+    if (cmRect.right > window.innerWidth) cm.style.left = (window.innerWidth - cmRect.width - 8) + 'px';
+    if (cmRect.bottom > window.innerHeight) cm.style.top = (clientY - cmRect.height) + 'px';
+}
+
+function hideAllContextMenus() {
+    document.querySelectorAll('.ctx-menu.show').forEach(function(el) { el.classList.remove('show'); });
+    ctxMenuTargetMapId = null;
+}
+
+// ---- CRUD: Pages ----
+function createNewMap() {
+    // Creates a new page in the currently selected folder (or 未分類)
+    saveToLocalStorage();
+
+    var metaList = getMetaList();
+    var defFolderId = getDefaultFolderId(metaList);
+
+    // Determine target folder: use folder of current active page, or 未分類
+    var targetFolderId = defFolderId;
+    if (currentMapId) {
+        var currentMeta = findMetaById(currentMapId);
+        if (currentMeta && currentMeta.type === 'page' && currentMeta.folderId) {
+            targetFolderId = currentMeta.folderId;
+        }
+    }
+
+    var newId = getNextMapId();
+    var now = nowISO();
+    var defaultData = { root: { id: 'root', text: '中心テーマ', children: [] } };
+
+    // Get max order among pages in target folder
+    var maxOrder = 0;
+    for (var i = 0; i < metaList.length; i++) {
+        if (metaList[i].type === 'page' && metaList[i].folderId === targetFolderId && (metaList[i].order || 0) >= maxOrder) {
+            maxOrder = (metaList[i].order || 0) + 1;
+        }
+    }
+
+    var meta = { id: newId, name: '無題のマップ', type: 'page', folderId: targetFolderId, order: maxOrder, createdAt: now, updatedAt: now };
+    metaList.push(meta);
+    saveMetaList(metaList);
+    try { localStorage.setItem(getMapDataKey(newId), JSON.stringify(defaultData)); } catch(e) {}
+
+    // Expand the target folder
+    var cs = getCollapseState();
+    cs[targetFolderId] = false;
+    setCollapseState(cs);
+
+    switchToMap(newId);
+    showToast('新しいマップを作成しました');
+}
+
+function createPageInFolder(folderId) {
+    // Creates a new page in specified folder
+    saveToLocalStorage();
+
+    var metaList = getMetaList();
+    var newId = getNextMapId();
+    var now = nowISO();
+    var defaultData = { root: { id: 'root', text: '中心テーマ', children: [] } };
+
+    // Get max order among pages in this folder
+    var maxOrder = 0;
+    for (var i = 0; i < metaList.length; i++) {
+        if (metaList[i].type === 'page' && metaList[i].folderId === folderId && (metaList[i].order || 0) >= maxOrder) {
+            maxOrder = (metaList[i].order || 0) + 1;
+        }
+    }
+
+    var meta = { id: newId, name: '無題のマップ', type: 'page', folderId: folderId, order: maxOrder, createdAt: now, updatedAt: now };
+    metaList.push(meta);
+    saveMetaList(metaList);
+    try { localStorage.setItem(getMapDataKey(newId), JSON.stringify(defaultData)); } catch(e) {}
+
+    // Expand the folder
+    var cs = getCollapseState();
+    cs[folderId] = false;
+    setCollapseState(cs);
+
+    switchToMap(newId);
+    showToast('新しいマップを作成しました');
+    setTimeout(function() { startInlineRename(newId); }, 200);
+}
+
+// ---- CRUD: Folders ----
+function createFolder() {
+    var metaList = getMetaList();
+    var newId = getNextMapId();
+    var now = nowISO();
+
+    // Get max order among non-default folders
+    var maxOrder = 0;
+    for (var i = 0; i < metaList.length; i++) {
+        if (metaList[i].type === 'folder' && !metaList[i].isDefault && (metaList[i].order || 0) >= maxOrder) {
+            maxOrder = (metaList[i].order || 0) + 1;
+        }
+    }
+
+    var meta = { id: newId, name: '新しいフォルダ', type: 'folder', order: maxOrder, createdAt: now, updatedAt: now };
+    metaList.push(meta);
+    saveMetaList(metaList);
+    renderMapList();
+    showToast('フォルダを作成しました');
+    setTimeout(function() { startInlineRename(newId); }, 200);
+}
+
+function deleteFolder(folderId) {
+    var metaList = getMetaList();
+    var folderMeta = findMetaById(folderId);
+    if (!folderMeta || folderMeta.isDefault) {
+        showToast('⚠️ このフォルダは削除できません');
+        return;
+    }
+
+    var pagesInFolder = metaList.filter(function(m) { return m.type === 'page' && m.folderId === folderId; });
+
+    if (!confirm('このフォルダを削除しますか？\n中のページは「未分類」に移動されます。')) return;
+
+    // Move children pages to 未分類
+    var defFolderId = getDefaultFolderId(metaList);
+    for (var i = 0; i < metaList.length; i++) {
+        if (metaList[i].type === 'page' && metaList[i].folderId === folderId) {
+            metaList[i].folderId = defFolderId;
+        }
+    }
+
+    // Remove folder from meta
+    var newMeta = metaList.filter(function(m) { return m.id !== folderId; });
+    saveMetaList(newMeta);
+    renderMapList();
+    showToast('🗑 フォルダを削除しました');
+}
+
+function switchToMap(mapId) {
+    if (mapId === currentMapId) return;
+
+    // Save current map
+    saveToLocalStorage();
+
+    // Load new map
+    var data = loadMapData(mapId);
+    if (!data) {
+        showToast('マップデータが見つかりません');
+        return;
+    }
+
+    // Reset state
+    finishEditing();
+    selectedNodeIds.clear();
+    lastSelectedNodeId = null;
+    selectionAnchorId = null;
+    editingNodeId = null;
+    undoHistory = [];
+    undoIndex = -1;
+    clipboard = null;
+    clipboardIsCut = false;
+
+    currentMapId = mapId;
+    mindMapData = data;
+    setLastActiveId(mapId);
+    updateUrlParam(mapId);
+    updatePageTitle();
+
+    saveState();
+    render();
+    resetView();
+    renderMapList();
+    selectNode('root');
+}
+
+function duplicateMap(mapId) {
+    var srcMeta = findMetaById(mapId);
+    if (!srcMeta || srcMeta.type !== 'page') return;
+
+    var srcData = loadMapData(mapId);
+    if (!srcData) return;
+
+    var newId = getNextMapId();
+    var now = nowISO();
+
+    // Get max order among pages in same folder
+    var metaList = getMetaList();
+    var folderId = srcMeta.folderId;
+    var maxOrder = 0;
+    for (var i = 0; i < metaList.length; i++) {
+        if (metaList[i].type === 'page' && metaList[i].folderId === folderId && (metaList[i].order || 0) >= maxOrder) {
+            maxOrder = (metaList[i].order || 0) + 1;
+        }
+    }
+
+    var newMeta = {
+        id: newId,
+        name: srcMeta.name + ' のコピー',
+        type: 'page',
+        folderId: folderId,
+        order: maxOrder,
+        createdAt: now,
+        updatedAt: now
+    };
+
+    metaList.push(newMeta);
+    saveMetaList(metaList);
+    try { localStorage.setItem(getMapDataKey(newId), JSON.stringify(deepClone(srcData))); } catch(e) {}
+
+    renderMapList();
+    showToast('📑 マップを複製しました');
+}
+
+function deleteMap(mapId) {
+    var metaList = getMetaList();
+    var pages = metaList.filter(function(m) { return m.type === 'page'; });
+    if (pages.length <= 1) {
+        showToast('⚠️ 最後のマップは削除できません');
+        return;
+    }
+    if (!confirm('このマップを削除しますか？')) return;
+
+    // Remove from meta
+    var newMeta = metaList.filter(function(m) { return m.id !== mapId; });
+
+    saveMetaList(newMeta);
+    try { localStorage.removeItem(getMapDataKey(mapId)); } catch(e) {}
+
+    if (mapId === currentMapId) {
+        // Switch to first available page
+        var remainingPages = newMeta.filter(function(m) { return m.type === 'page'; });
+        remainingPages.sort(function(a, b) { return (b.updatedAt || '').localeCompare(a.updatedAt || ''); });
+        if (remainingPages.length > 0) {
+            switchToMap(remainingPages[0].id);
+        }
+    } else {
+        renderMapList();
+    }
+    showToast('🗑 マップを削除しました');
+}
+
+function startInlineRename(mapId) {
+    var item = document.querySelector('.map-item[data-map-id="' + mapId + '"]');
+    if (!item) return;
+    var nameEl = item.querySelector('.map-item-name');
+    if (!nameEl) return;
+
+    // Check if it's the default folder (未分類) - don't allow rename
+    var meta = findMetaById(mapId);
+    if (meta && meta.type === 'folder' && meta.isDefault) return;
+
+    // Replace name span with an input element
+    // Use meta name (raw) to avoid including display-only prefixes like \uD83D\uDCC1
+    var currentName = meta ? meta.name : nameEl.textContent;
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'map-item-rename-input';
+    input.value = currentName;
+
+    nameEl.style.display = 'none';
+    nameEl.parentNode.insertBefore(input, nameEl.nextSibling);
+    input.focus();
+    input.select();
+
+    var finished = false;
+    function finish(save) {
+        if (finished) return;
+        finished = true;
+        var defaultName = (meta && meta.type === 'folder') ? '新しいフォルダ' : '無題のマップ';
+        var newName = save ? (input.value.trim() || defaultName) : currentName;
+        nameEl.style.display = '';
+        if (input.parentNode) input.parentNode.removeChild(input);
+
+        if (save) {
+            var metaList = getMetaList();
+            for (var i = 0; i < metaList.length; i++) {
+                if (metaList[i].id === mapId) {
+                    metaList[i].name = newName;
+                    metaList[i].updatedAt = nowISO();
+                    break;
+                }
+            }
+            saveMetaList(metaList);
+            if (mapId === currentMapId) updatePageTitle();
+        }
+        renderMapList();
+    }
+
+    input.addEventListener('keydown', function(e) {
+        e.stopPropagation(); // Prevent global keyboard handler
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (e.isComposing || e.keyCode === 229) return; // 変換中のEnterは無視
+            finish(true);
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            finish(false);
+        }
+    });
+    input.addEventListener('blur', function() {
+        finish(true);
+    });
+}
+
+// Expose for testing/integration
+window.getCurrentCopyText = getCurrentCopyText;
+window.getSelectedNodeIds = function() { return selectedNodeIds; };
+window.getMindMapData = function() { return mindMapData; };
+window.getCurrentMapId = function() { return currentMapId; };
+window.getMetaList = getMetaList;
+window.switchToMap = switchToMap;
+window.createNewMap = createNewMap;
+window.createFolder = createFolder;
+window.createPageInFolder = createPageInFolder;
+window.deleteFolder = deleteFolder;
+window.openRightSidebar = openRightSidebar;
+window.closeRightSidebar = closeRightSidebar;
+window.openLeftSidebar = openLeftSidebar;
+window.closeLeftSidebar = closeLeftSidebar;
+window.startInlineRename = startInlineRename;
+window.getSortMode = getSortMode;
+window.setSortMode = setSortMode;
+window.getCollapseState = getCollapseState;
+window.setCollapseState = setCollapseState;
+window.renderMapList = renderMapList;
+window.getDefaultFolderId = getDefaultFolderId;
+window.ensureDefaultFolder = ensureDefaultFolder;
+window.toggleNodeCollapse = toggleNodeCollapse;
+window.isNodeCollapsed = isNodeCollapsed;
+window.getNodeCollapseState = getNodeCollapseState;
+window.setNodeCollapseState = setNodeCollapseState;
+window.expandAllNodes = expandAllNodes;
+window.getVisibleNodesInOrder = getVisibleNodesInOrder;
+window.isNodeGrayedOut = isNodeGrayedOut;
+window.getNodeGrayoutState = getNodeGrayoutState;
+window.setNodeGrayoutState = setNodeGrayoutState;
+window.toggleNodeGrayout = toggleNodeGrayout;
+window.isDescendantOfGrayedOut = isDescendantOfGrayedOut;
+window.isNodeOrAncestorGrayedOut = isNodeOrAncestorGrayedOut;
+window.isNodeHighlighted = isNodeHighlighted;
+window.getNodeHighlightState = getNodeHighlightState;
+window.setNodeHighlightState = setNodeHighlightState;
+window.toggleNodeHighlight = toggleNodeHighlight;
+
+
+    })();
+    </script>
+</body>
+</html>

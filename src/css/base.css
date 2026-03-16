@@ -1,0 +1,30 @@
+/* ========================================
+   CSS Variables & Reset
+   ======================================== */
+:root {
+    --primary-color: #4a90d9;
+    --primary-hover: #357abd;
+    --bg-color: #f5f7fa;
+    --node-bg: #ffffff;
+    --node-border: #4a90d9;
+    --node-selected: #e3f2fd;
+    --text-color: #333333;
+    --line-color: #999999;
+    --shadow: 0 2px 8px rgba(0,0,0,0.1);
+    --font-family: 'Meiryo UI', 'メイリオ', Meiryo, sans-serif;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    font-family: var(--font-family);
+    background: var(--bg-color);
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
+}
+

@@ -1,0 +1,185 @@
+/* ========================================
+   Canvas Container (Full Screen - No Toolbar)
+   ======================================== */
+.canvas-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    background: var(--bg-color);
+    background-image:
+        radial-gradient(circle, #ddd 1px, transparent 1px);
+    background-size: 20px 20px;
+    transition: left 0.15s ease, right 0.15s ease;
+}
+
+.canvas {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    cursor: default;
+}
+
+.canvas.panning {
+    cursor: grabbing;
+}
+
+.canvas-inner {
+    position: absolute;
+    transform-origin: 0 0;
+}
+
+/* ========================================
+   SVG Lines
+   ======================================== */
+.lines-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 10000px;
+    height: 10000px;
+    overflow: visible;
+    transform: translate(-5000px, -5000px);
+    pointer-events: none;
+}
+
+.connection-line {
+    fill: none;
+    stroke: var(--line-color);
+    stroke-width: 2;
+    stroke-linecap: round;
+    pointer-events: none;
+}
+
+/* ========================================
+   Node Styles
+   ======================================== */
+.node {
+    position: absolute;
+    min-width: 120px;
+    padding: 10px 16px;
+    background: var(--node-bg);
+    border: 2px solid var(--node-border);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    user-select: none;
+    transition: box-shadow 0.2s;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+.node:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.node.selected {
+    background: var(--node-selected);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.3);
+}
+
+.node.root {
+    font-size: 16px;
+    font-weight: bold;
+    border-width: 3px;
+}
+
+.node.editing {
+    cursor: text;
+}
+
+.node.dragging {
+    opacity: 0.4;
+    z-index: 1000;
+}
+
+.node.drag-over-child {
+    box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.5);
+    border-color: #4caf50;
+}
+
+.node.drag-over-before {
+    border-top: 4px solid #2196f3;
+}
+
+.node.drag-over-after {
+    border-bottom: 4px solid #2196f3;
+}
+
+/* Collapse indicator circle – absolute-positioned at junction (right edge of node) */
+.node-collapse-indicator {
+    position: absolute;
+    top: 50%;
+    right: -4px;
+    transform: translate(100%, -50%);
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #37352f;
+    cursor: pointer;
+    z-index: 10;
+    transition: transform 0.12s, opacity 0.12s;
+    pointer-events: auto;
+}
+
+.node-collapse-indicator:hover {
+    transform: translate(100%, -50%) scale(1.25);
+    opacity: 0.75;
+}
+
+/* Clickable hit area at the connection-line junction (right side of node) */
+.node-junction-hitarea {
+    position: absolute;
+    top: 50%;
+    right: -6px;
+    transform: translate(100%, -50%);
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    z-index: 9;
+    border-radius: 50%;
+    pointer-events: auto;
+}
+
+.node-text {
+    outline: none;
+    min-width: 50px;
+    display: block;
+    white-space: pre;
+}
+
+.node-text[contenteditable="true"] {
+    cursor: text;
+    background: rgba(255,255,255,0.8);
+    padding: 2px 4px;
+    margin: -2px -4px;
+    border-radius: 3px;
+}
+
+/* ========================================
+   Drag Ghost
+   ======================================== */
+.drag-ghost {
+    position: fixed;
+    pointer-events: none;
+    z-index: 2000;
+    opacity: 0.8;
+    transform: rotate(2deg);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+
+/* ========================================
+   Lasso Selection Rectangle
+   ======================================== */
+.lasso-rect {
+    position: fixed;
+    border: 2px dashed var(--primary-color);
+    background: rgba(74, 144, 217, 0.08);
+    pointer-events: none;
+    z-index: 900;
+    display: none;
+}
+

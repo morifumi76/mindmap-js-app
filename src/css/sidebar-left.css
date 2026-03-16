@@ -1,0 +1,428 @@
+/* ========================================
+   Left Sidebar (My Maps) – Notion style
+   ======================================== */
+.left-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: #f7f7f5;
+    z-index: 600;
+    display: flex;
+    flex-direction: row;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.left-sidebar.collapsed {
+    transform: translateX(-100%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.left-sidebar.collapsed.peek {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+    box-shadow: 4px 0 16px rgba(0,0,0,0.1);
+}
+
+/* Invisible hover zone on the left edge to trigger peek */
+.left-sidebar-hover-zone {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 8px;
+    height: 100%;
+    z-index: 599;
+}
+
+.left-sidebar-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+    order: 1;
+}
+
+.left-sidebar-resize-handle {
+    width: 4px;
+    cursor: col-resize;
+    background: transparent;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+    transition: background 0.15s;
+    order: 2;
+}
+
+.left-sidebar-resize-handle:hover,
+.left-sidebar-resize-handle.dragging {
+    background: rgba(0,0,0,0.08);
+}
+
+.left-sidebar-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    font-size: 14px;
+    color: #91918e;
+    flex-shrink: 0;
+    transition: background 0.12s;
+}
+
+.left-sidebar-toggle-btn:hover {
+    background: rgba(0,0,0,0.06);
+}
+
+.left-sidebar-header {
+    padding: 12px 12px 0 12px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.left-sidebar-header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.left-sidebar-header-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #91918e;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.left-sidebar-sort-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.left-sidebar-new-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    padding: 4px 8px;
+    margin: 0 0 4px 0;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    font-family: var(--font-family);
+    font-size: 13px;
+    color: #91918e;
+    cursor: pointer;
+    transition: background 0.12s;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.left-sidebar-new-btn:hover {
+    background: rgba(0,0,0,0.03);
+    color: #37352f;
+}
+
+.left-sidebar-separator {
+    border-top: 1px solid rgba(0,0,0,0.06);
+    margin: 2px 0 4px 0;
+}
+
+.left-sidebar-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2px 0;
+    margin-top: 4px;
+}
+
+.map-item {
+    display: flex;
+    align-items: center;
+    height: 28px;
+    padding: 0 8px 0 12px;
+    margin: 1px 4px;
+    cursor: pointer;
+    transition: background 0.08s;
+    gap: 6px;
+    position: relative;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #37352f;
+}
+
+.map-item:hover {
+    background: rgba(0,0,0,0.03);
+}
+
+.map-item.active {
+    background: rgba(0,0,0,0.06);
+}
+
+.map-item-icon {
+    flex-shrink: 0;
+    font-size: 13px;
+    line-height: 1;
+    width: auto;
+    overflow: hidden;
+}
+
+.map-item-icon:empty {
+    width: 0;
+}
+
+.map-item-pin {
+    display: inline;
+    font-size: 11px;
+    line-height: 1;
+}
+
+.map-item-name {
+    flex: 1;
+    font-size: 13px;
+    color: #37352f;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+.map-item-name[contenteditable="true"] {
+    background: #fff;
+    border: 1px solid var(--primary-color);
+    border-radius: 3px;
+    padding: 1px 4px;
+    outline: none;
+    white-space: nowrap;
+    overflow: visible;
+}
+
+.map-item-menu-btn {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: #91918e;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.08s, background 0.08s;
+}
+
+.map-item:hover .map-item-menu-btn,
+.map-item-menu-btn.open {
+    opacity: 1;
+}
+
+.map-item-menu-btn:hover {
+    background: rgba(0,0,0,0.06);
+}
+
+/* Floating toggle when sidebar is collapsed – hidden by default, shown via JS */
+.left-sidebar-float-toggle {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 4px;
+    background: rgba(0,0,0,0.04);
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: #91918e;
+    z-index: 601;
+    transition: background 0.12s, opacity 0.2s;
+}
+
+.left-sidebar-float-toggle:hover {
+    background: rgba(0,0,0,0.08);
+}
+
+.left-sidebar-float-toggle.show {
+    display: flex;
+}
+
+/* Page indentation (inside folder) */
+.map-item.page-item {
+    padding-left: 28px;
+}
+
+.map-item.default-folder {
+    /* 未分類 folder cannot be dragged */
+    cursor: default;
+}
+
+/* Folder expand/collapse toggle */
+.map-item-toggle {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    border: none;
+    border-radius: 3px;
+    background: transparent;
+    cursor: pointer;
+    font-size: 10px;
+    color: #91918e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: background 0.08s;
+}
+
+.map-item-toggle:hover {
+    background: rgba(0,0,0,0.06);
+}
+
+/* Map item inline rename input */
+.map-item-rename-input {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    font-family: var(--font-family);
+    color: #37352f;
+    border: 1px solid var(--primary-color);
+    border-radius: 3px;
+    padding: 1px 4px;
+    outline: none;
+    background: #fff;
+}
+
+/* Sort toggle in My Maps header */
+.left-sidebar-sort-toggle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-right: 4px;
+}
+
+.left-sidebar-sort-label {
+    font-size: 11px;
+    color: #91918e;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.sort-toggle-switch {
+    position: relative;
+    width: 32px;
+    height: 16px;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.sort-toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+
+.sort-toggle-slider {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #d4d4d4;
+    border-radius: 8px;
+    transition: background 0.2s ease;
+}
+
+.sort-toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    left: 2px;
+    top: 2px;
+    background: #ffffff;
+    border-radius: 50%;
+    transition: transform 0.2s ease;
+}
+
+.sort-toggle-switch input:checked + .sort-toggle-slider {
+    background: #37352f;
+}
+
+.sort-toggle-switch input:checked + .sort-toggle-slider::before {
+    transform: translateX(16px);
+}
+
+/* Drag-over indicators for My Maps list items */
+.map-item.drag-over-above {
+    border-top: 2px solid var(--primary-color);
+}
+
+.map-item.drag-over-below {
+    border-bottom: 2px solid var(--primary-color);
+}
+
+.map-item.drag-over-into {
+    background: rgba(74, 144, 217, 0.12);
+}
+
+.map-item.map-dragging {
+    opacity: 0.4;
+}
+
+/* Context menu – Notion style */
+.ctx-menu {
+    position: fixed;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 6px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+    z-index: 5000;
+    min-width: 160px;
+    padding: 4px 0;
+    display: none;
+}
+
+.ctx-menu.show {
+    display: block;
+}
+
+.ctx-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px;
+    height: 28px;
+    font-size: 13px;
+    font-family: var(--font-family);
+    color: #37352f;
+    cursor: pointer;
+    transition: background 0.08s;
+    white-space: nowrap;
+}
+
+.ctx-menu-item:hover {
+    background: rgba(0,0,0,0.03);
+}
+
+.ctx-menu-item.danger {
+    color: #e53935;
+}
+
+.ctx-menu-item.danger:hover {
+    background: rgba(229,57,53,0.04);
+}
+
