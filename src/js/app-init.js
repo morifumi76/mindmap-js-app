@@ -16,7 +16,7 @@
         el.textContent = text;
         el.classList.add('show');
         clearTimeout(saveIndicatorHideTimer);
-        if (text === '✅ 保存済み') {
+        if (text === '保存済み') {
             saveIndicatorHideTimer = setTimeout(function() {
                 el.classList.remove('show');
             }, 2000);
@@ -47,8 +47,15 @@
             var data;
             try { data = JSON.parse(localStorage.getItem('mindmap-data-' + localId)); } catch(e) { return; }
             if (!data) return;
+            // グレーアウト・ハイライト状態をデータに含めてSupabaseへ保存
+            try {
+                var gray = localStorage.getItem('mindmap-node-grayout-' + localId);
+                var hl   = localStorage.getItem('mindmap-node-highlight-' + localId);
+                data._grayout   = gray  ? JSON.parse(gray)  : {};
+                data._highlight = hl    ? JSON.parse(hl)    : {};
+            } catch(e) {}
             window._supa.saveMap(localId, meta.name, data, meta.folderId).then(function() {
-                showSaveIndicator('✅ 保存済み');
+                showSaveIndicator('保存済み');
             }).catch(function() {
                 showSaveIndicator('⚠️ 保存失敗（ローカルに保存済み）');
                 clearTimeout(saveIndicatorHideTimer);

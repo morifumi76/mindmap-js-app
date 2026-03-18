@@ -995,42 +995,52 @@ html, body {
     box-shadow: 0 0 0 3px rgba(242, 201, 76, 0.4) !important;
 }
 
-/* Floating bottom-right button area */
+/* Floating top-center button area (grayout / highlight dots) */
 .canvas-float-btns {
     position: fixed;
-    bottom: 16px;
-    right: 16px;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
-    gap: 8px;
+    gap: 10px;
     z-index: 601;
-    transition: right 0.2s ease;
 }
 
 .canvas-float-btns .float-action-btn {
-    height: 32px;
-    padding: 0 14px;
     border: none;
-    border-radius: 6px;
-    background: #37352f;
-    color: #ffffff;
-    font-family: var(--font-family);
-    font-size: 13px;
-    font-weight: 500;
+    background: transparent;
     cursor: pointer;
+    padding: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
-    white-space: nowrap;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
-    transition: opacity 0.12s;
+    transition: transform 0.12s, opacity 0.12s;
 }
 
 .canvas-float-btns .float-action-btn:hover {
-    opacity: 0.85;
+    opacity: 0.75;
 }
 
 .canvas-float-btns .float-action-btn:active {
-    transform: scale(0.97);
+    transform: scale(0.9);
+}
+
+/* ドットの本体（::after で丸を描画） */
+.canvas-float-btns .float-dot-btn::after {
+    content: '';
+    display: block;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+
+.canvas-float-btns .float-dot-gray::after {
+    background: #a0a0a0;
+}
+
+.canvas-float-btns .float-dot-yellow::after {
+    background: #F2C94C;
 }
 
 /* ========================================
@@ -1566,10 +1576,10 @@ html, body {
         </div>
     </div>
 
-    <!-- Floating action buttons (bottom-right of canvas) -->
+    <!-- Floating action buttons (top-center of canvas) -->
     <div class="canvas-float-btns" id="canvasFloatBtns">
-        <button class="float-action-btn" id="grayoutFloatBtn" title="グレーアウト (Option+Cmd+G)">グレーアウト</button>
-        <button class="float-action-btn" id="highlightFloatBtn" title="ハイライト (Option+Cmd+Y)">ハイライト</button>
+        <button class="float-action-btn float-dot-btn float-dot-gray" id="grayoutFloatBtn" title="グレーアウト (Option+Cmd+G)"></button>
+        <button class="float-action-btn float-dot-btn float-dot-yellow" id="highlightFloatBtn" title="ハイライト (Option+Cmd+Y)"></button>
     </div>
 
     <!-- Lasso Selection Rectangle -->
@@ -14882,7 +14892,7 @@ ${suffix}`;
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (!key) continue;
-      if (key === "mindmap-meta" || key === "mindmap-id-counter" || key === "mindmap-last-active-id" || key.startsWith("mindmap-data-") || key.startsWith("mindmap-supabase-map-") || key.startsWith("mindmap-supabase-folder-")) {
+      if (key === "mindmap-meta" || key === "mindmap-id-counter" || key === "mindmap-last-active-id" || key.startsWith("mindmap-data-") || key.startsWith("mindmap-node-grayout-") || key.startsWith("mindmap-node-highlight-") || key.startsWith("mindmap-supabase-map-") || key.startsWith("mindmap-supabase-folder-")) {
         toRemove.push(key);
       }
     }
@@ -14951,6 +14961,11 @@ ${suffix}`;
         shareId: m.share_id
       });
       if (m.data) {
+        try {
+          if (m.data._grayout) localStorage.setItem("mindmap-node-grayout-" + localId, JSON.stringify(m.data._grayout));
+          if (m.data._highlight) localStorage.setItem("mindmap-node-highlight-" + localId, JSON.stringify(m.data._highlight));
+        } catch (e) {
+        }
         try {
           localStorage.setItem("mindmap-data-" + localId, JSON.stringify(m.data));
         } catch (e) {
@@ -17043,6 +17058,21 @@ function handleKeyDown(e) {
 
     var currentId = getSelectedNodeId();
 
+    // Mac では Option+G/Y を押すと e.key が特殊文字になるため、
+    // e.code で物理キーを判定してグレーアウト・ハイライトを処理する
+    if (e.altKey && cmdKey) {
+        if (e.code === 'KeyG') {
+            e.preventDefault();
+            if (currentId) { toggleNodeGrayout(currentId); saveState(); }
+            return;
+        }
+        if (e.code === 'KeyY') {
+            e.preventDefault();
+            if (currentId) { toggleNodeHighlight(currentId); saveState(); }
+            return;
+        }
+    }
+
     switch (e.key) {
         case 'Enter':
             e.preventDefault();
@@ -18799,7 +18829,7 @@ window.toggleNodeHighlight = toggleNodeHighlight;
         el.textContent = text;
         el.classList.add('show');
         clearTimeout(saveIndicatorHideTimer);
-        if (text === '✅ 保存済み') {
+        if (text === '保存済み') {
             saveIndicatorHideTimer = setTimeout(function() {
                 el.classList.remove('show');
             }, 2000);
@@ -18830,8 +18860,15 @@ window.toggleNodeHighlight = toggleNodeHighlight;
             var data;
             try { data = JSON.parse(localStorage.getItem('mindmap-data-' + localId)); } catch(e) { return; }
             if (!data) return;
+            // グレーアウト・ハイライト状態をデータに含めてSupabaseへ保存
+            try {
+                var gray = localStorage.getItem('mindmap-node-grayout-' + localId);
+                var hl   = localStorage.getItem('mindmap-node-highlight-' + localId);
+                data._grayout   = gray  ? JSON.parse(gray)  : {};
+                data._highlight = hl    ? JSON.parse(hl)    : {};
+            } catch(e) {}
             window._supa.saveMap(localId, meta.name, data, meta.folderId).then(function() {
-                showSaveIndicator('✅ 保存済み');
+                showSaveIndicator('保存済み');
             }).catch(function() {
                 showSaveIndicator('⚠️ 保存失敗（ローカルに保存済み）');
                 clearTimeout(saveIndicatorHideTimer);

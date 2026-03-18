@@ -63,6 +63,8 @@ function clearMindmapData() {
             key === 'mindmap-id-counter' ||
             key === 'mindmap-last-active-id' ||
             key.startsWith('mindmap-data-') ||
+            key.startsWith('mindmap-node-grayout-') ||
+            key.startsWith('mindmap-node-highlight-') ||
             key.startsWith('mindmap-supabase-map-') ||
             key.startsWith('mindmap-supabase-folder-')
         ) {
@@ -148,6 +150,11 @@ async function loadUserData() {
             shareId: m.share_id
         });
         if (m.data) {
+            // グレーアウト・ハイライト状態をlocalStorageに復元してからデータ本体を保存
+            try {
+                if (m.data._grayout)   localStorage.setItem('mindmap-node-grayout-'   + localId, JSON.stringify(m.data._grayout));
+                if (m.data._highlight) localStorage.setItem('mindmap-node-highlight-' + localId, JSON.stringify(m.data._highlight));
+            } catch(e) {}
             try { localStorage.setItem('mindmap-data-' + localId, JSON.stringify(m.data)); } catch(e) {}
         }
         if (firstPageLocalId === null) firstPageLocalId = localId;

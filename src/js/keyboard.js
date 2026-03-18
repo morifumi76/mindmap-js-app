@@ -72,6 +72,21 @@ function handleKeyDown(e) {
 
     var currentId = getSelectedNodeId();
 
+    // Mac では Option+G/Y を押すと e.key が特殊文字になるため、
+    // e.code で物理キーを判定してグレーアウト・ハイライトを処理する
+    if (e.altKey && cmdKey) {
+        if (e.code === 'KeyG') {
+            e.preventDefault();
+            if (currentId) { toggleNodeGrayout(currentId); saveState(); }
+            return;
+        }
+        if (e.code === 'KeyY') {
+            e.preventDefault();
+            if (currentId) { toggleNodeHighlight(currentId); saveState(); }
+            return;
+        }
+    }
+
     switch (e.key) {
         case 'Enter':
             e.preventDefault();

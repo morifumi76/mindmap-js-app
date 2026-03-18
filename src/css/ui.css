@@ -62,40 +62,50 @@
     box-shadow: 0 0 0 3px rgba(242, 201, 76, 0.4) !important;
 }
 
-/* Floating bottom-right button area */
+/* Floating top-center button area (grayout / highlight dots) */
 .canvas-float-btns {
     position: fixed;
-    bottom: 16px;
-    right: 16px;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
-    gap: 8px;
+    gap: 10px;
     z-index: 601;
-    transition: right 0.2s ease;
 }
 
 .canvas-float-btns .float-action-btn {
-    height: 32px;
-    padding: 0 14px;
     border: none;
-    border-radius: 6px;
-    background: #37352f;
-    color: #ffffff;
-    font-family: var(--font-family);
-    font-size: 13px;
-    font-weight: 500;
+    background: transparent;
     cursor: pointer;
+    padding: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
-    white-space: nowrap;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
-    transition: opacity 0.12s;
+    transition: transform 0.12s, opacity 0.12s;
 }
 
 .canvas-float-btns .float-action-btn:hover {
-    opacity: 0.85;
+    opacity: 0.75;
 }
 
 .canvas-float-btns .float-action-btn:active {
-    transform: scale(0.97);
+    transform: scale(0.9);
+}
+
+/* ドットの本体（::after で丸を描画） */
+.canvas-float-btns .float-dot-btn::after {
+    content: '';
+    display: block;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+
+.canvas-float-btns .float-dot-gray::after {
+    background: #a0a0a0;
+}
+
+.canvas-float-btns .float-dot-yellow::after {
+    background: #F2C94C;
 }
