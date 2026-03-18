@@ -1,0 +1,7 @@
+{
+  "outputDirectory": "dist",
+  "buildCommand": "npm run build",
+  "rewrites": [
+    { "source": "/share/:path*", "destination": "/index.html" }
+  ]
+}
