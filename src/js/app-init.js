@@ -105,6 +105,7 @@
     // ---- Login form ----
     function initLoginForm() {
         var form = document.getElementById('loginForm');
+        console.log('[DEBUG] initLoginForm called, form:', form);
         if (!form) return;
         form.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -112,10 +113,15 @@
             var password = document.getElementById('loginPassword').value;
             var errorEl  = document.getElementById('loginError');
             var btn      = document.getElementById('loginBtn');
+            console.log('[DEBUG] login attempt, email:', email);
+            console.log('[DEBUG] window._supa exists:', !!window._supa);
             errorEl.textContent = '';
             btn.disabled    = true;
             btn.textContent = 'ログイン中...';
-            window._supa.login(email, password).catch(function() {
+            window._supa.login(email, password).then(function(user) {
+                console.log('[DEBUG] login success, user:', user);
+            }).catch(function(err) {
+                console.error('[DEBUG] login error:', err);
                 errorEl.textContent = 'メールアドレスまたはパスワードが正しくありません';
                 btn.disabled    = false;
                 btn.textContent = 'ログイン';
@@ -370,8 +376,11 @@
 
     // ---- Main DOMContentLoaded handler ----
     document.addEventListener('DOMContentLoaded', function() {
+        console.log('[DEBUG] DOMContentLoaded fired');
+        console.log('[DEBUG] window._supa exists:', !!window._supa);
+
         if (!window._supa) {
-            // Supabase bundle failed to load — run normally
+            console.warn('[DEBUG] Supabase bundle not loaded — running without auth');
             init();
             return;
         }
@@ -383,24 +392,30 @@
 
         // Check for shared URL first
         var shareId = getShareIdFromUrl();
+        console.log('[DEBUG] shareId from URL:', shareId);
         if (shareId) {
             handleSharedAccess(shareId);
             return;
         }
 
         // Check auth state
+        console.log('[DEBUG] checking current user...');
         window._supa.getCurrentUser().then(function(user) {
+            console.log('[DEBUG] getCurrentUser result:', user);
             if (user) {
                 handleLoggedIn();
             } else {
+                console.log('[DEBUG] no user, showing login screen');
                 showLoginScreen();
             }
-        }).catch(function() {
+        }).catch(function(err) {
+            console.error('[DEBUG] getCurrentUser error:', err);
             showLoginScreen();
         });
 
         // Watch for auth changes (login/logout)
         window._supa.onAuthStateChange(function(user) {
+            console.log('[DEBUG] onAuthStateChange fired, user:', user);
             if (user) {
                 hideLoginScreen();
                 handleLoggedIn();
