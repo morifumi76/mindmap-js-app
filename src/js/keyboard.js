@@ -2,6 +2,48 @@
 // Keyboard Handler
 // ========================================
 
+// 選択中の全ノードにグレーアウトを適用（ボタンと同じ複数選択対応ロジック）
+function applyGrayoutToSelection() {
+    var nodes = getSelectedNodes();
+    if (nodes.length === 0) return;
+    var allOn = nodes.every(function(node) { return isNodeGrayedOut(node.id); });
+    var grayState = getNodeGrayoutState();
+    var hlState   = getNodeHighlightState();
+    nodes.forEach(function(node) {
+        if (allOn) {
+            delete grayState[node.id];
+        } else {
+            delete hlState[node.id];
+            grayState[node.id] = true;
+        }
+    });
+    setNodeGrayoutState(grayState);
+    setNodeHighlightState(hlState);
+    saveState();
+    showToast(allOn ? 'グレーアウトを解除しました' : 'グレーアウトしました');
+}
+
+// 選択中の全ノードにハイライトを適用（ボタンと同じ複数選択対応ロジック）
+function applyHighlightToSelection() {
+    var nodes = getSelectedNodes();
+    if (nodes.length === 0) return;
+    var allOn = nodes.every(function(node) { return isNodeHighlighted(node.id); });
+    var hlState   = getNodeHighlightState();
+    var grayState = getNodeGrayoutState();
+    nodes.forEach(function(node) {
+        if (allOn) {
+            delete hlState[node.id];
+        } else {
+            delete grayState[node.id];
+            hlState[node.id] = true;
+        }
+    });
+    setNodeHighlightState(hlState);
+    setNodeGrayoutState(grayState);
+    saveState();
+    showToast(allOn ? 'ハイライトを解除しました' : 'ハイライトしました');
+}
+
 function handleKeyDown(e) {
     // Read-only mode: only allow zoom/pan shortcuts, block all editing
     if (window._isReadOnly) {
@@ -77,12 +119,12 @@ function handleKeyDown(e) {
     if (e.altKey && cmdKey) {
         if (e.code === 'KeyG') {
             e.preventDefault();
-            if (currentId) { toggleNodeGrayout(currentId); saveState(); }
+            applyGrayoutToSelection();
             return;
         }
         if (e.code === 'KeyY') {
             e.preventDefault();
-            if (currentId) { toggleNodeHighlight(currentId); saveState(); }
+            applyHighlightToSelection();
             return;
         }
     }
@@ -136,7 +178,7 @@ function handleKeyDown(e) {
             if (e.altKey && cmdKey) {
                 // Option+Cmd+Y (Mac) or Alt+Ctrl+Y (Windows) – toggle highlight
                 e.preventDefault();
-                if (currentId) { toggleNodeHighlight(currentId); saveState(); }
+                applyHighlightToSelection();
             } else if (cmdKey) {
                 e.preventDefault(); redo();
             }
@@ -163,7 +205,7 @@ function handleKeyDown(e) {
             // Option+Cmd+G (Mac) or Alt+Ctrl+G (Windows) – toggle grayout
             if (e.altKey && cmdKey) {
                 e.preventDefault();
-                if (currentId) { toggleNodeGrayout(currentId); saveState(); }
+                applyGrayoutToSelection();
             }
             break;
         case 'Escape':
