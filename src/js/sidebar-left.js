@@ -7,8 +7,11 @@ var LEFT_SIDEBAR_DEFAULT = 240;
 var LEFT_SIDEBAR_KEY = 'mindmap_left_sidebar_width';
 var leftSidebarIsOpen = false;
 var leftSidebarPeekTimeout = null;
+var leftSidebarInitialized = false;
 
 function initLeftSidebar() {
+    if (leftSidebarInitialized) return;
+    leftSidebarInitialized = true;
     var sidebar = document.getElementById('leftSidebar');
     var handle = document.getElementById('leftSidebarResizeHandle');
     var hoverZone = document.getElementById('leftSidebarHoverZone');

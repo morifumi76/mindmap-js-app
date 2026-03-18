@@ -6,8 +6,11 @@ var SIDEBAR_OPEN_MIN = 200;
 var SIDEBAR_DEFAULT = 260;
 var SIDEBAR_KEY = 'mindmap_sidebar_width';
 var sidebarIsOpen = false;
+var sidebarInitialized = false;
 
 function initSidebar() {
+    if (sidebarInitialized) return;
+    sidebarInitialized = true;
     var sidebar = document.getElementById('sidebar');
     var handle = document.getElementById('sidebarResizeHandle');
     var floatToggle = document.getElementById('sidebarFloatToggle');
