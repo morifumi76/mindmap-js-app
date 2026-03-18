@@ -80,6 +80,7 @@
         window._isReadOnly = true;
         var banner = document.getElementById('readonlyBanner');
         if (banner) banner.classList.add('show');
+        document.body.classList.add('readonly-mode');
         // Hide left sidebar completely
         ['leftSidebar', 'leftSidebarHoverZone', 'leftSidebarFloatToggle'].forEach(function(id) {
             var el = document.getElementById(id);

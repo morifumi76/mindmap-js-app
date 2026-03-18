@@ -797,9 +797,8 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 100px;
-    min-width: 100px;
-    max-width: 100px;
+    flex: 1;
+    min-width: 0;
     height: 32px;
     border: none;
     border-radius: 6px;
@@ -809,10 +808,10 @@ html, body {
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
-    flex-grow: 0;
-    flex-shrink: 0;
     transition: opacity 0.12s;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .sidebar-btn-copy:hover,
@@ -1424,17 +1423,28 @@ html, body {
     top: 0;
     left: 0;
     right: 0;
+    height: 32px;
     background: #37352f;
     color: #ffffff;
     font-family: 'Meiryo UI', Meiryo, sans-serif;
     font-size: 13px;
-    text-align: center;
-    padding: 6px 0;
+    align-items: center;
+    justify-content: center;
     z-index: 2000;
 }
 
 #readonlyBanner.show {
-    display: block;
+    display: flex;
+}
+
+/* 閲覧専用モード時：キャンバスと右サイドバーをバナーの高さ分下にずらす */
+body.readonly-mode .canvas-container {
+    top: 32px;
+}
+
+body.readonly-mode .sidebar {
+    top: 32px;
+    height: calc(100% - 32px);
 }
 
 /* ========================================
@@ -18941,6 +18951,7 @@ window.toggleNodeHighlight = toggleNodeHighlight;
         window._isReadOnly = true;
         var banner = document.getElementById('readonlyBanner');
         if (banner) banner.classList.add('show');
+        document.body.classList.add('readonly-mode');
         // Hide left sidebar completely
         ['leftSidebar', 'leftSidebarHoverZone', 'leftSidebarFloatToggle'].forEach(function(id) {
             var el = document.getElementById(id);

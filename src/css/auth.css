@@ -375,17 +375,28 @@
     top: 0;
     left: 0;
     right: 0;
+    height: 32px;
     background: #37352f;
     color: #ffffff;
     font-family: 'Meiryo UI', Meiryo, sans-serif;
     font-size: 13px;
-    text-align: center;
-    padding: 6px 0;
+    align-items: center;
+    justify-content: center;
     z-index: 2000;
 }
 
 #readonlyBanner.show {
-    display: block;
+    display: flex;
+}
+
+/* 閲覧専用モード時：キャンバスと右サイドバーをバナーの高さ分下にずらす */
+body.readonly-mode .canvas-container {
+    top: 32px;
+}
+
+body.readonly-mode .sidebar {
+    top: 32px;
+    height: calc(100% - 32px);
 }
 
 /* ========================================
