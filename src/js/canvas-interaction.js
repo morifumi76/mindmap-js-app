@@ -143,7 +143,7 @@ function initCanvasInteraction() {
             var center = { x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 };
             var scale = dist / lastTouchDist;
             var oldZoom = viewState.zoom;
-            var newZoom = Math.max(0.2, Math.min(3, oldZoom * scale));
+            var newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, oldZoom * scale));
             var actualScale = newZoom / oldZoom;
             viewState.panX = center.x - actualScale * (center.x - viewState.panX);
             viewState.panY = center.y - actualScale * (center.y - viewState.panY);
@@ -153,18 +153,69 @@ function initCanvasInteraction() {
             lastTouchDist = dist;
             lastTouchCenter = center;
             updateView();
+            updateZoomDisplay();
         }
     }, { passive: false });
 }
 
+var ZOOM_MIN = 0.1;
+var ZOOM_MAX = 2.0;
+var ZOOM_STEP = 0.05;
+
 function applyZoom(mouseX, mouseY, zoomDelta) {
     var oldZoom = viewState.zoom;
-    var newZoom = Math.max(0.2, Math.min(3, oldZoom + zoomDelta));
+    var newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, oldZoom + zoomDelta));
     var scale = newZoom / oldZoom;
     viewState.panX = mouseX - scale * (mouseX - viewState.panX);
     viewState.panY = mouseY - scale * (mouseY - viewState.panY);
     viewState.zoom = newZoom;
     updateView();
+    updateZoomDisplay();
+}
+
+function zoomToCenter(newZoom) {
+    var container = document.getElementById('canvasContainer');
+    var rect = container.getBoundingClientRect();
+    var cx = rect.width / 2;
+    var cy = rect.height / 2;
+    var oldZoom = viewState.zoom;
+    newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, newZoom));
+    var scale = newZoom / oldZoom;
+    viewState.panX = cx - scale * (cx - viewState.panX);
+    viewState.panY = cy - scale * (cy - viewState.panY);
+    viewState.zoom = newZoom;
+    updateView();
+    updateZoomDisplay();
+}
+
+function updateZoomDisplay() {
+    var display = document.getElementById('zoomDisplay');
+    var outBtn = document.getElementById('zoomOutBtn');
+    var inBtn = document.getElementById('zoomInBtn');
+    if (!display) return;
+    display.textContent = Math.round(viewState.zoom * 100) + '%';
+    if (outBtn) outBtn.disabled = viewState.zoom <= ZOOM_MIN;
+    if (inBtn) inBtn.disabled = viewState.zoom >= ZOOM_MAX;
+}
+
+function initZoomControl() {
+    var outBtn = document.getElementById('zoomOutBtn');
+    var inBtn = document.getElementById('zoomInBtn');
+    if (outBtn) {
+        outBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var newZoom = Math.round((viewState.zoom - ZOOM_STEP) * 100) / 100;
+            zoomToCenter(newZoom);
+        });
+    }
+    if (inBtn) {
+        inBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var newZoom = Math.round((viewState.zoom + ZOOM_STEP) * 100) / 100;
+            zoomToCenter(newZoom);
+        });
+    }
+    updateZoomDisplay();
 }
 
 // ========================================

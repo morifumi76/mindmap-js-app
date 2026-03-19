@@ -251,6 +251,7 @@ function renderLines(node, svg, positions) {
 function updateView() {
     var inner = document.getElementById('canvasInner');
     inner.style.transform = 'translate(' + viewState.panX + 'px, ' + viewState.panY + 'px) scale(' + viewState.zoom + ')';
+    if (typeof updateZoomDisplay === 'function') updateZoomDisplay();
 }
 
 function resetView() {

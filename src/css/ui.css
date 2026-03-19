@@ -109,3 +109,49 @@
 .canvas-float-btns .float-dot-yellow::after {
     background: #F2C94C;
 }
+
+/* Zoom control bar */
+.zoom-control {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+    overflow: hidden;
+}
+
+.zoom-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 400;
+    color: #37352f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.12s;
+    flex-shrink: 0;
+}
+
+.zoom-btn:hover {
+    background: #f0f0ee;
+}
+
+.zoom-btn:disabled {
+    color: #c0c0c0;
+    cursor: default;
+    pointer-events: none;
+}
+
+.zoom-display {
+    font-size: 12px;
+    font-family: 'Meiryo UI', Meiryo, sans-serif;
+    color: #37352f;
+    min-width: 38px;
+    text-align: center;
+    user-select: none;
+}

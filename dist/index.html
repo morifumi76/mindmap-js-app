@@ -1046,6 +1046,52 @@ html, body {
     background: #F2C94C;
 }
 
+/* Zoom control bar */
+.zoom-control {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+    overflow: hidden;
+}
+
+.zoom-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 400;
+    color: #37352f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.12s;
+    flex-shrink: 0;
+}
+
+.zoom-btn:hover {
+    background: #f0f0ee;
+}
+
+.zoom-btn:disabled {
+    color: #c0c0c0;
+    cursor: default;
+    pointer-events: none;
+}
+
+.zoom-display {
+    font-size: 12px;
+    font-family: 'Meiryo UI', Meiryo, sans-serif;
+    color: #37352f;
+    min-width: 38px;
+    text-align: center;
+    user-select: none;
+}
+
 /* ========================================
    Auth: Login Screen
    ======================================== */
@@ -1601,6 +1647,11 @@ body.readonly-mode .sidebar-float-toggle {
 
     <!-- Floating action buttons (top-center of canvas) -->
     <div class="canvas-float-btns" id="canvasFloatBtns">
+        <div class="zoom-control" id="zoomControl">
+            <button class="zoom-btn" id="zoomOutBtn" title="縮小">−</button>
+            <span class="zoom-display" id="zoomDisplay">100%</span>
+            <button class="zoom-btn" id="zoomInBtn" title="拡大">+</button>
+        </div>
         <button class="float-action-btn float-dot-btn float-dot-gray" id="grayoutFloatBtn" title="グレーアウト (Option+Cmd+G)"></button>
         <button class="float-action-btn float-dot-btn float-dot-yellow" id="highlightFloatBtn" title="ハイライト (Option+Cmd+Y)"></button>
     </div>
@@ -16996,6 +17047,7 @@ function renderLines(node, svg, positions) {
 function updateView() {
     var inner = document.getElementById('canvasInner');
     inner.style.transform = 'translate(' + viewState.panX + 'px, ' + viewState.panY + 'px) scale(' + viewState.zoom + ')';
+    if (typeof updateZoomDisplay === 'function') updateZoomDisplay();
 }
 
 function resetView() {
@@ -17371,7 +17423,7 @@ function initCanvasInteraction() {
             var center = { x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 };
             var scale = dist / lastTouchDist;
             var oldZoom = viewState.zoom;
-            var newZoom = Math.max(0.2, Math.min(3, oldZoom * scale));
+            var newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, oldZoom * scale));
             var actualScale = newZoom / oldZoom;
             viewState.panX = center.x - actualScale * (center.x - viewState.panX);
             viewState.panY = center.y - actualScale * (center.y - viewState.panY);
@@ -17381,18 +17433,69 @@ function initCanvasInteraction() {
             lastTouchDist = dist;
             lastTouchCenter = center;
             updateView();
+            updateZoomDisplay();
         }
     }, { passive: false });
 }
 
+var ZOOM_MIN = 0.1;
+var ZOOM_MAX = 2.0;
+var ZOOM_STEP = 0.05;
+
 function applyZoom(mouseX, mouseY, zoomDelta) {
     var oldZoom = viewState.zoom;
-    var newZoom = Math.max(0.2, Math.min(3, oldZoom + zoomDelta));
+    var newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, oldZoom + zoomDelta));
     var scale = newZoom / oldZoom;
     viewState.panX = mouseX - scale * (mouseX - viewState.panX);
     viewState.panY = mouseY - scale * (mouseY - viewState.panY);
     viewState.zoom = newZoom;
     updateView();
+    updateZoomDisplay();
+}
+
+function zoomToCenter(newZoom) {
+    var container = document.getElementById('canvasContainer');
+    var rect = container.getBoundingClientRect();
+    var cx = rect.width / 2;
+    var cy = rect.height / 2;
+    var oldZoom = viewState.zoom;
+    newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, newZoom));
+    var scale = newZoom / oldZoom;
+    viewState.panX = cx - scale * (cx - viewState.panX);
+    viewState.panY = cy - scale * (cy - viewState.panY);
+    viewState.zoom = newZoom;
+    updateView();
+    updateZoomDisplay();
+}
+
+function updateZoomDisplay() {
+    var display = document.getElementById('zoomDisplay');
+    var outBtn = document.getElementById('zoomOutBtn');
+    var inBtn = document.getElementById('zoomInBtn');
+    if (!display) return;
+    display.textContent = Math.round(viewState.zoom * 100) + '%';
+    if (outBtn) outBtn.disabled = viewState.zoom <= ZOOM_MIN;
+    if (inBtn) inBtn.disabled = viewState.zoom >= ZOOM_MAX;
+}
+
+function initZoomControl() {
+    var outBtn = document.getElementById('zoomOutBtn');
+    var inBtn = document.getElementById('zoomInBtn');
+    if (outBtn) {
+        outBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var newZoom = Math.round((viewState.zoom - ZOOM_STEP) * 100) / 100;
+            zoomToCenter(newZoom);
+        });
+    }
+    if (inBtn) {
+        inBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var newZoom = Math.round((viewState.zoom + ZOOM_STEP) * 100) / 100;
+            zoomToCenter(newZoom);
+        });
+    }
+    updateZoomDisplay();
 }
 
 // ========================================
@@ -17462,6 +17565,7 @@ function init() {
     saveState();
     document.addEventListener('keydown', handleKeyDown);
     initCanvasInteraction();
+    initZoomControl();
     document.getElementById('copyBtn').addEventListener('click', copyToClipboard);
     document.getElementById('expandAllBtn').addEventListener('click', expandAllNodes);
 

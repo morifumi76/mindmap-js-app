@@ -47,6 +47,7 @@ function init() {
     saveState();
     document.addEventListener('keydown', handleKeyDown);
     initCanvasInteraction();
+    initZoomControl();
     document.getElementById('copyBtn').addEventListener('click', copyToClipboard);
     document.getElementById('expandAllBtn').addEventListener('click', expandAllNodes);
 
