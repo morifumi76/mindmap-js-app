@@ -731,7 +731,8 @@ html, body {
 .sidebar-toggle-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
+    gap: 12px;
 }
 
 .sidebar-toggle-label {
@@ -788,17 +789,16 @@ html, body {
 .sidebar-button-area {
     padding: 0 16px 12px 16px;
     display: flex;
-    justify-content: center;
-    gap: 8px;
+    justify-content: flex-end;
 }
 
-.sidebar-btn-copy,
-.sidebar-btn-expand-all {
+.sidebar-btn-copy {
     display: flex;
     align-items: center;
     justify-content: center;
-    flex: 1;
-    min-width: 0;
+    width: 100px;
+    min-width: 100px;
+    max-width: 100px;
     height: 32px;
     border: none;
     border-radius: 6px;
@@ -810,17 +810,13 @@ html, body {
     cursor: pointer;
     transition: opacity 0.12s;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
-.sidebar-btn-copy:hover,
-.sidebar-btn-expand-all:hover {
+.sidebar-btn-copy:hover {
     opacity: 0.85;
 }
 
-.sidebar-btn-copy:active,
-.sidebar-btn-expand-all:active {
+.sidebar-btn-copy:active {
     transform: scale(0.97);
 }
 
@@ -1090,6 +1086,43 @@ html, body {
     min-width: 38px;
     text-align: center;
     user-select: none;
+}
+
+/* Expand/Collapse all nodes control (left of zoom) */
+.expand-collapse-control {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+    overflow: hidden;
+    margin-right: 16px;
+}
+
+.expand-collapse-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 14px;
+    color: #37352f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.12s;
+    flex-shrink: 0;
+    user-select: none;
+}
+
+.expand-collapse-btn:hover {
+    background: #f0f0ee;
+    opacity: 0.6;
+}
+
+.expand-collapse-btn + .expand-collapse-btn {
+    border-left: 1px solid rgba(0,0,0,0.06);
 }
 
 /* ========================================
@@ -1578,6 +1611,7 @@ body.readonly-mode .sidebar-float-toggle {
     <div class="ctx-menu" id="ctxMenuFolder">
         <div class="ctx-menu-item" data-action="folder-rename">✏️ 名前変更</div>
         <div class="ctx-menu-item" data-action="folder-add-page">📄 ページを追加</div>
+        <div class="ctx-menu-item" data-action="folder-add-subfolder">📁 フォルダを追加</div>
         <div class="ctx-menu-item danger" data-action="folder-delete">🗑 削除</div>
     </div>
 
@@ -1630,7 +1664,6 @@ body.readonly-mode .sidebar-float-toggle {
                 </div>
                 <div class="sidebar-button-area">
                     <button class="sidebar-btn-copy" id="copyBtn" title="クリップボードにコピー">コピー</button>
-                    <button class="sidebar-btn-expand-all" id="expandAllBtn" title="すべてのノードを展開">すべて開く</button>
                 </div>
             </div>
             <!-- Hidden selects for backward compatibility -->
@@ -1647,6 +1680,10 @@ body.readonly-mode .sidebar-float-toggle {
 
     <!-- Floating action buttons (top-center of canvas) -->
     <div class="canvas-float-btns" id="canvasFloatBtns">
+        <div class="expand-collapse-control" id="expandCollapseControl">
+            <button class="expand-collapse-btn" id="collapseAllBtn" title="すべて閉じる">«</button>
+            <button class="expand-collapse-btn" id="expandAllBtn" title="すべて開く">»</button>
+        </div>
         <div class="zoom-control" id="zoomControl">
             <button class="zoom-btn" id="zoomOutBtn" title="縮小">−</button>
             <span class="zoom-display" id="zoomDisplay">100%</span>
@@ -15383,6 +15420,26 @@ function expandAllNodes() {
     showToast('すべてのノードを展開しました');
 }
 
+function collapseAllNodes() {
+    var state = {};
+    function collectCollapsible(node) {
+        if (node.id !== 'root' && node.children && node.children.length > 0) {
+            state[node.id] = true;
+        }
+        if (node.children) {
+            for (var i = 0; i < node.children.length; i++) {
+                collectCollapsible(node.children[i]);
+            }
+        }
+    }
+    if (mindMapData && mindMapData.root) {
+        collectCollapsible(mindMapData.root);
+    }
+    setNodeCollapseState(state);
+    render();
+    showToast('すべてのノードを折りたたみました');
+}
+
 // Drag reparenting state
 let nodeDragState = {
     isDragging: false,
@@ -17568,6 +17625,7 @@ function init() {
     initZoomControl();
     document.getElementById('copyBtn').addEventListener('click', copyToClipboard);
     document.getElementById('expandAllBtn').addEventListener('click', expandAllNodes);
+    document.getElementById('collapseAllBtn').addEventListener('click', collapseAllNodes);
 
     // Grey-out floating button
     var grayoutBtn = document.getElementById('grayoutFloatBtn');
@@ -18975,6 +19033,7 @@ window.isNodeCollapsed = isNodeCollapsed;
 window.getNodeCollapseState = getNodeCollapseState;
 window.setNodeCollapseState = setNodeCollapseState;
 window.expandAllNodes = expandAllNodes;
+window.collapseAllNodes = collapseAllNodes;
 window.getVisibleNodesInOrder = getVisibleNodesInOrder;
 window.isNodeGrayedOut = isNodeGrayedOut;
 window.getNodeGrayoutState = getNodeGrayoutState;

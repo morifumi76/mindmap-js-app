@@ -170,6 +170,26 @@ function expandAllNodes() {
     showToast('すべてのノードを展開しました');
 }
 
+function collapseAllNodes() {
+    var state = {};
+    function collectCollapsible(node) {
+        if (node.id !== 'root' && node.children && node.children.length > 0) {
+            state[node.id] = true;
+        }
+        if (node.children) {
+            for (var i = 0; i < node.children.length; i++) {
+                collectCollapsible(node.children[i]);
+            }
+        }
+    }
+    if (mindMapData && mindMapData.root) {
+        collectCollapsible(mindMapData.root);
+    }
+    setNodeCollapseState(state);
+    render();
+    showToast('すべてのノードを折りたたみました');
+}
+
 // Drag reparenting state
 let nodeDragState = {
     isDragging: false,

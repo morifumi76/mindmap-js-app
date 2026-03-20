@@ -50,6 +50,7 @@ function init() {
     initZoomControl();
     document.getElementById('copyBtn').addEventListener('click', copyToClipboard);
     document.getElementById('expandAllBtn').addEventListener('click', expandAllNodes);
+    document.getElementById('collapseAllBtn').addEventListener('click', collapseAllNodes);
 
     // Grey-out floating button
     var grayoutBtn = document.getElementById('grayoutFloatBtn');

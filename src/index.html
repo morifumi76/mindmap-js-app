@@ -59,6 +59,7 @@
     <div class="ctx-menu" id="ctxMenuFolder">
         <div class="ctx-menu-item" data-action="folder-rename">✏️ 名前変更</div>
         <div class="ctx-menu-item" data-action="folder-add-page">📄 ページを追加</div>
+        <div class="ctx-menu-item" data-action="folder-add-subfolder">📁 フォルダを追加</div>
         <div class="ctx-menu-item danger" data-action="folder-delete">🗑 削除</div>
     </div>
 
@@ -111,7 +112,6 @@
                 </div>
                 <div class="sidebar-button-area">
                     <button class="sidebar-btn-copy" id="copyBtn" title="クリップボードにコピー">コピー</button>
-                    <button class="sidebar-btn-expand-all" id="expandAllBtn" title="すべてのノードを展開">すべて開く</button>
                 </div>
             </div>
             <!-- Hidden selects for backward compatibility -->
@@ -128,6 +128,10 @@
 
     <!-- Floating action buttons (top-center of canvas) -->
     <div class="canvas-float-btns" id="canvasFloatBtns">
+        <div class="expand-collapse-control" id="expandCollapseControl">
+            <button class="expand-collapse-btn" id="collapseAllBtn" title="すべて閉じる">«</button>
+            <button class="expand-collapse-btn" id="expandAllBtn" title="すべて開く">»</button>
+        </div>
         <div class="zoom-control" id="zoomControl">
             <button class="zoom-btn" id="zoomOutBtn" title="縮小">−</button>
             <span class="zoom-display" id="zoomDisplay">100%</span>

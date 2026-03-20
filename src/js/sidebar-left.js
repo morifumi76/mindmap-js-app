@@ -992,6 +992,7 @@ window.isNodeCollapsed = isNodeCollapsed;
 window.getNodeCollapseState = getNodeCollapseState;
 window.setNodeCollapseState = setNodeCollapseState;
 window.expandAllNodes = expandAllNodes;
+window.collapseAllNodes = collapseAllNodes;
 window.getVisibleNodesInOrder = getVisibleNodesInOrder;
 window.isNodeGrayedOut = isNodeGrayedOut;
 window.getNodeGrayoutState = getNodeGrayoutState;
