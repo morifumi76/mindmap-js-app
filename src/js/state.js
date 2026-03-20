@@ -194,6 +194,7 @@ function collapseAllNodes() {
 let nodeDragState = {
     isDragging: false,
     didDrag: false,
+    isDuplicating: false,
     nodeId: null,
     draggedNodeIds: null,
     targetNodeId: null,
