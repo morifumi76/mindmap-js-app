@@ -384,6 +384,19 @@
     opacity: 0.4;
 }
 
+/* Sidebar multi-selection highlight */
+.map-item.sidebar-selected {
+    background: rgba(35, 131, 226, 0.10);
+}
+
+.map-item.sidebar-selected:hover {
+    background: rgba(35, 131, 226, 0.15);
+}
+
+.map-item.sidebar-selected.active {
+    background: rgba(35, 131, 226, 0.18);
+}
+
 /* Context menu – Notion style */
 .ctx-menu {
     position: fixed;
