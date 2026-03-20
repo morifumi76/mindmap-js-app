@@ -18452,17 +18452,23 @@ function createFolderElement(folder, hasPages, isCollapsed, isDndEnabled, depth)
             var h = rect.height;
 
             if (mapDragState.draggingType === 'folder') {
-                // Folder: top 25% → above, bottom 25% → below, middle → into (nest)
                 if (folderMeta.isDefault) return;
-                if (relY < h * 0.25) {
-                    itemEl.classList.add('drag-over-above');
-                    mapDragState.dropTarget = { id: folderId, position: 'above', type: 'folder' };
-                } else if (relY > h * 0.75) {
-                    itemEl.classList.add('drag-over-below');
-                    mapDragState.dropTarget = { id: folderId, position: 'below', type: 'folder' };
-                } else {
+                if (getSortMode() === 'alpha') {
+                    // アルファ順モード：フォルダ全体を "into" ゾーンにする（同階層並び替え不可）
                     itemEl.classList.add('drag-over-into');
                     mapDragState.dropTarget = { id: folderId, position: 'into', type: 'folder' };
+                } else {
+                    // 手動順モード：上25% → above, 下25% → below, 中央 → into（ネスト）
+                    if (relY < h * 0.25) {
+                        itemEl.classList.add('drag-over-above');
+                        mapDragState.dropTarget = { id: folderId, position: 'above', type: 'folder' };
+                    } else if (relY > h * 0.75) {
+                        itemEl.classList.add('drag-over-below');
+                        mapDragState.dropTarget = { id: folderId, position: 'below', type: 'folder' };
+                    } else {
+                        itemEl.classList.add('drag-over-into');
+                        mapDragState.dropTarget = { id: folderId, position: 'into', type: 'folder' };
+                    }
                 }
             } else {
                 // Page dropped onto folder: move page into this folder
@@ -18710,13 +18716,6 @@ function handleMapDrop(dragId, targetId, position, dragType) {
                 siblings[i].order = i;
             }
         }
-    }
-
-    // ドラッグで並び替えたらソートモードを手動に切り替える
-    if (getSortMode() === 'alpha') {
-        setSortMode('none');
-        var sortInput = document.getElementById('sortToggleInput');
-        if (sortInput) sortInput.checked = false;
     }
 
     saveMetaList(metaList);
