@@ -62,44 +62,59 @@
     box-shadow: 0 0 0 3px rgba(242, 201, 76, 0.4) !important;
 }
 
-/* Floating top-center button area (grayout / highlight dots) */
+/* Floating top-center button area */
 .canvas-float-btns {
     position: fixed;
     top: 14px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 10px;
+    align-items: center;
+    gap: 8px;
     z-index: 601;
 }
 
+/* Dot (grayout / highlight) control – white box matching zoom/expand controls */
+.dot-control {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+    overflow: hidden;
+}
+
 .canvas-float-btns .float-action-btn {
+    width: 28px;
+    height: 28px;
     border: none;
     background: transparent;
     cursor: pointer;
-    padding: 4px;
+    padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.12s, opacity 0.12s;
+    transition: background 0.12s, opacity 0.12s;
+    flex-shrink: 0;
 }
 
 .canvas-float-btns .float-action-btn:hover {
-    opacity: 0.75;
+    background: #f0f0ee;
 }
 
 .canvas-float-btns .float-action-btn:active {
-    transform: scale(0.9);
+    opacity: 0.7;
 }
 
 /* ドットの本体（::after で丸を描画） */
 .canvas-float-btns .float-dot-btn::after {
     content: '';
     display: block;
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.20);
 }
 
 .canvas-float-btns .float-dot-gray::after {
@@ -108,6 +123,11 @@
 
 .canvas-float-btns .float-dot-yellow::after {
     background: #F2C94C;
+}
+
+/* ドットボタン間の区切り線 */
+.dot-control .float-dot-btn + .float-dot-btn {
+    border-left: 1px solid rgba(0,0,0,0.06);
 }
 
 /* Zoom control bar */
@@ -165,7 +185,6 @@
     border-radius: 8px;
     box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
     overflow: hidden;
-    margin-right: 16px;
 }
 
 .expand-collapse-btn {
