@@ -7,6 +7,9 @@ var sidebarSelectedIds = new Set();
 var sidebarLastSelectedId = null;
 var sidebarAnchorId = null;
 
+// Flag: true while keyboard focus is logically "inside" the sidebar list
+window.sidebarNavigationMode = false;
+
 var LEFT_SIDEBAR_OPEN_MIN = 200;
 var LEFT_SIDEBAR_DEFAULT = 240;
 var LEFT_SIDEBAR_KEY = 'mindmap_left_sidebar_width';
@@ -164,18 +167,64 @@ function initLeftSidebar() {
         }
     });
 
-    // Arrow key navigation – document level so it works even after DOM rebuild
+    // Flag-based arrow key navigation
+    // mousedown on any map-item → enter navigation mode
+    document.getElementById('mapList').addEventListener('mousedown', function(e) {
+        var item = e.target.closest('.map-item');
+        if (item) {
+            window.sidebarNavigationMode = true;
+        }
+    });
+    // mousedown outside sidebar → exit navigation mode
+    document.addEventListener('mousedown', function(e) {
+        var sidebar = document.getElementById('leftSidebar');
+        if (sidebar && !sidebar.contains(e.target)) {
+            window.sidebarNavigationMode = false;
+        }
+    });
+
     document.addEventListener('keydown', function(e) {
-        if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
-        var leftSidebar = document.getElementById('leftSidebar');
-        if (!leftSidebar || !leftSidebar.contains(document.activeElement)) return;
-        if (!document.activeElement.classList.contains('map-item')) return;
+        var isVertical = e.key === 'ArrowUp' || e.key === 'ArrowDown';
+        var isHorizontal = e.key === 'ArrowLeft' || e.key === 'ArrowRight';
+        if (!isVertical && !isHorizontal) return;
+        if (!window.sidebarNavigationMode) return;
         e.preventDefault();
+
+        // Left/Right: expand or collapse the currently selected folder
+        if (isHorizontal && sidebarLastSelectedId) {
+            var curMeta = findMetaById(sidebarLastSelectedId);
+            if (curMeta && curMeta.type === 'folder') {
+                var cs = getCollapseState();
+                var curCollapsed = cs[curMeta.id] === true;
+                if (e.key === 'ArrowRight' && curCollapsed) {
+                    // Expand
+                    cs[curMeta.id] = false;
+                    setCollapseState(cs);
+                    renderMapList();
+                } else if (e.key === 'ArrowLeft' && !curCollapsed) {
+                    // Collapse
+                    cs[curMeta.id] = true;
+                    setCollapseState(cs);
+                    renderMapList();
+                }
+            }
+            return;
+        }
 
         var items = Array.from(document.querySelectorAll('#mapList .map-item'));
         if (items.length === 0) return;
 
-        var currentIndex = items.indexOf(document.activeElement);
+        // Find current position by sidebarLastSelectedId
+        var currentIndex = -1;
+        if (sidebarLastSelectedId) {
+            for (var i = 0; i < items.length; i++) {
+                if (String(items[i].dataset.mapId) === String(sidebarLastSelectedId)) {
+                    currentIndex = i;
+                    break;
+                }
+            }
+        }
+        if (currentIndex === -1) currentIndex = 0;
 
         var nextIndex;
         if (e.key === 'ArrowDown') {
@@ -186,7 +235,7 @@ function initLeftSidebar() {
         if (nextIndex === currentIndex) return;
 
         var nextItem = items[nextIndex];
-        var nextId = nextItem.dataset.mapId;
+        var nextId = String(nextItem.dataset.mapId);
 
         clearSidebarSelection();
         sidebarSelectedIds.add(nextId);
@@ -197,13 +246,13 @@ function initLeftSidebar() {
         var meta = findMetaById(nextId);
         if (meta && meta.type === 'page') {
             switchToMap(meta.id);
-            // switchToMap が renderMapList でDOMを再構築するので次フレームでフォーカス復元
+            // After switchToMap rebuilds DOM, scroll the new item into view
             setTimeout(function() {
                 var newEl = document.querySelector('#mapList .map-item[data-map-id="' + nextId + '"]');
-                if (newEl) newEl.focus({ preventScroll: true });
+                if (newEl) newEl.scrollIntoView({ block: 'nearest' });
             }, 0);
         } else {
-            nextItem.focus({ preventScroll: true });
+            nextItem.scrollIntoView({ block: 'nearest' });
         }
     });
 
@@ -612,12 +661,8 @@ function createPageElement(page, isActive, isDndEnabled, depth) {
             sidebarLastSelectedId = String(pageId);
             sidebarAnchorId = String(pageId);
             updateSidebarSelectionDisplay();
+            window.sidebarNavigationMode = true;
             switchToMap(pageId);
-            // renderMapList がDOMを再構築するため、新しい要素にフォーカスを戻す
-            setTimeout(function() {
-                var el = document.querySelector('#mapList .map-item[data-map-id="' + pageId + '"]');
-                if (el) el.focus({ preventScroll: true });
-            }, 0);
         });
 
         menuBtnEl.addEventListener('click', function(e) {

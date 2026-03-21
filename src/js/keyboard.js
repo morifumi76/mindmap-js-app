@@ -69,11 +69,8 @@ function handleKeyDown(e) {
         return;
     }
 
-    // If focus is on a sidebar list item, let the sidebar handle arrow keys
-    var leftSidebar = document.getElementById('leftSidebar');
-    if (leftSidebar && leftSidebar.contains(activeEl) && activeEl.classList.contains('map-item')) {
-        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') return;
-    }
+    // If sidebar navigation mode is active, let the sidebar handle arrow keys
+    if (window.sidebarNavigationMode && (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight')) return;
 
     // While editing
     if (editingNodeId) {
