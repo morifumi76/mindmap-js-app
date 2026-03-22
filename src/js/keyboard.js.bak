@@ -69,11 +69,8 @@ function handleKeyDown(e) {
         return;
     }
 
-    // If sidebar navigation mode is active, let the sidebar handle these keys
-    if (window.sidebarNavigationMode) {
-        var _sbKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'F2', 'Delete', 'Backspace'];
-        if (_sbKeys.indexOf(e.key) !== -1) return;
-    }
+    // If sidebar navigation mode is active, let the sidebar handle arrow keys
+    if (window.sidebarNavigationMode && (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight')) return;
 
     // While editing
     if (editingNodeId) {

@@ -17390,8 +17390,11 @@ function handleKeyDown(e) {
         return;
     }
 
-    // If sidebar navigation mode is active, let the sidebar handle arrow keys
-    if (window.sidebarNavigationMode && (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight')) return;
+    // If sidebar navigation mode is active, let the sidebar handle these keys
+    if (window.sidebarNavigationMode) {
+        var _sbKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'F2', 'Delete', 'Backspace'];
+        if (_sbKeys.indexOf(e.key) !== -1) return;
+    }
 
     // While editing
     if (editingNodeId) {
@@ -18438,37 +18441,119 @@ function initLeftSidebar() {
     });
 
     document.addEventListener('keydown', function(e) {
-        var isVertical = e.key === 'ArrowUp' || e.key === 'ArrowDown';
-        var isHorizontal = e.key === 'ArrowLeft' || e.key === 'ArrowRight';
-        if (!isVertical && !isHorizontal) return;
         if (!window.sidebarNavigationMode) return;
+
+        var sbIsMac = /Mac/.test(navigator.platform);
+        var sbCmd   = sbIsMac ? e.metaKey : e.ctrlKey;
+        var isVertical   = e.key === 'ArrowUp'   || e.key === 'ArrowDown';
+        var isHorizontal = e.key === 'ArrowLeft' || e.key === 'ArrowRight';
+        // Mac: Enter=rename, Win: F2=rename
+        var isRename    = (sbIsMac && e.key === 'Enter' && !e.shiftKey && !sbCmd) ||
+                          (!sbIsMac && e.key === 'F2');
+        // Mac: Cmd+Backspace=delete, Win: Delete (no modifier)=delete
+        var isDelete    = (sbIsMac && sbCmd && e.key === 'Backspace') ||
+                          (!sbIsMac && e.key === 'Delete' && !sbCmd && !e.shiftKey && !e.altKey);
+        if (!isVertical && !isHorizontal && !isRename && !isDelete) return;
         e.preventDefault();
 
-        // Left/Right: expand or collapse the currently selected folder
+        // ── リネーム（Mac: Enter / Win: F2）──────────────────────────────────
+        if (isRename) {
+            if (sidebarLastSelectedId) startInlineRename(sidebarLastSelectedId);
+            return;
+        }
+
+        // ── 削除（Mac: Cmd+Backspace / Win: Delete）──────────────────────────
+        if (isDelete) {
+            if (sidebarSelectedIds.size === 0) return;
+            var delPageIds = [], delFolderIds = [];
+            sidebarSelectedIds.forEach(function(sid) {
+                var dm = findMetaById(sid);
+                if (!dm) return;
+                if (dm.type === 'page') delPageIds.push(dm.id);
+                else if (dm.type === 'folder' && !dm.isDefault) delFolderIds.push(dm.id);
+            });
+            if (delPageIds.length > 0 && delFolderIds.length === 0) {
+                if (delPageIds.length === 1) deleteMap(delPageIds[0]);
+                else deleteMapMultiple(delPageIds.map(String));
+            } else if (delFolderIds.length > 0 && delPageIds.length === 0) {
+                if (delFolderIds.length === 1) deleteFolder(delFolderIds[0]);
+                else deleteFolderMultiple(delFolderIds);
+            } else if (delPageIds.length > 0 || delFolderIds.length > 0) {
+                // 混在：ページ→フォルダの順で削除
+                if (delPageIds.length > 0) deleteMapMultiple(delPageIds.map(String));
+                if (delFolderIds.length > 0) deleteFolderMultiple(delFolderIds);
+            }
+            return;
+        }
+
+        // ── 左右キー（フォルダ開閉 / 親へ移動）──────────────────────────────
         if (isHorizontal && sidebarLastSelectedId) {
             var curMeta = findMetaById(sidebarLastSelectedId);
             if (curMeta && curMeta.type === 'folder') {
                 var cs = getCollapseState();
                 var curCollapsed = cs[curMeta.id] === true;
                 if (e.key === 'ArrowRight' && curCollapsed) {
-                    // Expand
+                    // 展開
                     cs[curMeta.id] = false;
                     setCollapseState(cs);
                     renderMapList();
+                } else if (e.key === 'ArrowRight' && !curCollapsed) {
+                    // 展開済み → 最初の子アイテムへ移動
+                    var allItems = Array.from(document.querySelectorAll('#mapList .map-item'));
+                    var curPos = -1;
+                    for (var ci = 0; ci < allItems.length; ci++) {
+                        if (String(allItems[ci].dataset.mapId) === String(sidebarLastSelectedId)) { curPos = ci; break; }
+                    }
+                    if (curPos !== -1 && curPos + 1 < allItems.length) {
+                        var fcId = String(allItems[curPos + 1].dataset.mapId);
+                        clearSidebarSelection();
+                        sidebarSelectedIds.add(fcId);
+                        sidebarLastSelectedId = fcId;
+                        sidebarAnchorId = fcId;
+                        updateSidebarSelectionDisplay();
+                        allItems[curPos + 1].scrollIntoView({ block: 'nearest' });
+                        var fcMeta = findMetaById(fcId);
+                        if (fcMeta && fcMeta.type === 'page') switchToMap(fcMeta.id);
+                    }
                 } else if (e.key === 'ArrowLeft' && !curCollapsed) {
-                    // Collapse
+                    // 折りたたむ
                     cs[curMeta.id] = true;
                     setCollapseState(cs);
                     renderMapList();
+                } else if (e.key === 'ArrowLeft' && curCollapsed) {
+                    // 折りたたみ済み → 親フォルダへ移動
+                    var pId = curMeta.parentFolderId;
+                    if (pId) {
+                        clearSidebarSelection();
+                        sidebarSelectedIds.add(String(pId));
+                        sidebarLastSelectedId = String(pId);
+                        sidebarAnchorId = String(pId);
+                        updateSidebarSelectionDisplay();
+                        var pEl = document.querySelector('#mapList .map-item[data-map-id="' + pId + '"]');
+                        if (pEl) pEl.scrollIntoView({ block: 'nearest' });
+                    }
+                }
+            } else if (curMeta && curMeta.type === 'page' && e.key === 'ArrowLeft') {
+                // ページ選択中に左 → 親フォルダへ移動
+                var ppId = curMeta.folderId;
+                if (ppId) {
+                    clearSidebarSelection();
+                    sidebarSelectedIds.add(String(ppId));
+                    sidebarLastSelectedId = String(ppId);
+                    sidebarAnchorId = String(ppId);
+                    updateSidebarSelectionDisplay();
+                    var ppEl = document.querySelector('#mapList .map-item[data-map-id="' + ppId + '"]');
+                    if (ppEl) ppEl.scrollIntoView({ block: 'nearest' });
                 }
             }
             return;
         }
 
+        // ── 上下キー ──────────────────────────────────────────────────────────
         var items = Array.from(document.querySelectorAll('#mapList .map-item'));
         if (items.length === 0) return;
 
-        // Find current position by sidebarLastSelectedId
+        // 現在位置を sidebarLastSelectedId から特定
         var currentIndex = -1;
         if (sidebarLastSelectedId) {
             for (var i = 0; i < items.length; i++) {
@@ -18488,25 +18573,31 @@ function initLeftSidebar() {
         }
         if (nextIndex === currentIndex) return;
 
-        var nextItem = items[nextIndex];
-        var nextId = String(nextItem.dataset.mapId);
+        var nextId = String(items[nextIndex].dataset.mapId);
 
+        // Shift+↑↓: 範囲選択
+        if (e.shiftKey) {
+            sidebarRangeSelect(nextId);
+            items[nextIndex].scrollIntoView({ block: 'nearest' });
+            return;
+        }
+
+        // 通常の上下移動
         clearSidebarSelection();
         sidebarSelectedIds.add(nextId);
         sidebarLastSelectedId = nextId;
         sidebarAnchorId = nextId;
         updateSidebarSelectionDisplay();
 
-        var meta = findMetaById(nextId);
-        if (meta && meta.type === 'page') {
-            switchToMap(meta.id);
-            // After switchToMap rebuilds DOM, scroll the new item into view
+        var nextMeta = findMetaById(nextId);
+        if (nextMeta && nextMeta.type === 'page') {
+            switchToMap(nextMeta.id);
             setTimeout(function() {
                 var newEl = document.querySelector('#mapList .map-item[data-map-id="' + nextId + '"]');
                 if (newEl) newEl.scrollIntoView({ block: 'nearest' });
             }, 0);
         } else {
-            nextItem.scrollIntoView({ block: 'nearest' });
+            items[nextIndex].scrollIntoView({ block: 'nearest' });
         }
     });
 
