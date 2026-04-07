@@ -9,16 +9,19 @@ function applyGrayoutToSelection() {
     var allOn = nodes.every(function(node) { return isNodeGrayedOut(node.id); });
     var grayState = getNodeGrayoutState();
     var hlState   = getNodeHighlightState();
+    var cyanState = getNodeCyanState();
     nodes.forEach(function(node) {
         if (allOn) {
             delete grayState[node.id];
         } else {
             delete hlState[node.id];
+            delete cyanState[node.id];
             grayState[node.id] = true;
         }
     });
     setNodeGrayoutState(grayState);
     setNodeHighlightState(hlState);
+    setNodeCyanState(cyanState);
     render();
     saveState();
     showToast(allOn ? 'グレーアウトを解除しました' : 'グレーアウトしました');
@@ -31,16 +34,19 @@ function applyHighlightToSelection() {
     var allOn = nodes.every(function(node) { return isNodeHighlighted(node.id); });
     var hlState   = getNodeHighlightState();
     var grayState = getNodeGrayoutState();
+    var cyanState = getNodeCyanState();
     nodes.forEach(function(node) {
         if (allOn) {
             delete hlState[node.id];
         } else {
             delete grayState[node.id];
+            delete cyanState[node.id];
             hlState[node.id] = true;
         }
     });
     setNodeHighlightState(hlState);
     setNodeGrayoutState(grayState);
+    setNodeCyanState(cyanState);
     render();
     saveState();
     showToast(allOn ? 'ハイライトを解除しました' : 'ハイライトしました');
@@ -52,14 +58,20 @@ function applyCyanToSelection() {
     if (nodes.length === 0) return;
     var allOn = nodes.every(function(node) { return isNodeCyan(node.id); });
     var cyanState = getNodeCyanState();
+    var grayState = getNodeGrayoutState();
+    var hlState   = getNodeHighlightState();
     nodes.forEach(function(node) {
         if (allOn) {
             delete cyanState[node.id];
         } else {
+            delete grayState[node.id];
+            delete hlState[node.id];
             cyanState[node.id] = true;
         }
     });
     setNodeCyanState(cyanState);
+    setNodeGrayoutState(grayState);
+    setNodeHighlightState(hlState);
     render();
     saveState();
     showToast(allOn ? '水色を解除しました' : '水色にしました');

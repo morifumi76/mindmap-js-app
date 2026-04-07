@@ -67,17 +67,20 @@ function init() {
                 var allOn = nodes.every(function(node) { return isNodeGrayedOut(node.id); });
                 var grayState = getNodeGrayoutState();
                 var hlState = getNodeHighlightState();
+                var cyanState0 = getNodeCyanState();
                 nodes.forEach(function(node) {
                     if (allOn) {
                         delete grayState[node.id];
                     } else {
-                        // グレーアウトON時はハイライトを解除（相互排他）
+                        // グレーアウトON時はハイライト・水色を解除（相互排他）
                         delete hlState[node.id];
+                        delete cyanState0[node.id];
                         grayState[node.id] = true;
                     }
                 });
                 setNodeGrayoutState(grayState);
                 setNodeHighlightState(hlState);
+                setNodeCyanState(cyanState0);
                 saveState();
                 showToast(allOn ? 'グレーアウトを解除しました' : 'グレーアウトしました');
                 render();
@@ -98,17 +101,20 @@ function init() {
                 var allOn = nodes.every(function(node) { return isNodeHighlighted(node.id); });
                 var hlState = getNodeHighlightState();
                 var grayState = getNodeGrayoutState();
+                var cyanState1 = getNodeCyanState();
                 nodes.forEach(function(node) {
                     if (allOn) {
                         delete hlState[node.id];
                     } else {
-                        // ハイライトON時はグレーアウトを解除（相互排他）
+                        // ハイライトON時はグレーアウト・水色を解除（相互排他）
                         delete grayState[node.id];
+                        delete cyanState1[node.id];
                         hlState[node.id] = true;
                     }
                 });
                 setNodeHighlightState(hlState);
                 setNodeGrayoutState(grayState);
+                setNodeCyanState(cyanState1);
                 saveState();
                 showToast(allOn ? 'ハイライトを解除しました' : 'ハイライトしました');
                 render();
@@ -126,14 +132,21 @@ function init() {
             if (nodes.length > 0) {
                 var allOn = nodes.every(function(node) { return isNodeCyan(node.id); });
                 var cyanState = getNodeCyanState();
+                var grayState2 = getNodeGrayoutState();
+                var hlState2 = getNodeHighlightState();
                 nodes.forEach(function(node) {
                     if (allOn) {
                         delete cyanState[node.id];
                     } else {
+                        // 水色ON時はグレーアウト・ハイライトを解除（相互排他）
+                        delete grayState2[node.id];
+                        delete hlState2[node.id];
                         cyanState[node.id] = true;
                     }
                 });
                 setNodeCyanState(cyanState);
+                setNodeGrayoutState(grayState2);
+                setNodeHighlightState(hlState2);
                 saveState();
                 showToast(allOn ? '水色を解除しました' : '水色にしました');
                 render();
