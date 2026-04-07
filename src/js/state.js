@@ -139,6 +139,25 @@ function toggleNodeHighlight(nodeId) {
     }
     render();
 }
+// Node red-text state: { [nodeId]: true } - per map, saved in localStorage
+var NODE_REDTEXT_KEY_PREFIX = 'mindmap-node-redtext-';
+function getNodeRedTextState() {
+    if (!currentMapId) return {};
+    try {
+        var raw = localStorage.getItem(NODE_REDTEXT_KEY_PREFIX + currentMapId);
+        if (raw) return JSON.parse(raw);
+    } catch(e) {}
+    return {};
+}
+function setNodeRedTextState(state) {
+    if (!currentMapId) return;
+    try { localStorage.setItem(NODE_REDTEXT_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
+}
+function isNodeRedText(nodeId) {
+    var state = getNodeRedTextState();
+    return state[nodeId] === true;
+}
+
 function getNodeCollapseState() {
     if (!currentMapId) return {};
     try {

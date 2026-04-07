@@ -65,6 +65,7 @@ function clearMindmapData() {
             key.startsWith('mindmap-data-') ||
             key.startsWith('mindmap-node-grayout-') ||
             key.startsWith('mindmap-node-highlight-') ||
+            key.startsWith('mindmap-node-redtext-') ||
             key.startsWith('mindmap-supabase-map-') ||
             key.startsWith('mindmap-supabase-folder-')
         ) {
@@ -166,6 +167,7 @@ async function loadUserData() {
             try {
                 if (m.data._grayout)   localStorage.setItem('mindmap-node-grayout-'   + localId, JSON.stringify(m.data._grayout));
                 if (m.data._highlight) localStorage.setItem('mindmap-node-highlight-' + localId, JSON.stringify(m.data._highlight));
+                if (m.data._redtext)   localStorage.setItem('mindmap-node-redtext-'   + localId, JSON.stringify(m.data._redtext));
             } catch(e) {}
             try { localStorage.setItem('mindmap-data-' + localId, JSON.stringify(m.data)); } catch(e) {}
         }

@@ -117,6 +117,33 @@ function init() {
             }
         });
     }
+    // 赤文字フローティングボタン
+    var redTextBtn = document.getElementById('redTextFloatBtn');
+    if (redTextBtn) {
+        redTextBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var nodes = getSelectedNodes();
+            if (nodes.length > 0) {
+                // 1つでもOFFがあれば全部ON、全部ONなら全部OFF
+                var allOn = nodes.every(function(node) { return isNodeRedText(node.id); });
+                var rtState = getNodeRedTextState();
+                nodes.forEach(function(node) {
+                    if (allOn) {
+                        delete rtState[node.id];
+                    } else {
+                        rtState[node.id] = true;
+                    }
+                });
+                setNodeRedTextState(rtState);
+                saveState();
+                showToast(allOn ? '赤文字を解除しました' : '赤文字にしました');
+                render();
+            } else {
+                showToast('ノードを選択してください');
+            }
+        });
+    }
+
     document.getElementById('sidebarMiniCopy').addEventListener('click', function(e) {
         e.stopPropagation();
         copyToClipboard();

@@ -1009,6 +1009,23 @@ html, body {
     box-shadow: 0 0 0 3px rgba(242, 201, 76, 0.4) !important;
 }
 
+/* ========================================
+   Red Text Node Styles
+   ======================================== */
+.node.red-text .node-text {
+    color: #e53e3e !important;
+}
+
+/* 赤文字Aボタン */
+.canvas-float-btns .float-redtext-btn {
+    font-size: 14px;
+    font-weight: 700;
+    color: #e53e3e;
+    line-height: 1;
+    font-family: Georgia, 'Times New Roman', serif;
+    letter-spacing: -0.5px;
+}
+
 /* Floating top-center button area */
 .canvas-float-btns {
     position: fixed;
@@ -1073,7 +1090,7 @@ html, body {
 }
 
 /* ドットボタン間の区切り線 */
-.dot-control .float-dot-btn + .float-dot-btn {
+.dot-control .float-action-btn + .float-action-btn {
     border-left: 1px solid rgba(0,0,0,0.06);
 }
 
@@ -1726,6 +1743,7 @@ body.readonly-mode .sidebar-float-toggle {
         <div class="dot-control">
             <button class="float-action-btn float-dot-btn float-dot-gray" id="grayoutFloatBtn" title="グレーアウト (Option+Cmd+G)"></button>
             <button class="float-action-btn float-dot-btn float-dot-yellow" id="highlightFloatBtn" title="ハイライト (Option+Cmd+Y)"></button>
+            <button class="float-action-btn float-redtext-btn" id="redTextFloatBtn" title="赤文字">A</button>
         </div>
     </div>
 
@@ -15039,7 +15057,7 @@ ${suffix}`;
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (!key) continue;
-      if (key === "mindmap-meta" || key === "mindmap-id-counter" || key === "mindmap-last-active-id" || key.startsWith("mindmap-data-") || key.startsWith("mindmap-node-grayout-") || key.startsWith("mindmap-node-highlight-") || key.startsWith("mindmap-supabase-map-") || key.startsWith("mindmap-supabase-folder-")) {
+      if (key === "mindmap-meta" || key === "mindmap-id-counter" || key === "mindmap-last-active-id" || key.startsWith("mindmap-data-") || key.startsWith("mindmap-node-grayout-") || key.startsWith("mindmap-node-highlight-") || key.startsWith("mindmap-node-redtext-") || key.startsWith("mindmap-supabase-map-") || key.startsWith("mindmap-supabase-folder-")) {
         toRemove.push(key);
       }
     }
@@ -15119,6 +15137,7 @@ ${suffix}`;
         try {
           if (m.data._grayout) localStorage.setItem("mindmap-node-grayout-" + localId, JSON.stringify(m.data._grayout));
           if (m.data._highlight) localStorage.setItem("mindmap-node-highlight-" + localId, JSON.stringify(m.data._highlight));
+          if (m.data._redtext) localStorage.setItem("mindmap-node-redtext-" + localId, JSON.stringify(m.data._redtext));
         } catch (e) {
         }
         try {
@@ -15453,6 +15472,25 @@ function toggleNodeHighlight(nodeId) {
     }
     render();
 }
+// Node red-text state: { [nodeId]: true } - per map, saved in localStorage
+var NODE_REDTEXT_KEY_PREFIX = 'mindmap-node-redtext-';
+function getNodeRedTextState() {
+    if (!currentMapId) return {};
+    try {
+        var raw = localStorage.getItem(NODE_REDTEXT_KEY_PREFIX + currentMapId);
+        if (raw) return JSON.parse(raw);
+    } catch(e) {}
+    return {};
+}
+function setNodeRedTextState(state) {
+    if (!currentMapId) return;
+    try { localStorage.setItem(NODE_REDTEXT_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
+}
+function isNodeRedText(nodeId) {
+    var state = getNodeRedTextState();
+    return state[nodeId] === true;
+}
+
 function getNodeCollapseState() {
     if (!currentMapId) return {};
     try {
@@ -17171,7 +17209,7 @@ function renderNodes(node, container, positions) {
     var pos = positions[node.id];
     if (!pos) return;
     var el = document.createElement('div');
-    el.className = 'node' + (node.id === 'root' ? ' root' : '') + (isNodeGrayedOut(node.id) ? ' grayed-out' : '') + (isNodeHighlighted(node.id) ? ' highlighted' : '');
+    el.className = 'node' + (node.id === 'root' ? ' root' : '') + (isNodeGrayedOut(node.id) ? ' grayed-out' : '') + (isNodeHighlighted(node.id) ? ' highlighted' : '') + (isNodeRedText(node.id) ? ' red-text' : '');
     el.dataset.id = node.id;
     el.style.left = pos.x + 'px';
     el.style.top = pos.y + 'px';
@@ -17912,6 +17950,33 @@ function init() {
             }
         });
     }
+    // 赤文字フローティングボタン
+    var redTextBtn = document.getElementById('redTextFloatBtn');
+    if (redTextBtn) {
+        redTextBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var nodes = getSelectedNodes();
+            if (nodes.length > 0) {
+                // 1つでもOFFがあれば全部ON、全部ONなら全部OFF
+                var allOn = nodes.every(function(node) { return isNodeRedText(node.id); });
+                var rtState = getNodeRedTextState();
+                nodes.forEach(function(node) {
+                    if (allOn) {
+                        delete rtState[node.id];
+                    } else {
+                        rtState[node.id] = true;
+                    }
+                });
+                setNodeRedTextState(rtState);
+                saveState();
+                showToast(allOn ? '赤文字を解除しました' : '赤文字にしました');
+                render();
+            } else {
+                showToast('ノードを選択してください');
+            }
+        });
+    }
+
     document.getElementById('sidebarMiniCopy').addEventListener('click', function(e) {
         e.stopPropagation();
         copyToClipboard();
@@ -20155,12 +20220,14 @@ window.toggleNodeHighlight = toggleNodeHighlight;
             var data;
             try { data = JSON.parse(localStorage.getItem('mindmap-data-' + localId)); } catch(e) { return; }
             if (!data) return;
-            // グレーアウト・ハイライト状態をデータに含めてSupabaseへ保存
+            // グレーアウト・ハイライト・赤文字状態をデータに含めてSupabaseへ保存
             try {
                 var gray = localStorage.getItem('mindmap-node-grayout-' + localId);
                 var hl   = localStorage.getItem('mindmap-node-highlight-' + localId);
+                var rt   = localStorage.getItem('mindmap-node-redtext-' + localId);
                 data._grayout   = gray  ? JSON.parse(gray)  : {};
                 data._highlight = hl    ? JSON.parse(hl)    : {};
+                data._redtext   = rt    ? JSON.parse(rt)    : {};
             } catch(e) {}
             window._supa.saveMap(localId, meta.name, data, meta.folderId).then(function() {
                 showSaveIndicator('保存済み');
