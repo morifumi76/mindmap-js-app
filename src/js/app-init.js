@@ -47,13 +47,15 @@
             var data;
             try { data = JSON.parse(localStorage.getItem('mindmap-data-' + localId)); } catch(e) { return; }
             if (!data) return;
-            // グレーアウト・ハイライト・赤文字状態をデータに含めてSupabaseへ保存
+            // グレーアウト・ハイライト・水色・赤文字状態をデータに含めてSupabaseへ保存
             try {
                 var gray = localStorage.getItem('mindmap-node-grayout-' + localId);
                 var hl   = localStorage.getItem('mindmap-node-highlight-' + localId);
+                var cy   = localStorage.getItem('mindmap-node-cyan-' + localId);
                 var rt   = localStorage.getItem('mindmap-node-redtext-' + localId);
                 data._grayout   = gray  ? JSON.parse(gray)  : {};
                 data._highlight = hl    ? JSON.parse(hl)    : {};
+                data._cyan      = cy    ? JSON.parse(cy)    : {};
                 data._redtext   = rt    ? JSON.parse(rt)    : {};
             } catch(e) {}
             window._supa.saveMap(localId, meta.name, data, meta.folderId).then(function() {

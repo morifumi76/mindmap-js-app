@@ -46,6 +46,44 @@ function applyHighlightToSelection() {
     showToast(allOn ? 'ハイライトを解除しました' : 'ハイライトしました');
 }
 
+// 選択中の全ノードに水色ハイライトを適用（Cmd+Opt+B）
+function applyCyanToSelection() {
+    var nodes = getSelectedNodes();
+    if (nodes.length === 0) return;
+    var allOn = nodes.every(function(node) { return isNodeCyan(node.id); });
+    var cyanState = getNodeCyanState();
+    nodes.forEach(function(node) {
+        if (allOn) {
+            delete cyanState[node.id];
+        } else {
+            cyanState[node.id] = true;
+        }
+    });
+    setNodeCyanState(cyanState);
+    render();
+    saveState();
+    showToast(allOn ? '水色を解除しました' : '水色にしました');
+}
+
+// 選択中の全ノードに赤文字を適用（Cmd+Opt+A）
+function applyRedTextToSelection() {
+    var nodes = getSelectedNodes();
+    if (nodes.length === 0) return;
+    var allOn = nodes.every(function(node) { return isNodeRedText(node.id); });
+    var rtState = getNodeRedTextState();
+    nodes.forEach(function(node) {
+        if (allOn) {
+            delete rtState[node.id];
+        } else {
+            rtState[node.id] = true;
+        }
+    });
+    setNodeRedTextState(rtState);
+    render();
+    saveState();
+    showToast(allOn ? '赤文字を解除しました' : '赤文字にしました');
+}
+
 function handleKeyDown(e) {
     // Read-only mode: only allow zoom/pan shortcuts, block all editing
     if (window._isReadOnly) {
@@ -138,6 +176,16 @@ function handleKeyDown(e) {
             applyHighlightToSelection();
             return;
         }
+        if (e.code === 'KeyB') {
+            e.preventDefault();
+            applyCyanToSelection();
+            return;
+        }
+        if (e.code === 'KeyA') {
+            e.preventDefault();
+            applyRedTextToSelection();
+            return;
+        }
     }
 
     switch (e.key) {
@@ -195,7 +243,13 @@ function handleKeyDown(e) {
             }
             break;
         case 'a': case 'A':
-            if (cmdKey) { e.preventDefault(); selectAll(); }
+            if (e.altKey && cmdKey) {
+                // Option+Cmd+A – toggle red text（e.code で処理済みのためここには到達しないが念のため）
+                e.preventDefault();
+                applyRedTextToSelection();
+            } else if (cmdKey) {
+                e.preventDefault(); selectAll();
+            }
             break;
         case 'c': case 'C':
             if (cmdKey) { e.preventDefault(); copySelectedNodes(); }

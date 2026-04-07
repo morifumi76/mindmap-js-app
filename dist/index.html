@@ -1010,6 +1010,26 @@ html, body {
 }
 
 /* ========================================
+   Cyan Highlight Node Styles
+   ======================================== */
+.node.cyan-hl {
+    background: #56CCF2 !important;
+    border-color: #56CCF2 !important;
+    color: #1a4a5e !important;
+    box-shadow: none !important;
+}
+
+.node.cyan-hl .node-text {
+    color: #1a4a5e !important;
+}
+
+.node.cyan-hl.selected {
+    background: #45BCE0 !important;
+    border-color: #38AACC !important;
+    box-shadow: 0 0 0 3px rgba(86, 204, 242, 0.4) !important;
+}
+
+/* ========================================
    Red Text Node Styles
    ======================================== */
 .node.red-text .node-text {
@@ -1087,6 +1107,10 @@ html, body {
 
 .canvas-float-btns .float-dot-yellow::after {
     background: #F2C94C;
+}
+
+.canvas-float-btns .float-dot-cyan::after {
+    background: #56CCF2;
 }
 
 /* ドットボタン間の区切り線 */
@@ -1743,7 +1767,8 @@ body.readonly-mode .sidebar-float-toggle {
         <div class="dot-control">
             <button class="float-action-btn float-dot-btn float-dot-gray" id="grayoutFloatBtn" title="グレーアウト (Option+Cmd+G)"></button>
             <button class="float-action-btn float-dot-btn float-dot-yellow" id="highlightFloatBtn" title="ハイライト (Option+Cmd+Y)"></button>
-            <button class="float-action-btn float-redtext-btn" id="redTextFloatBtn" title="赤文字">A</button>
+            <button class="float-action-btn float-dot-btn float-dot-cyan" id="cyanFloatBtn" title="水色ハイライト (Option+Cmd+B)"></button>
+            <button class="float-action-btn float-redtext-btn" id="redTextFloatBtn" title="赤文字 (Option+Cmd+A)">A</button>
         </div>
     </div>
 
@@ -15057,7 +15082,7 @@ ${suffix}`;
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (!key) continue;
-      if (key === "mindmap-meta" || key === "mindmap-id-counter" || key === "mindmap-last-active-id" || key.startsWith("mindmap-data-") || key.startsWith("mindmap-node-grayout-") || key.startsWith("mindmap-node-highlight-") || key.startsWith("mindmap-node-redtext-") || key.startsWith("mindmap-supabase-map-") || key.startsWith("mindmap-supabase-folder-")) {
+      if (key === "mindmap-meta" || key === "mindmap-id-counter" || key === "mindmap-last-active-id" || key.startsWith("mindmap-data-") || key.startsWith("mindmap-node-grayout-") || key.startsWith("mindmap-node-highlight-") || key.startsWith("mindmap-node-cyan-") || key.startsWith("mindmap-node-redtext-") || key.startsWith("mindmap-supabase-map-") || key.startsWith("mindmap-supabase-folder-")) {
         toRemove.push(key);
       }
     }
@@ -15137,6 +15162,7 @@ ${suffix}`;
         try {
           if (m.data._grayout) localStorage.setItem("mindmap-node-grayout-" + localId, JSON.stringify(m.data._grayout));
           if (m.data._highlight) localStorage.setItem("mindmap-node-highlight-" + localId, JSON.stringify(m.data._highlight));
+          if (m.data._cyan) localStorage.setItem("mindmap-node-cyan-" + localId, JSON.stringify(m.data._cyan));
           if (m.data._redtext) localStorage.setItem("mindmap-node-redtext-" + localId, JSON.stringify(m.data._redtext));
         } catch (e) {
         }
@@ -15472,6 +15498,25 @@ function toggleNodeHighlight(nodeId) {
     }
     render();
 }
+// Node cyan state: { [nodeId]: true } - per map, saved in localStorage
+var NODE_CYAN_KEY_PREFIX = 'mindmap-node-cyan-';
+function getNodeCyanState() {
+    if (!currentMapId) return {};
+    try {
+        var raw = localStorage.getItem(NODE_CYAN_KEY_PREFIX + currentMapId);
+        if (raw) return JSON.parse(raw);
+    } catch(e) {}
+    return {};
+}
+function setNodeCyanState(state) {
+    if (!currentMapId) return;
+    try { localStorage.setItem(NODE_CYAN_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
+}
+function isNodeCyan(nodeId) {
+    var state = getNodeCyanState();
+    return state[nodeId] === true;
+}
+
 // Node red-text state: { [nodeId]: true } - per map, saved in localStorage
 var NODE_REDTEXT_KEY_PREFIX = 'mindmap-node-redtext-';
 function getNodeRedTextState() {
@@ -17209,7 +17254,7 @@ function renderNodes(node, container, positions) {
     var pos = positions[node.id];
     if (!pos) return;
     var el = document.createElement('div');
-    el.className = 'node' + (node.id === 'root' ? ' root' : '') + (isNodeGrayedOut(node.id) ? ' grayed-out' : '') + (isNodeHighlighted(node.id) ? ' highlighted' : '') + (isNodeRedText(node.id) ? ' red-text' : '');
+    el.className = 'node' + (node.id === 'root' ? ' root' : '') + (isNodeGrayedOut(node.id) ? ' grayed-out' : '') + (isNodeHighlighted(node.id) ? ' highlighted' : '') + (isNodeCyan(node.id) ? ' cyan-hl' : '') + (isNodeRedText(node.id) ? ' red-text' : '');
     el.dataset.id = node.id;
     el.style.left = pos.x + 'px';
     el.style.top = pos.y + 'px';
@@ -17410,6 +17455,44 @@ function applyHighlightToSelection() {
     showToast(allOn ? 'ハイライトを解除しました' : 'ハイライトしました');
 }
 
+// 選択中の全ノードに水色ハイライトを適用（Cmd+Opt+B）
+function applyCyanToSelection() {
+    var nodes = getSelectedNodes();
+    if (nodes.length === 0) return;
+    var allOn = nodes.every(function(node) { return isNodeCyan(node.id); });
+    var cyanState = getNodeCyanState();
+    nodes.forEach(function(node) {
+        if (allOn) {
+            delete cyanState[node.id];
+        } else {
+            cyanState[node.id] = true;
+        }
+    });
+    setNodeCyanState(cyanState);
+    render();
+    saveState();
+    showToast(allOn ? '水色を解除しました' : '水色にしました');
+}
+
+// 選択中の全ノードに赤文字を適用（Cmd+Opt+A）
+function applyRedTextToSelection() {
+    var nodes = getSelectedNodes();
+    if (nodes.length === 0) return;
+    var allOn = nodes.every(function(node) { return isNodeRedText(node.id); });
+    var rtState = getNodeRedTextState();
+    nodes.forEach(function(node) {
+        if (allOn) {
+            delete rtState[node.id];
+        } else {
+            rtState[node.id] = true;
+        }
+    });
+    setNodeRedTextState(rtState);
+    render();
+    saveState();
+    showToast(allOn ? '赤文字を解除しました' : '赤文字にしました');
+}
+
 function handleKeyDown(e) {
     // Read-only mode: only allow zoom/pan shortcuts, block all editing
     if (window._isReadOnly) {
@@ -17502,6 +17585,16 @@ function handleKeyDown(e) {
             applyHighlightToSelection();
             return;
         }
+        if (e.code === 'KeyB') {
+            e.preventDefault();
+            applyCyanToSelection();
+            return;
+        }
+        if (e.code === 'KeyA') {
+            e.preventDefault();
+            applyRedTextToSelection();
+            return;
+        }
     }
 
     switch (e.key) {
@@ -17559,7 +17652,13 @@ function handleKeyDown(e) {
             }
             break;
         case 'a': case 'A':
-            if (cmdKey) { e.preventDefault(); selectAll(); }
+            if (e.altKey && cmdKey) {
+                // Option+Cmd+A – toggle red text（e.code で処理済みのためここには到達しないが念のため）
+                e.preventDefault();
+                applyRedTextToSelection();
+            } else if (cmdKey) {
+                e.preventDefault(); selectAll();
+            }
             break;
         case 'c': case 'C':
             if (cmdKey) { e.preventDefault(); copySelectedNodes(); }
@@ -17950,6 +18049,32 @@ function init() {
             }
         });
     }
+    // 水色ハイライトフローティングボタン
+    var cyanBtn = document.getElementById('cyanFloatBtn');
+    if (cyanBtn) {
+        cyanBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var nodes = getSelectedNodes();
+            if (nodes.length > 0) {
+                var allOn = nodes.every(function(node) { return isNodeCyan(node.id); });
+                var cyanState = getNodeCyanState();
+                nodes.forEach(function(node) {
+                    if (allOn) {
+                        delete cyanState[node.id];
+                    } else {
+                        cyanState[node.id] = true;
+                    }
+                });
+                setNodeCyanState(cyanState);
+                saveState();
+                showToast(allOn ? '水色を解除しました' : '水色にしました');
+                render();
+            } else {
+                showToast('ノードを選択してください');
+            }
+        });
+    }
+
     // 赤文字フローティングボタン
     var redTextBtn = document.getElementById('redTextFloatBtn');
     if (redTextBtn) {
@@ -20220,13 +20345,15 @@ window.toggleNodeHighlight = toggleNodeHighlight;
             var data;
             try { data = JSON.parse(localStorage.getItem('mindmap-data-' + localId)); } catch(e) { return; }
             if (!data) return;
-            // グレーアウト・ハイライト・赤文字状態をデータに含めてSupabaseへ保存
+            // グレーアウト・ハイライト・水色・赤文字状態をデータに含めてSupabaseへ保存
             try {
                 var gray = localStorage.getItem('mindmap-node-grayout-' + localId);
                 var hl   = localStorage.getItem('mindmap-node-highlight-' + localId);
+                var cy   = localStorage.getItem('mindmap-node-cyan-' + localId);
                 var rt   = localStorage.getItem('mindmap-node-redtext-' + localId);
                 data._grayout   = gray  ? JSON.parse(gray)  : {};
                 data._highlight = hl    ? JSON.parse(hl)    : {};
+                data._cyan      = cy    ? JSON.parse(cy)    : {};
                 data._redtext   = rt    ? JSON.parse(rt)    : {};
             } catch(e) {}
             window._supa.saveMap(localId, meta.name, data, meta.folderId).then(function() {

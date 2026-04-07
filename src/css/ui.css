@@ -63,6 +63,26 @@
 }
 
 /* ========================================
+   Cyan Highlight Node Styles
+   ======================================== */
+.node.cyan-hl {
+    background: #56CCF2 !important;
+    border-color: #56CCF2 !important;
+    color: #1a4a5e !important;
+    box-shadow: none !important;
+}
+
+.node.cyan-hl .node-text {
+    color: #1a4a5e !important;
+}
+
+.node.cyan-hl.selected {
+    background: #45BCE0 !important;
+    border-color: #38AACC !important;
+    box-shadow: 0 0 0 3px rgba(86, 204, 242, 0.4) !important;
+}
+
+/* ========================================
    Red Text Node Styles
    ======================================== */
 .node.red-text .node-text {
@@ -140,6 +160,10 @@
 
 .canvas-float-btns .float-dot-yellow::after {
     background: #F2C94C;
+}
+
+.canvas-float-btns .float-dot-cyan::after {
+    background: #56CCF2;
 }
 
 /* ドットボタン間の区切り線 */

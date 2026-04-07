@@ -117,6 +117,32 @@ function init() {
             }
         });
     }
+    // 水色ハイライトフローティングボタン
+    var cyanBtn = document.getElementById('cyanFloatBtn');
+    if (cyanBtn) {
+        cyanBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var nodes = getSelectedNodes();
+            if (nodes.length > 0) {
+                var allOn = nodes.every(function(node) { return isNodeCyan(node.id); });
+                var cyanState = getNodeCyanState();
+                nodes.forEach(function(node) {
+                    if (allOn) {
+                        delete cyanState[node.id];
+                    } else {
+                        cyanState[node.id] = true;
+                    }
+                });
+                setNodeCyanState(cyanState);
+                saveState();
+                showToast(allOn ? '水色を解除しました' : '水色にしました');
+                render();
+            } else {
+                showToast('ノードを選択してください');
+            }
+        });
+    }
+
     // 赤文字フローティングボタン
     var redTextBtn = document.getElementById('redTextFloatBtn');
     if (redTextBtn) {
