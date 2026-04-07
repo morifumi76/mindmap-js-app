@@ -15048,6 +15048,8 @@ ${suffix}`;
   async function loadUserData() {
     const user = await getCurrentUser();
     if (!user) return false;
+    const prevLastLocalId = parseInt(localStorage.getItem("mindmap-last-active-id"), 10) || null;
+    const prevLastSupabaseUuid = prevLastLocalId ? getSupabaseMapId(prevLastLocalId) : null;
     const [{ data: folders, error: fErr }, { data: maps, error: mErr }] = await Promise.all([
       supabase.from("folders").select("*").eq("user_id", user.id).order("sort_order"),
       supabase.from("maps").select("*").eq("user_id", user.id).order("updated_at", { ascending: false })
@@ -15096,8 +15098,10 @@ ${suffix}`;
       }
     }
     let firstPageLocalId = null;
+    const mapSupabaseToLocal = {};
     for (const m of maps) {
       const localId = nextId();
+      mapSupabaseToLocal[m.id] = localId;
       setSupabaseMapId(localId, m.id);
       const fLocalId = m.folder_id ? folderLocalIds[m.folder_id] || defaultFolderId : defaultFolderId;
       metaList.push({
@@ -15136,9 +15140,10 @@ ${suffix}`;
       localStorage.setItem("mindmap-migrated-v4", "1");
     } catch (e) {
     }
-    if (firstPageLocalId !== null) {
+    const restoredLastActiveId = prevLastSupabaseUuid && mapSupabaseToLocal[prevLastSupabaseUuid] ? mapSupabaseToLocal[prevLastSupabaseUuid] : firstPageLocalId;
+    if (restoredLastActiveId !== null) {
       try {
-        localStorage.setItem("mindmap-last-active-id", String(firstPageLocalId));
+        localStorage.setItem("mindmap-last-active-id", String(restoredLastActiveId));
       } catch (e) {
       }
     }
@@ -20442,7 +20447,11 @@ window.toggleNodeHighlight = toggleNodeHighlight;
     }
 
     // ---- Handle logged-in state ----
+    // 一度だけ実行するためのフラグ（タブ復帰時のトークンリフレッシュによる再実行を防ぐ）
+    var _handleLoggedInCalled = false;
     function handleLoggedIn() {
+        if (_handleLoggedInCalled) return;
+        _handleLoggedInCalled = true;
         showLoading();
         showLogoutButton();
         window._supa.loadUserData().then(function(hasData) {
@@ -20530,11 +20539,14 @@ window.toggleNodeHighlight = toggleNodeHighlight;
         });
 
         // Watch for auth changes (login/logout)
+        // appInitialized が true のときはトークンリフレッシュによる誤再初期化を防ぐ
         window._supa.onAuthStateChange(function(user) {
             console.log('[DEBUG] onAuthStateChange fired, user:', user);
             if (user) {
                 hideLoginScreen();
-                handleLoggedIn();
+                if (!appInitialized) {
+                    handleLoggedIn();
+                }
             }
             // logout is handled by the logout button (page reload)
         });

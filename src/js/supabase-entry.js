@@ -79,6 +79,10 @@ async function loadUserData() {
     const user = await getCurrentUser();
     if (!user) return false;
 
+    // 現在開いているマップのSupabase UUIDを保存（ID再採番後に復元するため）
+    const prevLastLocalId = parseInt(localStorage.getItem('mindmap-last-active-id'), 10) || null;
+    const prevLastSupabaseUuid = prevLastLocalId ? getSupabaseMapId(prevLastLocalId) : null;
+
     const [{ data: folders, error: fErr }, { data: maps, error: mErr }] = await Promise.all([
         supabase.from('folders').select('*').eq('user_id', user.id).order('sort_order'),
         supabase.from('maps').select('*').eq('user_id', user.id).order('updated_at', { ascending: false })
@@ -140,8 +144,10 @@ async function loadUserData() {
 
     // Process maps
     let firstPageLocalId = null;
+    const mapSupabaseToLocal = {}; // Supabase UUID → 新しいローカルID
     for (const m of maps) {
         const localId = nextId();
+        mapSupabaseToLocal[m.id] = localId;
         setSupabaseMapId(localId, m.id);
         const fLocalId = m.folder_id ? (folderLocalIds[m.folder_id] || defaultFolderId) : defaultFolderId;
         metaList.push({
@@ -169,8 +175,13 @@ async function loadUserData() {
     try { localStorage.setItem('mindmap-meta', JSON.stringify(metaList)); } catch(e) {}
     try { localStorage.setItem('mindmap-id-counter', String(idCounter)); } catch(e) {}
     try { localStorage.setItem('mindmap-migrated-v4', '1'); } catch(e) {}
-    if (firstPageLocalId !== null) {
-        try { localStorage.setItem('mindmap-last-active-id', String(firstPageLocalId)); } catch(e) {}
+
+    // 前回開いていたマップを優先して復元。なければ最初のページを使う
+    const restoredLastActiveId = (prevLastSupabaseUuid && mapSupabaseToLocal[prevLastSupabaseUuid])
+        ? mapSupabaseToLocal[prevLastSupabaseUuid]
+        : firstPageLocalId;
+    if (restoredLastActiveId !== null) {
+        try { localStorage.setItem('mindmap-last-active-id', String(restoredLastActiveId)); } catch(e) {}
     }
 
     return true;

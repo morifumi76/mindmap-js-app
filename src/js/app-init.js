@@ -339,7 +339,11 @@
     }
 
     // ---- Handle logged-in state ----
+    // 一度だけ実行するためのフラグ（タブ復帰時のトークンリフレッシュによる再実行を防ぐ）
+    var _handleLoggedInCalled = false;
     function handleLoggedIn() {
+        if (_handleLoggedInCalled) return;
+        _handleLoggedInCalled = true;
         showLoading();
         showLogoutButton();
         window._supa.loadUserData().then(function(hasData) {
@@ -427,11 +431,14 @@
         });
 
         // Watch for auth changes (login/logout)
+        // appInitialized が true のときはトークンリフレッシュによる誤再初期化を防ぐ
         window._supa.onAuthStateChange(function(user) {
             console.log('[DEBUG] onAuthStateChange fired, user:', user);
             if (user) {
                 hideLoginScreen();
-                handleLoggedIn();
+                if (!appInitialized) {
+                    handleLoggedIn();
+                }
             }
             // logout is handled by the logout button (page reload)
         });
