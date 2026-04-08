@@ -310,6 +310,19 @@ function migrateIfNeeded() {
     try { localStorage.setItem('mindmap-migrated-v4', '1'); } catch(e) {}
 }
 
+// ---- お気に入りトグル ----
+function toggleFavorite(mapId) {
+    var metaList = getMetaList();
+    for (var i = 0; i < metaList.length; i++) {
+        if (String(metaList[i].id) === String(mapId)) {
+            metaList[i].starred = !metaList[i].starred;
+            saveMetaList(metaList);
+            return metaList[i].starred;
+        }
+    }
+    return false;
+}
+
 // ---- Save / Load for current map ----
 function saveToLocalStorage() {
     if (!currentMapId) return;

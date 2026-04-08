@@ -108,6 +108,12 @@ function updateFloatBtnsPosition() {
     var rightSidebar = document.getElementById('sidebar');
     var rightW = (rightSidebar && !rightSidebar.classList.contains('collapsed')) ? rightSidebar.offsetWidth : 0;
     btnsContainer.style.right = (16 + rightW) + 'px';
+
+    // 星ボタンの位置: 右上固定、サイドバー開時はその幅分左にずれる
+    var starBtn = document.getElementById('canvasStarBtn');
+    if (starBtn) {
+        starBtn.style.right = (12 + rightW) + 'px';
+    }
 }
 
 function adjustCanvasForSidebars() {

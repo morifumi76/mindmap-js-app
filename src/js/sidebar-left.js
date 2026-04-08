@@ -249,6 +249,18 @@ function initLeftSidebar() {
         createNewMap();
     });
 
+    // キャンバス右上の星ボタン: お気に入りトグル
+    var canvasStarBtn = document.getElementById('canvasStarBtn');
+    if (canvasStarBtn) {
+        canvasStarBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (!currentMapId) return;
+            var isNowStarred = toggleFavorite(currentMapId);
+            renderMapList();
+            showToast(isNowStarred ? '★ お気に入りに追加しました' : '☆ お気に入りから外しました');
+        });
+    }
+
     // Context menu actions for pages
     document.getElementById('ctxMenu').addEventListener('click', function(e) {
         var action = e.target.getAttribute('data-action');
@@ -611,6 +623,9 @@ function renderMapList() {
     var folders = metaList.filter(function(m) { return m.type === 'folder'; });
     var pages = metaList.filter(function(m) { return m.type === 'page'; });
 
+    // お気に入りページを抽出（starred フラグが true のもの）
+    var starredPages = pages.filter(function(p) { return p.starred; });
+
     // Build maps for quick lookup
     var pagesByFolder = {};   // folderId -> [pages]
     var subFoldersByParent = {}; // parentFolderId -> [folders]
@@ -665,8 +680,47 @@ function renderMapList() {
 
     list.innerHTML = '';
 
+    // --- お気に入りセクション（常時表示・折りたたみ対応） ---
+    var FAV_COLLAPSE_KEY = 'mindmap-fav-collapsed';
+    var isFavCollapsed = localStorage.getItem(FAV_COLLAPSE_KEY) === '1';
+
+    var favHeader = document.createElement('div');
+    favHeader.className = 'map-section-header map-section-header--collapsible';
+    favHeader.innerHTML = '<span class="map-section-toggle">' + (isFavCollapsed ? '►' : '▼') + '</span> お気に入り';
+    favHeader.title = isFavCollapsed ? '展開' : '折りたたむ';
+    favHeader.addEventListener('click', function() {
+        isFavCollapsed = !isFavCollapsed;
+        try { localStorage.setItem(FAV_COLLAPSE_KEY, isFavCollapsed ? '1' : '0'); } catch(e) {}
+        renderMapList();
+    });
+    list.appendChild(favHeader);
+
+    if (!isFavCollapsed) {
+        for (var si = 0; si < starredPages.length; si++) {
+            var sp = starredPages[si];
+            var isSpActive = (String(sp.id) === String(currentMapId));
+            var spEl = createPageElement(sp, isSpActive, false, 0, true);
+            list.appendChild(spEl);
+        }
+    }
+
+    var PRIV_COLLAPSE_KEY = 'mindmap-priv-collapsed';
+    var isPrivCollapsed = localStorage.getItem(PRIV_COLLAPSE_KEY) === '1';
+
+    var privHeader = document.createElement('div');
+    privHeader.className = 'map-section-header map-section-header--collapsible';
+    privHeader.innerHTML = '<span class="map-section-toggle">' + (isPrivCollapsed ? '►' : '▼') + '</span> プライベート';
+    privHeader.title = isPrivCollapsed ? '展開' : '折りたたむ';
+    privHeader.addEventListener('click', function() {
+        isPrivCollapsed = !isPrivCollapsed;
+        try { localStorage.setItem(PRIV_COLLAPSE_KEY, isPrivCollapsed ? '1' : '0'); } catch(e) {}
+        renderMapList();
+    });
+    list.appendChild(privHeader);
+
     // Recursive render starting from root (parentFolderId === null)
     function renderFolderChildren(parentId, depth) {
+        if (isPrivCollapsed) return;
         var childFolders = subFoldersByParent[parentId] || [];
         var childPages = pagesByFolder[parentId] || [];
 
@@ -695,6 +749,7 @@ function renderMapList() {
 
     renderFolderChildren(null, 0);
     updateSidebarSelectionDisplay();
+    updateCanvasStarBtn();
 }
 
 function createFolderElement(folder, hasPages, isCollapsed, isDndEnabled, depth, containsActive) {
@@ -874,7 +929,7 @@ function createFolderElement(folder, hasPages, isCollapsed, isDndEnabled, depth,
     return item;
 }
 
-function createPageElement(page, isActive, isDndEnabled, depth) {
+function createPageElement(page, isActive, isDndEnabled, depth, inFavSection) {
     depth = depth || 0;
     var item = document.createElement('div');
     item.className = 'map-item page-item' + (isActive ? ' active' : '');
@@ -1022,6 +1077,17 @@ function createPageElement(page, isActive, isDndEnabled, depth) {
     })(page.id, page, item, name, menuBtn);
 
     return item;
+}
+
+// ---- キャンバス右上の星ボタンを現在のマップ状態に合わせて更新 ----
+function updateCanvasStarBtn() {
+    var btn = document.getElementById('canvasStarBtn');
+    if (!btn) return;
+    var meta = findMetaById(currentMapId);
+    if (!meta) return;
+    btn.textContent = meta.starred ? '★' : '☆';
+    btn.classList.toggle('starred', !!meta.starred);
+    btn.title = meta.starred ? 'お気に入りから外す' : 'お気に入りに追加';
 }
 
 // ---- Map Drag & Drop State ----

@@ -627,6 +627,76 @@ html, body {
     background: rgba(35, 131, 226, 0.18);
 }
 
+/* ========================================
+   お気に入り / プライベート セクションヘッダー
+   ======================================== */
+.map-section-header {
+    padding: 8px 12px 4px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #91918e;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    user-select: none;
+}
+
+/* お気に入りセクション折りたたみボタン */
+.map-section-header--collapsible {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.1s;
+}
+
+.map-section-header--collapsible:hover {
+    color: #37352f;
+}
+
+.map-section-toggle {
+    font-size: 9px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+/* マップアイテムの星ボタン */
+.map-item-star-btn {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: #c4c4c0;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.08s, color 0.08s, background 0.08s;
+    padding: 0;
+    line-height: 1;
+}
+
+/* ホバー時に表示 */
+.map-item:hover .map-item-star-btn {
+    opacity: 1;
+}
+
+/* お気に入り登録済みは常に表示（★ 黄色） */
+.map-item-star-btn.starred,
+.map-item-star-btn.in-fav {
+    opacity: 1;
+    color: #f5c518;
+}
+
+.map-item-star-btn:hover {
+    background: rgba(0,0,0,0.06);
+    color: #f5c518;
+}
+
 /* Context menu – Notion style */
 .ctx-menu {
     position: fixed;
@@ -879,28 +949,31 @@ html, body {
     display: none !important;
 }
 
-/* Floating 🌲 toggle button (top-right, fixed size) */
+/* Floating 🌲 toggle button (右下 FABスタイル・丸枠) */
 .sidebar-float-toggle {
     position: fixed;
-    top: 12px;
-    right: 12px;
-    width: 36px;
-    height: 36px;
+    bottom: 24px;
+    right: 24px;
+    top: auto;
+    width: 52px;
+    height: 52px;
     border: none;
-    border-radius: 8px;
+    border-radius: 50%;
     background: #fff;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.06);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    font-size: 22px;
     z-index: 601;
-    transition: background 0.12s;
+    transition: background 0.12s, box-shadow 0.12s, transform 0.12s;
 }
 
 .sidebar-float-toggle:hover {
     background: #f0f0ee;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.22), 0 0 0 1px rgba(0,0,0,0.06);
+    transform: scale(1.06);
 }
 
 .sidebar-float-toggle.hidden {
@@ -944,6 +1017,39 @@ html, body {
     letter-spacing: 0.5px;
 }
 
+
+/* ========================================
+   キャンバス右上: お気に入り星ボタン
+   ======================================== */
+.canvas-star-btn {
+    position: fixed;
+    top: 12px;
+    right: 12px; /* 🌲ボタンの元の位置（右上）に配置 */
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    background: #fff;
+    color: #c4c4c0;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 601;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+    transition: background 0.12s, color 0.12s;
+    line-height: 1;
+}
+
+.canvas-star-btn:hover {
+    background: #f0f0ee;
+    color: #f5c518;
+}
+
+.canvas-star-btn.starred {
+    color: #f5c518;
+}
 
 /* ========================================
    Toast Notification
@@ -1706,6 +1812,9 @@ body.readonly-mode .sidebar-float-toggle {
 
     <!-- Floating 🌲 toggle for right sidebar (always visible unless sidebar is open) -->
     <button class="sidebar-float-toggle" id="sidebarFloatToggle" title="ツリーナビを開く">🌲</button>
+
+    <!-- Canvas star button (top-right): お気に入りトグル -->
+    <button class="canvas-star-btn" id="canvasStarBtn" title="お気に入りに追加">☆</button>
 
     <!-- Right Sidebar -->
     <div class="sidebar" id="sidebar">
@@ -15948,6 +16057,19 @@ function migrateIfNeeded() {
     try { localStorage.setItem('mindmap-migrated-v4', '1'); } catch(e) {}
 }
 
+// ---- お気に入りトグル ----
+function toggleFavorite(mapId) {
+    var metaList = getMetaList();
+    for (var i = 0; i < metaList.length; i++) {
+        if (String(metaList[i].id) === String(mapId)) {
+            metaList[i].starred = !metaList[i].starred;
+            saveMetaList(metaList);
+            return metaList[i].starred;
+        }
+    }
+    return false;
+}
+
 // ---- Save / Load for current map ----
 function saveToLocalStorage() {
     if (!currentMapId) return;
@@ -18332,6 +18454,12 @@ function updateFloatBtnsPosition() {
     var rightSidebar = document.getElementById('sidebar');
     var rightW = (rightSidebar && !rightSidebar.classList.contains('collapsed')) ? rightSidebar.offsetWidth : 0;
     btnsContainer.style.right = (16 + rightW) + 'px';
+
+    // 星ボタンの位置: 右上固定、サイドバー開時はその幅分左にずれる
+    var starBtn = document.getElementById('canvasStarBtn');
+    if (starBtn) {
+        starBtn.style.right = (12 + rightW) + 'px';
+    }
 }
 
 function adjustCanvasForSidebars() {
@@ -18729,6 +18857,18 @@ function initLeftSidebar() {
         createNewMap();
     });
 
+    // キャンバス右上の星ボタン: お気に入りトグル
+    var canvasStarBtn = document.getElementById('canvasStarBtn');
+    if (canvasStarBtn) {
+        canvasStarBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (!currentMapId) return;
+            var isNowStarred = toggleFavorite(currentMapId);
+            renderMapList();
+            showToast(isNowStarred ? '★ お気に入りに追加しました' : '☆ お気に入りから外しました');
+        });
+    }
+
     // Context menu actions for pages
     document.getElementById('ctxMenu').addEventListener('click', function(e) {
         var action = e.target.getAttribute('data-action');
@@ -19091,6 +19231,9 @@ function renderMapList() {
     var folders = metaList.filter(function(m) { return m.type === 'folder'; });
     var pages = metaList.filter(function(m) { return m.type === 'page'; });
 
+    // お気に入りページを抽出（starred フラグが true のもの）
+    var starredPages = pages.filter(function(p) { return p.starred; });
+
     // Build maps for quick lookup
     var pagesByFolder = {};   // folderId -> [pages]
     var subFoldersByParent = {}; // parentFolderId -> [folders]
@@ -19145,8 +19288,47 @@ function renderMapList() {
 
     list.innerHTML = '';
 
+    // --- お気に入りセクション（常時表示・折りたたみ対応） ---
+    var FAV_COLLAPSE_KEY = 'mindmap-fav-collapsed';
+    var isFavCollapsed = localStorage.getItem(FAV_COLLAPSE_KEY) === '1';
+
+    var favHeader = document.createElement('div');
+    favHeader.className = 'map-section-header map-section-header--collapsible';
+    favHeader.innerHTML = '<span class="map-section-toggle">' + (isFavCollapsed ? '►' : '▼') + '</span> お気に入り';
+    favHeader.title = isFavCollapsed ? '展開' : '折りたたむ';
+    favHeader.addEventListener('click', function() {
+        isFavCollapsed = !isFavCollapsed;
+        try { localStorage.setItem(FAV_COLLAPSE_KEY, isFavCollapsed ? '1' : '0'); } catch(e) {}
+        renderMapList();
+    });
+    list.appendChild(favHeader);
+
+    if (!isFavCollapsed) {
+        for (var si = 0; si < starredPages.length; si++) {
+            var sp = starredPages[si];
+            var isSpActive = (String(sp.id) === String(currentMapId));
+            var spEl = createPageElement(sp, isSpActive, false, 0, true);
+            list.appendChild(spEl);
+        }
+    }
+
+    var PRIV_COLLAPSE_KEY = 'mindmap-priv-collapsed';
+    var isPrivCollapsed = localStorage.getItem(PRIV_COLLAPSE_KEY) === '1';
+
+    var privHeader = document.createElement('div');
+    privHeader.className = 'map-section-header map-section-header--collapsible';
+    privHeader.innerHTML = '<span class="map-section-toggle">' + (isPrivCollapsed ? '►' : '▼') + '</span> プライベート';
+    privHeader.title = isPrivCollapsed ? '展開' : '折りたたむ';
+    privHeader.addEventListener('click', function() {
+        isPrivCollapsed = !isPrivCollapsed;
+        try { localStorage.setItem(PRIV_COLLAPSE_KEY, isPrivCollapsed ? '1' : '0'); } catch(e) {}
+        renderMapList();
+    });
+    list.appendChild(privHeader);
+
     // Recursive render starting from root (parentFolderId === null)
     function renderFolderChildren(parentId, depth) {
+        if (isPrivCollapsed) return;
         var childFolders = subFoldersByParent[parentId] || [];
         var childPages = pagesByFolder[parentId] || [];
 
@@ -19175,6 +19357,7 @@ function renderMapList() {
 
     renderFolderChildren(null, 0);
     updateSidebarSelectionDisplay();
+    updateCanvasStarBtn();
 }
 
 function createFolderElement(folder, hasPages, isCollapsed, isDndEnabled, depth, containsActive) {
@@ -19354,7 +19537,7 @@ function createFolderElement(folder, hasPages, isCollapsed, isDndEnabled, depth,
     return item;
 }
 
-function createPageElement(page, isActive, isDndEnabled, depth) {
+function createPageElement(page, isActive, isDndEnabled, depth, inFavSection) {
     depth = depth || 0;
     var item = document.createElement('div');
     item.className = 'map-item page-item' + (isActive ? ' active' : '');
@@ -19502,6 +19685,17 @@ function createPageElement(page, isActive, isDndEnabled, depth) {
     })(page.id, page, item, name, menuBtn);
 
     return item;
+}
+
+// ---- キャンバス右上の星ボタンを現在のマップ状態に合わせて更新 ----
+function updateCanvasStarBtn() {
+    var btn = document.getElementById('canvasStarBtn');
+    if (!btn) return;
+    var meta = findMetaById(currentMapId);
+    if (!meta) return;
+    btn.textContent = meta.starred ? '★' : '☆';
+    btn.classList.toggle('starred', !!meta.starred);
+    btn.title = meta.starred ? 'お気に入りから外す' : 'お気に入りに追加';
 }
 
 // ---- Map Drag & Drop State ----

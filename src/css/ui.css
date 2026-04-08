@@ -1,4 +1,37 @@
 /* ========================================
+   キャンバス右上: お気に入り星ボタン
+   ======================================== */
+.canvas-star-btn {
+    position: fixed;
+    top: 12px;
+    right: 12px; /* 🌲ボタンの元の位置（右上）に配置 */
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    background: #fff;
+    color: #c4c4c0;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 601;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+    transition: background 0.12s, color 0.12s;
+    line-height: 1;
+}
+
+.canvas-star-btn:hover {
+    background: #f0f0ee;
+    color: #f5c518;
+}
+
+.canvas-star-btn.starred {
+    color: #f5c518;
+}
+
+/* ========================================
    Toast Notification
    ======================================== */
 .toast {

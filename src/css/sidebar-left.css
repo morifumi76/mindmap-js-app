@@ -402,6 +402,76 @@
     background: rgba(35, 131, 226, 0.18);
 }
 
+/* ========================================
+   お気に入り / プライベート セクションヘッダー
+   ======================================== */
+.map-section-header {
+    padding: 8px 12px 4px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #91918e;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    user-select: none;
+}
+
+/* お気に入りセクション折りたたみボタン */
+.map-section-header--collapsible {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.1s;
+}
+
+.map-section-header--collapsible:hover {
+    color: #37352f;
+}
+
+.map-section-toggle {
+    font-size: 9px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+/* マップアイテムの星ボタン */
+.map-item-star-btn {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: #c4c4c0;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.08s, color 0.08s, background 0.08s;
+    padding: 0;
+    line-height: 1;
+}
+
+/* ホバー時に表示 */
+.map-item:hover .map-item-star-btn {
+    opacity: 1;
+}
+
+/* お気に入り登録済みは常に表示（★ 黄色） */
+.map-item-star-btn.starred,
+.map-item-star-btn.in-fav {
+    opacity: 1;
+    color: #f5c518;
+}
+
+.map-item-star-btn:hover {
+    background: rgba(0,0,0,0.06);
+    color: #f5c518;
+}
+
 /* Context menu – Notion style */
 .ctx-menu {
     position: fixed;

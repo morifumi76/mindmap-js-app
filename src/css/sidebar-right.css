@@ -206,28 +206,31 @@
     display: none !important;
 }
 
-/* Floating 🌲 toggle button (top-right, fixed size) */
+/* Floating 🌲 toggle button (右下 FABスタイル・丸枠) */
 .sidebar-float-toggle {
     position: fixed;
-    top: 12px;
-    right: 12px;
-    width: 36px;
-    height: 36px;
+    bottom: 24px;
+    right: 24px;
+    top: auto;
+    width: 52px;
+    height: 52px;
     border: none;
-    border-radius: 8px;
+    border-radius: 50%;
     background: #fff;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.06);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    font-size: 22px;
     z-index: 601;
-    transition: background 0.12s;
+    transition: background 0.12s, box-shadow 0.12s, transform 0.12s;
 }
 
 .sidebar-float-toggle:hover {
     background: #f0f0ee;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.22), 0 0 0 1px rgba(0,0,0,0.06);
+    transform: scale(1.06);
 }
 
 .sidebar-float-toggle.hidden {
