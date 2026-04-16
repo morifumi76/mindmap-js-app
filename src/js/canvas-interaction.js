@@ -230,11 +230,17 @@ function syncToggleButtons() {
     var borderEl = document.getElementById('copyBorder');
     var hiyokoInput = document.getElementById('toggleHiyokoInput');
     var borderInput = document.getElementById('toggleBorderInput');
+    var hideGrayoutInput = document.getElementById('toggleHideGrayoutInput');
     if (hiyokoInput) {
         hiyokoInput.checked = (formatEl.value === 'hiyoko');
     }
     if (borderInput) {
         borderInput.checked = (borderEl.value === 'border');
+    }
+    if (hideGrayoutInput) {
+        var saved = null;
+        try { saved = localStorage.getItem('mindmap_hideGrayout'); } catch(e) {}
+        hideGrayoutInput.checked = (saved === null) ? true : (saved === 'true');
     }
 }
 

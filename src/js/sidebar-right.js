@@ -176,9 +176,19 @@ function renderSidebarTree() {
     }
 }
 
+// グレーアウト非表示トグルの状態を取得（デフォルトON = 非表示）
+function isGrayoutHiddenInSidebar() {
+    var el = document.getElementById('toggleHideGrayoutInput');
+    if (el) return !!el.checked;
+    var saved = null;
+    try { saved = localStorage.getItem('mindmap_hideGrayout'); } catch(e) {}
+    return (saved === null) ? true : (saved === 'true');
+}
+
 function generatePreviewLines(node, level, parentContinues, format, useBorder, lines) {
-    // If this node is grayed out, skip it and all descendants entirely in tree nav
-    if (level > 0 && isNodeGrayedOut(node.id)) return;
+    var hideGrayout = isGrayoutHiddenInSidebar();
+    // グレーアウト非表示がONの場合のみ、グレーアウトされたノードとその子孫をスキップ
+    if (hideGrayout && level > 0 && isNodeGrayedOut(node.id)) return;
 
     var iconLevel = Math.min(level + 1, 4);
     var icons = levelIcons[format];
@@ -208,13 +218,14 @@ function generatePreviewLines(node, level, parentContinues, format, useBorder, l
     lineText = lineText.replace(/\n/g, ' ');
     lines.push({ text: lineText, nodeId: node.id });
 
-    // Skip children if node is collapsed OR grayed out (hide grayed-out node and all descendants)
-    if (isNodeCollapsed(node.id) || isNodeGrayedOut(node.id)) return;
+    // Skip children if node is collapsed OR (非表示モード時のみ)グレーアウトされている
+    if (isNodeCollapsed(node.id)) return;
+    if (hideGrayout && isNodeGrayedOut(node.id)) return;
 
-    // Filter out grayed-out children for sidebar display
+    // グレーアウトされた子を表示するかはトグル状態に依存
     var visibleChildrenForSidebar = [];
     for (var ci = 0; ci < node.children.length; ci++) {
-        if (!isNodeGrayedOut(node.children[ci].id)) {
+        if (!hideGrayout || !isNodeGrayedOut(node.children[ci].id)) {
             visibleChildrenForSidebar.push(node.children[ci]);
         }
     }

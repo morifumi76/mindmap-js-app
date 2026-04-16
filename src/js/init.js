@@ -196,6 +196,12 @@ function init() {
     // Apply saved state to hidden selects
     if (savedFormat) document.getElementById('copyFormat').value = savedFormat;
     document.getElementById('copyBorder').value = savedBorder || 'border';
+    // グレーアウト非表示トグルの初期状態を復元（デフォルトON = 非表示）
+    var savedHideGrayout = localStorage.getItem('mindmap_hideGrayout');
+    var hideGrayoutInput = document.getElementById('toggleHideGrayoutInput');
+    if (hideGrayoutInput) {
+        hideGrayoutInput.checked = (savedHideGrayout === null) ? true : (savedHideGrayout === 'true');
+    }
     // Sync toggle button UI with saved state
     syncToggleButtons();
 
@@ -224,6 +230,15 @@ function init() {
         try { localStorage.setItem('mindmap_copyBorder', borderEl.value); } catch(e) {}
         renderSidebarTree();
     });
+
+    // Toggle switch: グレーアウト非表示 ON/OFF
+    var hideGrayoutToggle = document.getElementById('toggleHideGrayoutInput');
+    if (hideGrayoutToggle) {
+        hideGrayoutToggle.addEventListener('change', function() {
+            try { localStorage.setItem('mindmap_hideGrayout', this.checked ? 'true' : 'false'); } catch(e) {}
+            renderSidebarTree();
+        });
+    }
 
     // Keep hidden selects in sync (for backward compat / API)
     document.getElementById('copyFormat').addEventListener('change', function() {

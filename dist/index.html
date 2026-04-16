@@ -1845,6 +1845,13 @@ body.readonly-mode .sidebar-float-toggle {
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
+                    <div class="sidebar-toggle-row">
+                        <span class="sidebar-toggle-label">グレーアウト非表示</span>
+                        <label class="toggle-switch" id="toggleHideGrayout">
+                            <input type="checkbox" id="toggleHideGrayoutInput" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
                 </div>
                 <div class="sidebar-button-area">
                     <button class="sidebar-btn-copy" id="copyBtn" title="クリップボードにコピー">コピー</button>
@@ -18055,11 +18062,17 @@ function syncToggleButtons() {
     var borderEl = document.getElementById('copyBorder');
     var hiyokoInput = document.getElementById('toggleHiyokoInput');
     var borderInput = document.getElementById('toggleBorderInput');
+    var hideGrayoutInput = document.getElementById('toggleHideGrayoutInput');
     if (hiyokoInput) {
         hiyokoInput.checked = (formatEl.value === 'hiyoko');
     }
     if (borderInput) {
         borderInput.checked = (borderEl.value === 'border');
+    }
+    if (hideGrayoutInput) {
+        var saved = null;
+        try { saved = localStorage.getItem('mindmap_hideGrayout'); } catch(e) {}
+        hideGrayoutInput.checked = (saved === null) ? true : (saved === 'true');
     }
 }
 
@@ -18262,6 +18275,12 @@ function init() {
     // Apply saved state to hidden selects
     if (savedFormat) document.getElementById('copyFormat').value = savedFormat;
     document.getElementById('copyBorder').value = savedBorder || 'border';
+    // グレーアウト非表示トグルの初期状態を復元（デフォルトON = 非表示）
+    var savedHideGrayout = localStorage.getItem('mindmap_hideGrayout');
+    var hideGrayoutInput = document.getElementById('toggleHideGrayoutInput');
+    if (hideGrayoutInput) {
+        hideGrayoutInput.checked = (savedHideGrayout === null) ? true : (savedHideGrayout === 'true');
+    }
     // Sync toggle button UI with saved state
     syncToggleButtons();
 
@@ -18290,6 +18309,15 @@ function init() {
         try { localStorage.setItem('mindmap_copyBorder', borderEl.value); } catch(e) {}
         renderSidebarTree();
     });
+
+    // Toggle switch: グレーアウト非表示 ON/OFF
+    var hideGrayoutToggle = document.getElementById('toggleHideGrayoutInput');
+    if (hideGrayoutToggle) {
+        hideGrayoutToggle.addEventListener('change', function() {
+            try { localStorage.setItem('mindmap_hideGrayout', this.checked ? 'true' : 'false'); } catch(e) {}
+            renderSidebarTree();
+        });
+    }
 
     // Keep hidden selects in sync (for backward compat / API)
     document.getElementById('copyFormat').addEventListener('change', function() {
@@ -18522,9 +18550,19 @@ function renderSidebarTree() {
     }
 }
 
+// グレーアウト非表示トグルの状態を取得（デフォルトON = 非表示）
+function isGrayoutHiddenInSidebar() {
+    var el = document.getElementById('toggleHideGrayoutInput');
+    if (el) return !!el.checked;
+    var saved = null;
+    try { saved = localStorage.getItem('mindmap_hideGrayout'); } catch(e) {}
+    return (saved === null) ? true : (saved === 'true');
+}
+
 function generatePreviewLines(node, level, parentContinues, format, useBorder, lines) {
-    // If this node is grayed out, skip it and all descendants entirely in tree nav
-    if (level > 0 && isNodeGrayedOut(node.id)) return;
+    var hideGrayout = isGrayoutHiddenInSidebar();
+    // グレーアウト非表示がONの場合のみ、グレーアウトされたノードとその子孫をスキップ
+    if (hideGrayout && level > 0 && isNodeGrayedOut(node.id)) return;
 
     var iconLevel = Math.min(level + 1, 4);
     var icons = levelIcons[format];
@@ -18554,13 +18592,14 @@ function generatePreviewLines(node, level, parentContinues, format, useBorder, l
     lineText = lineText.replace(/\n/g, ' ');
     lines.push({ text: lineText, nodeId: node.id });
 
-    // Skip children if node is collapsed OR grayed out (hide grayed-out node and all descendants)
-    if (isNodeCollapsed(node.id) || isNodeGrayedOut(node.id)) return;
+    // Skip children if node is collapsed OR (非表示モード時のみ)グレーアウトされている
+    if (isNodeCollapsed(node.id)) return;
+    if (hideGrayout && isNodeGrayedOut(node.id)) return;
 
-    // Filter out grayed-out children for sidebar display
+    // グレーアウトされた子を表示するかはトグル状態に依存
     var visibleChildrenForSidebar = [];
     for (var ci = 0; ci < node.children.length; ci++) {
-        if (!isNodeGrayedOut(node.children[ci].id)) {
+        if (!hideGrayout || !isNodeGrayedOut(node.children[ci].id)) {
             visibleChildrenForSidebar.push(node.children[ci]);
         }
     }
