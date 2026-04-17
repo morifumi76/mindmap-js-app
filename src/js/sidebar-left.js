@@ -623,8 +623,9 @@ function renderMapList() {
     var folders = metaList.filter(function(m) { return m.type === 'folder'; });
     var pages = metaList.filter(function(m) { return m.type === 'page'; });
 
-    // お気に入りページを抽出（starred フラグが true のもの）
+    // お気に入りページを抽出し、starOrder 順にソート（アルファベットソートの影響を受けない）
     var starredPages = pages.filter(function(p) { return p.starred; });
+    starredPages.sort(function(a, b) { return (a.starOrder || 0) - (b.starOrder || 0); });
 
     // Build maps for quick lookup
     var pagesByFolder = {};   // folderId -> [pages]
@@ -699,7 +700,7 @@ function renderMapList() {
         for (var si = 0; si < starredPages.length; si++) {
             var sp = starredPages[si];
             var isSpActive = (String(sp.id) === String(currentMapId));
-            var spEl = createPageElement(sp, isSpActive, false, 0, true);
+            var spEl = createPageElement(sp, isSpActive, true, 0, true);
             list.appendChild(spEl);
         }
     }
@@ -942,6 +943,9 @@ function createPageElement(page, isActive, isDndEnabled, depth, inFavSection) {
     if (isDndEnabled) {
         item.draggable = true;
     }
+    if (inFavSection) {
+        item.dataset.inFav = 'true';
+    }
 
     var name = document.createElement('span');
     name.className = 'map-item-name' + (page.isPublic ? ' map-item-name--shared' : '');
@@ -1011,14 +1015,16 @@ function createPageElement(page, isActive, isDndEnabled, depth, inFavSection) {
 
         // Drag & Drop for pages
         if (isDndEnabled) {
+            var _inFav = !!inFavSection;
             itemEl.addEventListener('dragstart', function(e) {
                 e.dataTransfer.setData('text/plain', String(pageId));
                 e.dataTransfer.setData('item-type', 'page');
                 e.dataTransfer.effectAllowed = 'copyMove';
                 mapDragState.draggingId = pageId;
                 mapDragState.draggingType = 'page';
+                mapDragState.fromFavSection = _inFav;
                 // 複数選択中なら全選択ページをまとめてドラッグ
-                if (sidebarSelectedIds.size > 1 && sidebarSelectedIds.has(String(pageId))) {
+                if (!_inFav && sidebarSelectedIds.size > 1 && sidebarSelectedIds.has(String(pageId))) {
                     var allIds = [];
                     sidebarSelectedIds.forEach(function(id) { allIds.push(id); });
                     mapDragState.draggingIds = allIds;
@@ -1038,6 +1044,7 @@ function createPageElement(page, isActive, isDndEnabled, depth, inFavSection) {
                 mapDragState.draggingId = null;
                 mapDragState.draggingIds = null;
                 mapDragState.draggingType = null;
+                mapDragState.fromFavSection = false;
             });
             itemEl.addEventListener('dragover', function(e) {
                 if (!mapDragState.draggingId) return;
@@ -1045,6 +1052,10 @@ function createPageElement(page, isActive, isDndEnabled, depth, inFavSection) {
                 e.dataTransfer.dropEffect = 'move';
                 clearMapDragIndicators();
                 if (mapDragState.draggingId === pageId) return;
+
+                // お気に入りセクション内のドロップはお気に入り同士のみ許可
+                if (_inFav && !mapDragState.fromFavSection) return;
+                if (!_inFav && mapDragState.fromFavSection) return;
 
                 // Only pages can be placed above/below other pages
                 if (mapDragState.draggingType !== 'page') return;
@@ -1055,10 +1066,10 @@ function createPageElement(page, isActive, isDndEnabled, depth, inFavSection) {
 
                 if (relY < h * 0.5) {
                     itemEl.classList.add('drag-over-above');
-                    mapDragState.dropTarget = { id: pageId, position: 'above', type: 'page' };
+                    mapDragState.dropTarget = { id: pageId, position: 'above', type: 'page', inFav: _inFav };
                 } else {
                     itemEl.classList.add('drag-over-below');
-                    mapDragState.dropTarget = { id: pageId, position: 'below', type: 'page' };
+                    mapDragState.dropTarget = { id: pageId, position: 'below', type: 'page', inFav: _inFav };
                 }
             });
             itemEl.addEventListener('dragleave', function(e) {
@@ -1068,10 +1079,15 @@ function createPageElement(page, isActive, isDndEnabled, depth, inFavSection) {
                 e.preventDefault();
                 clearMapDragIndicators();
                 if (!mapDragState.draggingId || !mapDragState.dropTarget) return;
-                handleMapDrop(mapDragState.draggingId, mapDragState.dropTarget.id, mapDragState.dropTarget.position, mapDragState.draggingType);
+                if (mapDragState.dropTarget.inFav) {
+                    handleFavDrop(mapDragState.draggingId, mapDragState.dropTarget.id, mapDragState.dropTarget.position);
+                } else {
+                    handleMapDrop(mapDragState.draggingId, mapDragState.dropTarget.id, mapDragState.dropTarget.position, mapDragState.draggingType);
+                }
                 mapDragState.draggingId = null;
                 mapDragState.dropTarget = null;
                 mapDragState.draggingType = null;
+                mapDragState.fromFavSection = false;
             });
         }
     })(page.id, page, item, name, menuBtn);
@@ -1198,6 +1214,37 @@ function isFolderDescendant(metaList, ancestorId, checkId) {
         }
     }
     return false;
+}
+
+// お気に入りセクション内の並び替え処理
+function handleFavDrop(dragId, targetId, position) {
+    if (dragId === targetId) return;
+    var metaList = getMetaList();
+    var starredItems = metaList.filter(function(m) { return m.type === 'page' && m.starred && m.id !== dragId; });
+    starredItems.sort(function(a, b) { return (a.starOrder || 0) - (b.starOrder || 0); });
+
+    var dragMeta = null;
+    for (var i = 0; i < metaList.length; i++) {
+        if (metaList[i].id === dragId) { dragMeta = metaList[i]; break; }
+    }
+    if (!dragMeta) return;
+
+    var targetIdx = -1;
+    for (var i = 0; i < starredItems.length; i++) {
+        if (starredItems[i].id === targetId) { targetIdx = i; break; }
+    }
+    if (targetIdx === -1) return;
+    if (position === 'below') targetIdx++;
+    starredItems.splice(targetIdx, 0, dragMeta);
+    for (var i = 0; i < starredItems.length; i++) {
+        starredItems[i].starOrder = i;
+    }
+    saveMetaList(metaList);
+    // Supabaseに同期
+    if (typeof window._supaQueueSync === 'function' && !window._isReadOnly) {
+        window._supaQueueSync(dragId);
+    }
+    renderMapList();
 }
 
 function handleMapDrop(dragId, targetId, position, dragType) {

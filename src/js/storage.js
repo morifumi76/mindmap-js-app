@@ -316,7 +316,19 @@ function toggleFavorite(mapId) {
     for (var i = 0; i < metaList.length; i++) {
         if (String(metaList[i].id) === String(mapId)) {
             metaList[i].starred = !metaList[i].starred;
+            if (metaList[i].starred) {
+                // お気に入り追加時: 末尾に配置（既存の最大 starOrder + 1）
+                var maxSO = 0;
+                for (var j = 0; j < metaList.length; j++) {
+                    if (metaList[j].starred && metaList[j].starOrder > maxSO) maxSO = metaList[j].starOrder;
+                }
+                metaList[i].starOrder = maxSO + 1;
+            }
             saveMetaList(metaList);
+            // Supabaseにもstarred状態を同期
+            if (typeof window._supaQueueSync === 'function' && !window._isReadOnly) {
+                window._supaQueueSync(mapId);
+            }
             return metaList[i].starred;
         }
     }

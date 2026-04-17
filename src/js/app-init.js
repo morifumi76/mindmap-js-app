@@ -57,6 +57,8 @@
                 data._highlight = hl    ? JSON.parse(hl)    : {};
                 data._cyan      = cy    ? JSON.parse(cy)    : {};
                 data._redtext   = rt    ? JSON.parse(rt)    : {};
+                data._starred   = !!meta.starred;
+                data._starOrder = meta.starOrder || 0;
             } catch(e) {}
             window._supa.saveMap(localId, meta.name, data, meta.folderId).then(function() {
                 showSaveIndicator('保存済み');

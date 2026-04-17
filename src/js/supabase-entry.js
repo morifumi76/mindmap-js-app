@@ -161,7 +161,9 @@ async function loadUserData() {
             createdAt: m.created_at,
             updatedAt: m.updated_at,
             isPublic: m.is_public,
-            shareId: m.share_id
+            shareId: m.share_id,
+            starred: !!(m.data && m.data._starred),
+            starOrder: (m.data && m.data._starOrder) || 0
         });
         if (m.data) {
             // グレーアウト・ハイライト状態をlocalStorageに復元してからデータ本体を保存
