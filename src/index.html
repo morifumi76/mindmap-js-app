@@ -200,6 +200,26 @@
     </div>
     <style>#loadingOverlay.show{display:flex!important}</style>
 
+    <!-- Set Password Overlay (招待制：初回パスワード設定) -->
+    <div id="setPasswordOverlay">
+        <div class="auth-card">
+            <h1 class="auth-title">パスワードを設定</h1>
+            <p class="auth-desc">招待ありがとうございます。<br>ログイン用のパスワードを設定してください。</p>
+            <form id="setPasswordForm">
+                <div class="auth-field">
+                    <label for="newPassword">新しいパスワード</label>
+                    <input type="password" id="newPassword" autocomplete="new-password" required minlength="8" placeholder="8文字以上">
+                </div>
+                <div class="auth-field">
+                    <label for="confirmPassword">パスワード（確認）</label>
+                    <input type="password" id="confirmPassword" autocomplete="new-password" required minlength="8" placeholder="もう一度入力">
+                </div>
+                <div class="auth-error" id="setPasswordError"></div>
+                <button type="submit" class="auth-btn" id="setPasswordBtn">パスワードを設定</button>
+            </form>
+        </div>
+    </div>
+
     <!-- Login Overlay -->
     <div id="authOverlay">
         <div class="auth-card">

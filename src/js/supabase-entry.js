@@ -32,10 +32,22 @@ async function getCurrentUser() {
 }
 
 function onAuthStateChange(callback) {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        callback(session ? session.user : null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        callback(session ? session.user : null, event);
     });
     return () => subscription.unsubscribe();
+}
+
+async function updatePassword(newPassword) {
+    const { data, error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) throw error;
+    return data;
+}
+
+// 招待リンクか判定（URLハッシュに type=invite が含まれる）
+function isInviteHash() {
+    var hash = window.location.hash;
+    return hash.indexOf('type=invite') !== -1 || hash.indexOf('type=signup') !== -1;
 }
 
 // ---- ID mapping helpers ----
@@ -363,6 +375,8 @@ window._supa = {
     logout,
     getCurrentUser,
     onAuthStateChange,
+    updatePassword,
+    isInviteHash,
     loadUserData,
     saveMap,
     deleteMap,

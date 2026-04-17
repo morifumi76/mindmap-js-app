@@ -1540,6 +1540,30 @@ html, body {
     cursor: not-allowed;
 }
 
+/* 説明テキスト（招待画面） */
+.auth-desc {
+    font-size: 13px;
+    color: #6b6b6b;
+    line-height: 1.7;
+    text-align: center;
+    margin: 0 0 20px 0;
+}
+
+/* パスワード設定オーバーレイ */
+#setPasswordOverlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #f7f7f5;
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+
+#setPasswordOverlay.show {
+    display: flex;
+}
+
 /* ========================================
    Save Indicator
    ======================================== */
@@ -2065,6 +2089,26 @@ body.readonly-mode .sidebar-float-toggle {
         データを読み込んでいます...
     </div>
     <style>#loadingOverlay.show{display:flex!important}</style>
+
+    <!-- Set Password Overlay (招待制：初回パスワード設定) -->
+    <div id="setPasswordOverlay">
+        <div class="auth-card">
+            <h1 class="auth-title">パスワードを設定</h1>
+            <p class="auth-desc">招待ありがとうございます。<br>ログイン用のパスワードを設定してください。</p>
+            <form id="setPasswordForm">
+                <div class="auth-field">
+                    <label for="newPassword">新しいパスワード</label>
+                    <input type="password" id="newPassword" autocomplete="new-password" required minlength="8" placeholder="8文字以上">
+                </div>
+                <div class="auth-field">
+                    <label for="confirmPassword">パスワード（確認）</label>
+                    <input type="password" id="confirmPassword" autocomplete="new-password" required minlength="8" placeholder="もう一度入力">
+                </div>
+                <div class="auth-error" id="setPasswordError"></div>
+                <button type="submit" class="auth-btn" id="setPasswordBtn">パスワードを設定</button>
+            </form>
+        </div>
+    </div>
 
     <!-- Login Overlay -->
     <div id="authOverlay">
@@ -15336,10 +15380,19 @@ ${suffix}`;
     return user;
   }
   function onAuthStateChange(callback) {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      callback(session ? session.user : null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      callback(session ? session.user : null, event);
     });
     return () => subscription.unsubscribe();
+  }
+  async function updatePassword(newPassword) {
+    const { data, error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) throw error;
+    return data;
+  }
+  function isInviteHash() {
+    var hash = window.location.hash;
+    return hash.indexOf("type=invite") !== -1 || hash.indexOf("type=signup") !== -1;
   }
   function getSupabaseMapId(localId) {
     return localStorage.getItem(MAP_KEY_PREFIX + localId);
@@ -15615,6 +15668,8 @@ ${suffix}`;
     logout,
     getCurrentUser,
     onAuthStateChange,
+    updatePassword,
+    isInviteHash,
     loadUserData,
     saveMap,
     deleteMap,
@@ -21146,6 +21201,58 @@ window.toggleNodeHighlight = toggleNodeHighlight;
         if (overlay) overlay.classList.remove('show');
     }
 
+    // ---- Set Password screen (招待制フロー) ----
+    var _isInviteFlow = false;
+
+    function showSetPasswordScreen() {
+        var overlay = document.getElementById('setPasswordOverlay');
+        if (overlay) overlay.classList.add('show');
+    }
+
+    function hideSetPasswordScreen() {
+        var overlay = document.getElementById('setPasswordOverlay');
+        if (overlay) overlay.classList.remove('show');
+    }
+
+    function initSetPasswordForm() {
+        var form = document.getElementById('setPasswordForm');
+        if (!form) return;
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var pw       = document.getElementById('newPassword').value;
+            var confirm  = document.getElementById('confirmPassword').value;
+            var errorEl  = document.getElementById('setPasswordError');
+            var btn      = document.getElementById('setPasswordBtn');
+            errorEl.textContent = '';
+
+            if (pw.length < 8) {
+                errorEl.textContent = 'パスワードは8文字以上で入力してください';
+                return;
+            }
+            if (pw !== confirm) {
+                errorEl.textContent = 'パスワードが一致しません';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = '設定中...';
+
+            window._supa.updatePassword(pw).then(function() {
+                hideSetPasswordScreen();
+                // URLハッシュをクリーンアップ
+                if (window.history.replaceState) {
+                    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+                }
+                _isInviteFlow = false;
+                handleLoggedIn();
+            }).catch(function(err) {
+                errorEl.textContent = 'パスワードの設定に失敗しました: ' + (err.message || err);
+                btn.disabled = false;
+                btn.textContent = 'パスワードを設定';
+            });
+        });
+    }
+
     // ---- Loading overlay ----
     function showLoading() {
         var el = document.getElementById('loadingOverlay');
@@ -21450,9 +21557,13 @@ window.toggleNodeHighlight = toggleNodeHighlight;
         }
 
         initLoginForm();
+        initSetPasswordForm();
         initMigrationDialog();
         initShareDialog();
         initLogoutButton();
+
+        // 招待リンク判定（URLハッシュに type=invite が含まれるか）
+        _isInviteFlow = window._supa.isInviteHash();
 
         // Check for shared URL first
         var shareId = getShareIdFromUrl();
@@ -21479,9 +21590,15 @@ window.toggleNodeHighlight = toggleNodeHighlight;
 
         // Watch for auth changes (login/logout)
         // appInitialized が true のときはトークンリフレッシュによる誤再初期化を防ぐ
-        window._supa.onAuthStateChange(function(user) {
-            console.log('[DEBUG] onAuthStateChange fired, user:', user);
+        window._supa.onAuthStateChange(function(user, event) {
+            console.log('[DEBUG] onAuthStateChange fired, user:', user, 'event:', event);
             if (user) {
+                // 招待フロー: セッション確立後にパスワード設定画面を表示
+                if (_isInviteFlow) {
+                    hideLoginScreen();
+                    showSetPasswordScreen();
+                    return;
+                }
                 hideLoginScreen();
                 if (!appInitialized) {
                     handleLoggedIn();

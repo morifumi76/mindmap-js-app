@@ -105,6 +105,58 @@
         if (overlay) overlay.classList.remove('show');
     }
 
+    // ---- Set Password screen (招待制フロー) ----
+    var _isInviteFlow = false;
+
+    function showSetPasswordScreen() {
+        var overlay = document.getElementById('setPasswordOverlay');
+        if (overlay) overlay.classList.add('show');
+    }
+
+    function hideSetPasswordScreen() {
+        var overlay = document.getElementById('setPasswordOverlay');
+        if (overlay) overlay.classList.remove('show');
+    }
+
+    function initSetPasswordForm() {
+        var form = document.getElementById('setPasswordForm');
+        if (!form) return;
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var pw       = document.getElementById('newPassword').value;
+            var confirm  = document.getElementById('confirmPassword').value;
+            var errorEl  = document.getElementById('setPasswordError');
+            var btn      = document.getElementById('setPasswordBtn');
+            errorEl.textContent = '';
+
+            if (pw.length < 8) {
+                errorEl.textContent = 'パスワードは8文字以上で入力してください';
+                return;
+            }
+            if (pw !== confirm) {
+                errorEl.textContent = 'パスワードが一致しません';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = '設定中...';
+
+            window._supa.updatePassword(pw).then(function() {
+                hideSetPasswordScreen();
+                // URLハッシュをクリーンアップ
+                if (window.history.replaceState) {
+                    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+                }
+                _isInviteFlow = false;
+                handleLoggedIn();
+            }).catch(function(err) {
+                errorEl.textContent = 'パスワードの設定に失敗しました: ' + (err.message || err);
+                btn.disabled = false;
+                btn.textContent = 'パスワードを設定';
+            });
+        });
+    }
+
     // ---- Loading overlay ----
     function showLoading() {
         var el = document.getElementById('loadingOverlay');
@@ -409,9 +461,13 @@
         }
 
         initLoginForm();
+        initSetPasswordForm();
         initMigrationDialog();
         initShareDialog();
         initLogoutButton();
+
+        // 招待リンク判定（URLハッシュに type=invite が含まれるか）
+        _isInviteFlow = window._supa.isInviteHash();
 
         // Check for shared URL first
         var shareId = getShareIdFromUrl();
@@ -438,9 +494,15 @@
 
         // Watch for auth changes (login/logout)
         // appInitialized が true のときはトークンリフレッシュによる誤再初期化を防ぐ
-        window._supa.onAuthStateChange(function(user) {
-            console.log('[DEBUG] onAuthStateChange fired, user:', user);
+        window._supa.onAuthStateChange(function(user, event) {
+            console.log('[DEBUG] onAuthStateChange fired, user:', user, 'event:', event);
             if (user) {
+                // 招待フロー: セッション確立後にパスワード設定画面を表示
+                if (_isInviteFlow) {
+                    hideLoginScreen();
+                    showSetPasswordScreen();
+                    return;
+                }
                 hideLoginScreen();
                 if (!appInitialized) {
                     handleLoggedIn();

@@ -99,6 +99,30 @@
     cursor: not-allowed;
 }
 
+/* 説明テキスト（招待画面） */
+.auth-desc {
+    font-size: 13px;
+    color: #6b6b6b;
+    line-height: 1.7;
+    text-align: center;
+    margin: 0 0 20px 0;
+}
+
+/* パスワード設定オーバーレイ */
+#setPasswordOverlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #f7f7f5;
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+
+#setPasswordOverlay.show {
+    display: flex;
+}
+
 /* ========================================
    Save Indicator
    ======================================== */
