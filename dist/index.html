@@ -1224,6 +1224,139 @@ html, body {
     border-left: 1px solid rgba(0,0,0,0.06);
 }
 
+/* リンク挿入ボタン（dot-control と別のコンテナで隙間を作る） */
+.link-control {
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+    overflow: hidden;
+}
+.canvas-float-btns .float-link-btn {
+    font-size: 14px;
+    line-height: 1;
+}
+.canvas-float-btns .float-link-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+.canvas-float-btns .float-link-btn:disabled:hover {
+    background: transparent;
+}
+.canvas-float-btns .float-link-btn.has-link {
+    background: #e0f0ff;
+}
+
+/* ハイパーリンク設定済みノード（リンク色＋下線でリンクらしく） */
+.node.has-link .node-text {
+    color: #0563C1 !important;
+    text-decoration: underline;
+    text-decoration-color: #0563C1;
+    text-underline-offset: 2px;
+}
+
+/* リンク設定モーダル */
+.link-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 800;
+}
+.link-modal {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px 22px;
+    width: 380px;
+    max-width: calc(100vw - 32px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    box-sizing: border-box;
+}
+.link-modal-header {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 14px;
+    color: #111;
+}
+.link-modal-body label {
+    display: block;
+    margin-bottom: 12px;
+}
+.link-modal-body label span {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 4px;
+}
+.link-modal-body input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+.link-modal-body input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+.link-modal-error {
+    color: #e53e3e;
+    font-size: 12px;
+    min-height: 16px;
+    margin-top: 4px;
+}
+.link-modal-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+.link-modal-spacer {
+    flex: 1;
+}
+.link-modal-footer button {
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    font-family: inherit;
+}
+.link-modal-footer button:hover {
+    background: #f3f4f6;
+}
+#linkModalOk {
+    background: #2563eb;
+    color: #fff;
+    border-color: #2563eb;
+}
+#linkModalOk:hover {
+    background: #1d4ed8;
+}
+#linkModalOk:disabled {
+    background: #9ca3af;
+    border-color: #9ca3af;
+    cursor: not-allowed;
+}
+#linkModalOk:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.35);
+}
+#linkModalDelete {
+    color: #e53e3e;
+    border-color: #e53e3e;
+}
+#linkModalDelete:hover {
+    background: #fef2f2;
+}
+
 /* Zoom control bar */
 .zoom-control {
     display: flex;
@@ -1885,6 +2018,33 @@ body.readonly-mode .sidebar-float-toggle {
             <button class="float-action-btn float-dot-btn float-dot-yellow" id="highlightFloatBtn" title="ハイライト (Option+Cmd+Y)"></button>
             <button class="float-action-btn float-dot-btn float-dot-cyan" id="cyanFloatBtn" title="水色ハイライト (Option+Cmd+B)"></button>
             <button class="float-action-btn float-redtext-btn" id="redTextFloatBtn" title="赤文字 (Option+Cmd+A)">A</button>
+        </div>
+        <div class="link-control">
+            <button class="float-action-btn float-link-btn" id="linkFloatBtn" title="リンクを挿入 (Option+Cmd+K)" aria-label="リンクを挿入" disabled>🔗</button>
+        </div>
+    </div>
+
+    <!-- Link modal -->
+    <div class="link-modal-overlay" id="linkModalOverlay" style="display:none">
+        <div class="link-modal" role="dialog" aria-labelledby="linkModalTitle">
+            <div class="link-modal-header" id="linkModalTitle">リンクを設定</div>
+            <div class="link-modal-body">
+                <label>
+                    <span>テキスト名</span>
+                    <input type="text" id="linkModalText" autocomplete="off">
+                </label>
+                <label>
+                    <span>URL</span>
+                    <input type="text" id="linkModalUrl" placeholder="https://" autocomplete="off">
+                </label>
+                <div class="link-modal-error" id="linkModalError"></div>
+            </div>
+            <div class="link-modal-footer">
+                <button type="button" id="linkModalDelete" style="display:none">削除</button>
+                <span class="link-modal-spacer"></span>
+                <button type="button" id="linkModalCancel">キャンセル</button>
+                <button type="button" id="linkModalOk" disabled>OK</button>
+            </div>
         </div>
     </div>
 
@@ -15652,6 +15812,28 @@ function isNodeRedText(nodeId) {
     return state[nodeId] === true;
 }
 
+// ノードのハイパーリンク情報は node.hyperlink として mindMapData に保存される（Supabase/localStorageに自動同期）
+function getNodeHyperlink(nodeId) {
+    var r = findNode(nodeId);
+    if (!r || !r.node) return null;
+    return r.node.hyperlink || null;
+}
+function setNodeHyperlink(nodeId, link) {
+    var r = findNode(nodeId);
+    if (!r || !r.node) return;
+    if (link && link.url) {
+        r.node.hyperlink = {
+            url: link.url,
+            displayText: link.displayText || r.node.text
+        };
+    } else {
+        delete r.node.hyperlink;
+    }
+}
+function isNodeLinked(nodeId) {
+    return !!getNodeHyperlink(nodeId);
+}
+
 function getNodeCollapseState() {
     if (!currentMapId) return {};
     try {
@@ -16384,6 +16566,8 @@ function updateSelectionDisplay() {
     document.querySelectorAll('.sidebar-preview-line').forEach(function(el) {
         el.classList.toggle('active', selectedNodeIds.has(el.getAttribute('data-sid')));
     });
+    // 選択状態に応じてリンクボタンの活性・リンク設定済み表示を更新
+    if (typeof updateLinkButtonState === 'function') updateLinkButtonState();
 }
 
 function toggleSelectNode(nodeId) {
@@ -17383,7 +17567,7 @@ function renderNodes(node, container, positions) {
     var pos = positions[node.id];
     if (!pos) return;
     var el = document.createElement('div');
-    el.className = 'node' + (node.id === 'root' ? ' root' : '') + (isNodeGrayedOut(node.id) ? ' grayed-out' : '') + (isNodeHighlighted(node.id) ? ' highlighted' : '') + (isNodeCyan(node.id) ? ' cyan-hl' : '') + (isNodeRedText(node.id) ? ' red-text' : '');
+    el.className = 'node' + (node.id === 'root' ? ' root' : '') + (isNodeGrayedOut(node.id) ? ' grayed-out' : '') + (isNodeHighlighted(node.id) ? ' highlighted' : '') + (isNodeCyan(node.id) ? ' cyan-hl' : '') + (isNodeRedText(node.id) ? ' red-text' : '') + (node.hyperlink && node.hyperlink.url ? ' has-link' : '');
     el.dataset.id = node.id;
     el.style.left = pos.x + 'px';
     el.style.top = pos.y + 'px';
@@ -17459,10 +17643,23 @@ function renderNodes(node, container, positions) {
                 finishEditing();
                 rangeSelectNode(nodeData.id);
             } else if (cmdKey) {
-                finishEditing();
-                toggleSelectNode(nodeData.id);
+                // リンク設定済みノードではCmd+クリックで編集モードへ（URL発火させずに編集）
+                if (nodeData.hyperlink && nodeData.hyperlink.url) {
+                    finishEditing();
+                    selectNode(nodeData.id);
+                    startEditing(nodeData.id);
+                } else {
+                    finishEditing();
+                    toggleSelectNode(nodeData.id);
+                }
             } else {
-                // Normal click -> enter edit mode directly
+                // Normal click: リンクありなら新タブで開く、なければ編集モード
+                if (nodeData.hyperlink && nodeData.hyperlink.url) {
+                    finishEditing();
+                    selectNode(nodeData.id);
+                    window.open(nodeData.hyperlink.url, '_blank', 'noopener,noreferrer');
+                    return;
+                }
                 if (editingNodeId === nodeData.id) return;
                 finishEditing();
                 selectNode(nodeData.id);
@@ -17635,6 +17832,9 @@ function applyRedTextToSelection() {
 }
 
 function handleKeyDown(e) {
+    // リンク設定モーダル表示中は、モーダル内の handler（input/button）のみで処理する
+    if (typeof isLinkModalOpen === 'function' && isLinkModalOpen()) return;
+
     // Read-only mode: only allow zoom/pan shortcuts, block all editing
     if (window._isReadOnly) {
         var isMacRO = /Mac/.test(navigator.platform);
@@ -17734,6 +17934,12 @@ function handleKeyDown(e) {
         if (e.code === 'KeyA') {
             e.preventDefault();
             applyRedTextToSelection();
+            return;
+        }
+        if (e.code === 'KeyK') {
+            // Option+Cmd+K – open hyperlink modal for selected node
+            e.preventDefault();
+            if (typeof openLinkModal === 'function') openLinkModal();
             return;
         }
     }
@@ -18235,6 +18441,17 @@ function init() {
         });
     }
 
+    // リンク挿入フローティングボタン
+    var linkBtn = document.getElementById('linkFloatBtn');
+    if (linkBtn) {
+        linkBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            openLinkModal();
+        });
+    }
+    initLinkModal();
+    updateLinkButtonState();
+
     // 赤文字フローティングボタン
     var redTextBtn = document.getElementById('redTextFloatBtn');
     if (redTextBtn) {
@@ -18367,6 +18584,213 @@ function updateUrlParam(mapId) {
 function updatePageTitle() {
     var meta = findMetaById(currentMapId);
     document.title = meta ? meta.name + ' - マインドマップ' : 'マインドマップ';
+}
+
+// ========================================
+// Link Modal (ハイパーリンク設定モーダル)
+// ========================================
+var linkModalInitialized = false;
+
+// 選択状態に応じてリンクボタンを活性/非活性・リンク設定済み表示を切り替え
+function updateLinkButtonState() {
+    var btn = document.getElementById('linkFloatBtn');
+    if (!btn) return;
+    var id = getSelectedNodeId();
+    if (!id) {
+        btn.disabled = true;
+        btn.classList.remove('has-link');
+        return;
+    }
+    btn.disabled = false;
+    if (isNodeLinked(id)) {
+        btn.classList.add('has-link');
+    } else {
+        btn.classList.remove('has-link');
+    }
+}
+
+// URL形式を正規化（httpスキームがなければ https:// を補完）
+function normalizeLinkUrl(raw) {
+    if (!raw) return '';
+    var url = raw.trim();
+    if (!url) return '';
+    if (!/^https?:\/\//i.test(url)) {
+        url = 'https://' + url;
+    }
+    return url;
+}
+
+// http(s) のURLとして有効か判定
+function isValidHttpUrl(url) {
+    if (!url) return false;
+    if (!/^https?:\/\/[^\s]+\.[^\s]+/i.test(url)) return false;
+    try {
+        new URL(url);
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+function validateLinkModalInput() {
+    var urlInput = document.getElementById('linkModalUrl');
+    var okBtn = document.getElementById('linkModalOk');
+    if (!urlInput || !okBtn) return false;
+    var normalized = normalizeLinkUrl(urlInput.value);
+    var valid = isValidHttpUrl(normalized);
+    okBtn.disabled = !valid;
+    return valid;
+}
+
+function openLinkModal() {
+    var nodeId = getSelectedNodeId();
+    if (!nodeId) {
+        showToast('ノードを選択してください');
+        return;
+    }
+    var r = findNode(nodeId);
+    if (!r || !r.node) return;
+    var existing = r.node.hyperlink || null;
+
+    var overlay = document.getElementById('linkModalOverlay');
+    var textInput = document.getElementById('linkModalText');
+    var urlInput = document.getElementById('linkModalUrl');
+    var deleteBtn = document.getElementById('linkModalDelete');
+    var errorEl = document.getElementById('linkModalError');
+    if (!overlay || !textInput || !urlInput) return;
+
+    textInput.value = existing ? (existing.displayText || r.node.text) : r.node.text;
+    urlInput.value = existing ? existing.url : '';
+    deleteBtn.style.display = existing ? '' : 'none';
+    errorEl.textContent = '';
+    overlay.dataset.nodeId = nodeId;
+    overlay.style.display = 'flex';
+
+    validateLinkModalInput();
+    setTimeout(function() {
+        urlInput.focus();
+        urlInput.select();
+    }, 0);
+}
+
+function closeLinkModal() {
+    var overlay = document.getElementById('linkModalOverlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
+function isLinkModalOpen() {
+    var overlay = document.getElementById('linkModalOverlay');
+    return !!(overlay && overlay.style.display === 'flex');
+}
+
+function submitLinkModal() {
+    var overlay = document.getElementById('linkModalOverlay');
+    var nodeId = overlay ? overlay.dataset.nodeId : null;
+    var textInput = document.getElementById('linkModalText');
+    var urlInput = document.getElementById('linkModalUrl');
+    var errorEl = document.getElementById('linkModalError');
+    if (!nodeId || !textInput || !urlInput) return;
+
+    var normalized = normalizeLinkUrl(urlInput.value);
+    if (!isValidHttpUrl(normalized)) {
+        errorEl.textContent = '有効なURLを入力してください';
+        return;
+    }
+
+    var r = findNode(nodeId);
+    if (!r || !r.node) { closeLinkModal(); return; }
+
+    var displayText = (textInput.value || '').trim() || r.node.text;
+    r.node.hyperlink = { url: normalized, displayText: displayText };
+    saveState();
+    render();
+    updateLinkButtonState();
+    closeLinkModal();
+    showToast('リンクを設定しました');
+}
+
+function deleteLinkFromModal() {
+    var overlay = document.getElementById('linkModalOverlay');
+    var nodeId = overlay ? overlay.dataset.nodeId : null;
+    if (!nodeId) { closeLinkModal(); return; }
+    var r = findNode(nodeId);
+    if (!r || !r.node) { closeLinkModal(); return; }
+    if (!r.node.hyperlink) { closeLinkModal(); return; }
+    delete r.node.hyperlink;
+    saveState();
+    render();
+    updateLinkButtonState();
+    closeLinkModal();
+    showToast('リンクを削除しました');
+}
+
+function initLinkModal() {
+    if (linkModalInitialized) return;
+    linkModalInitialized = true;
+
+    var overlay = document.getElementById('linkModalOverlay');
+    var urlInput = document.getElementById('linkModalUrl');
+    var textInput = document.getElementById('linkModalText');
+    var okBtn = document.getElementById('linkModalOk');
+    var cancelBtn = document.getElementById('linkModalCancel');
+    var deleteBtn = document.getElementById('linkModalDelete');
+    var errorEl = document.getElementById('linkModalError');
+    if (!overlay) return;
+
+    // URL入力の変更でバリデーション
+    if (urlInput) {
+        urlInput.addEventListener('input', function() {
+            if (errorEl) errorEl.textContent = '';
+            validateLinkModalInput();
+        });
+        // Enter: テキスト選択中→選択解除（カーソル末尾へ）、選択なし→確定
+        urlInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (urlInput.selectionStart !== urlInput.selectionEnd) {
+                    urlInput.selectionStart = urlInput.selectionEnd = urlInput.value.length;
+                    return;
+                }
+                validateLinkModalInput();
+                if (!okBtn.disabled) submitLinkModal();
+            }
+        });
+    }
+    if (textInput) {
+        // テキスト名でEnter → URL未入力ならURL欄へ、選択中なら解除、それ以外は確定
+        textInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (urlInput && !urlInput.value.trim()) {
+                    urlInput.focus();
+                    return;
+                }
+                if (textInput.selectionStart !== textInput.selectionEnd) {
+                    textInput.selectionStart = textInput.selectionEnd = textInput.value.length;
+                    return;
+                }
+                validateLinkModalInput();
+                if (!okBtn.disabled) submitLinkModal();
+            }
+        });
+    }
+
+    if (okBtn) okBtn.addEventListener('click', submitLinkModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeLinkModal);
+    if (deleteBtn) deleteBtn.addEventListener('click', deleteLinkFromModal);
+
+    // オーバーレイ外クリックで閉じる
+    overlay.addEventListener('mousedown', function(e) {
+        if (e.target === overlay) closeLinkModal();
+    });
+
+    // Escキーで閉じる（モーダル表示中のみ）
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && isLinkModalOpen()) {
+            e.stopPropagation();
+            closeLinkModal();
+        }
+    }, true);
 }
 
 // DOMContentLoaded is handled by app-init.js (which calls init() after auth check)

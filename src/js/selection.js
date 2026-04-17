@@ -33,6 +33,8 @@ function updateSelectionDisplay() {
     document.querySelectorAll('.sidebar-preview-line').forEach(function(el) {
         el.classList.toggle('active', selectedNodeIds.has(el.getAttribute('data-sid')));
     });
+    // 選択状態に応じてリンクボタンの活性・リンク設定済み表示を更新
+    if (typeof updateLinkButtonState === 'function') updateLinkButtonState();
 }
 
 function toggleSelectNode(nodeId) {

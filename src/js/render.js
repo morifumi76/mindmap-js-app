@@ -110,7 +110,7 @@ function renderNodes(node, container, positions) {
     var pos = positions[node.id];
     if (!pos) return;
     var el = document.createElement('div');
-    el.className = 'node' + (node.id === 'root' ? ' root' : '') + (isNodeGrayedOut(node.id) ? ' grayed-out' : '') + (isNodeHighlighted(node.id) ? ' highlighted' : '') + (isNodeCyan(node.id) ? ' cyan-hl' : '') + (isNodeRedText(node.id) ? ' red-text' : '');
+    el.className = 'node' + (node.id === 'root' ? ' root' : '') + (isNodeGrayedOut(node.id) ? ' grayed-out' : '') + (isNodeHighlighted(node.id) ? ' highlighted' : '') + (isNodeCyan(node.id) ? ' cyan-hl' : '') + (isNodeRedText(node.id) ? ' red-text' : '') + (node.hyperlink && node.hyperlink.url ? ' has-link' : '');
     el.dataset.id = node.id;
     el.style.left = pos.x + 'px';
     el.style.top = pos.y + 'px';
@@ -186,10 +186,23 @@ function renderNodes(node, container, positions) {
                 finishEditing();
                 rangeSelectNode(nodeData.id);
             } else if (cmdKey) {
-                finishEditing();
-                toggleSelectNode(nodeData.id);
+                // リンク設定済みノードではCmd+クリックで編集モードへ（URL発火させずに編集）
+                if (nodeData.hyperlink && nodeData.hyperlink.url) {
+                    finishEditing();
+                    selectNode(nodeData.id);
+                    startEditing(nodeData.id);
+                } else {
+                    finishEditing();
+                    toggleSelectNode(nodeData.id);
+                }
             } else {
-                // Normal click -> enter edit mode directly
+                // Normal click: リンクありなら新タブで開く、なければ編集モード
+                if (nodeData.hyperlink && nodeData.hyperlink.url) {
+                    finishEditing();
+                    selectNode(nodeData.id);
+                    window.open(nodeData.hyperlink.url, '_blank', 'noopener,noreferrer');
+                    return;
+                }
                 if (editingNodeId === nodeData.id) return;
                 finishEditing();
                 selectNode(nodeData.id);

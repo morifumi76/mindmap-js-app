@@ -97,6 +97,9 @@ function applyRedTextToSelection() {
 }
 
 function handleKeyDown(e) {
+    // リンク設定モーダル表示中は、モーダル内の handler（input/button）のみで処理する
+    if (typeof isLinkModalOpen === 'function' && isLinkModalOpen()) return;
+
     // Read-only mode: only allow zoom/pan shortcuts, block all editing
     if (window._isReadOnly) {
         var isMacRO = /Mac/.test(navigator.platform);
@@ -196,6 +199,12 @@ function handleKeyDown(e) {
         if (e.code === 'KeyA') {
             e.preventDefault();
             applyRedTextToSelection();
+            return;
+        }
+        if (e.code === 'KeyK') {
+            // Option+Cmd+K – open hyperlink modal for selected node
+            e.preventDefault();
+            if (typeof openLinkModal === 'function') openLinkModal();
             return;
         }
     }

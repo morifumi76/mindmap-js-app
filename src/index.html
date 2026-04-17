@@ -153,6 +153,33 @@
             <button class="float-action-btn float-dot-btn float-dot-cyan" id="cyanFloatBtn" title="水色ハイライト (Option+Cmd+B)"></button>
             <button class="float-action-btn float-redtext-btn" id="redTextFloatBtn" title="赤文字 (Option+Cmd+A)">A</button>
         </div>
+        <div class="link-control">
+            <button class="float-action-btn float-link-btn" id="linkFloatBtn" title="リンクを挿入 (Option+Cmd+K)" aria-label="リンクを挿入" disabled>🔗</button>
+        </div>
+    </div>
+
+    <!-- Link modal -->
+    <div class="link-modal-overlay" id="linkModalOverlay" style="display:none">
+        <div class="link-modal" role="dialog" aria-labelledby="linkModalTitle">
+            <div class="link-modal-header" id="linkModalTitle">リンクを設定</div>
+            <div class="link-modal-body">
+                <label>
+                    <span>テキスト名</span>
+                    <input type="text" id="linkModalText" autocomplete="off">
+                </label>
+                <label>
+                    <span>URL</span>
+                    <input type="text" id="linkModalUrl" placeholder="https://" autocomplete="off">
+                </label>
+                <div class="link-modal-error" id="linkModalError"></div>
+            </div>
+            <div class="link-modal-footer">
+                <button type="button" id="linkModalDelete" style="display:none">削除</button>
+                <span class="link-modal-spacer"></span>
+                <button type="button" id="linkModalCancel">キャンセル</button>
+                <button type="button" id="linkModalOk" disabled>OK</button>
+            </div>
+        </div>
     </div>
 
     <!-- Lasso Selection Rectangle -->
