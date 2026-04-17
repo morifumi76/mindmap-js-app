@@ -11,7 +11,7 @@
     --text-color: #333333;
     --line-color: #999999;
     --shadow: 0 2px 8px rgba(0,0,0,0.1);
-    --font-family: 'Meiryo UI', 'メイリオ', Meiryo, sans-serif;
+    --font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
 }
 
 * {
