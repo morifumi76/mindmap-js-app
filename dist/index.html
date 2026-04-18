@@ -21238,13 +21238,22 @@ window.toggleNodeHighlight = toggleNodeHighlight;
             btn.textContent = '設定中...';
 
             window._supa.updatePassword(pw).then(function() {
+                // パスワード設定成功 → サインアウトしてログイン画面へ
+                _isInviteFlow = false;
+                return window._supa.logout();
+            }).then(function() {
                 hideSetPasswordScreen();
                 // URLハッシュをクリーンアップ
                 if (window.history.replaceState) {
                     window.history.replaceState(null, '', window.location.pathname + window.location.search);
                 }
-                _isInviteFlow = false;
-                handleLoggedIn();
+                // 成功メッセージを表示してログイン画面へ
+                showLoginScreen();
+                var errorEl = document.getElementById('loginError');
+                if (errorEl) {
+                    errorEl.style.color = '#2e7d32';
+                    errorEl.textContent = 'パスワードを設定しました。ログインしてください。';
+                }
             }).catch(function(err) {
                 errorEl.textContent = 'パスワードの設定に失敗しました: ' + (err.message || err);
                 btn.disabled = false;
@@ -21278,6 +21287,7 @@ window.toggleNodeHighlight = toggleNodeHighlight;
             console.log('[DEBUG] login attempt, email:', email);
             console.log('[DEBUG] window._supa exists:', !!window._supa);
             errorEl.textContent = '';
+            errorEl.style.color = '';
             btn.disabled    = true;
             btn.textContent = 'ログイン中...';
             window._supa.login(email, password).then(function(user) {
