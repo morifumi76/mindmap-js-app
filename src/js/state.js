@@ -274,3 +274,42 @@ let lassoState = {
 // Context menu state
 let ctxMenuTargetMapId = null;
 
+// ノード間関連線（フリー接続）の状態管理
+// connectionMode: 接続待機モード中かどうか・元ノード・現在のマウス位置（プレビュー用）
+let connectionMode = {
+    active: false,
+    fromNodeId: null,
+    mouseCanvasX: 0,
+    mouseCanvasY: 0
+};
+// 現在選択中の関連線ID（最大1本）
+let selectedRelationId = null;
+// 関連線ドラッグ状態（点線本体・制御点どちらをつかんでも使う）
+// active=true でmousedown済み、moved=true で実際に閾値以上動いた（曲線として確定）
+let relationCtrlDragState = {
+    active: false,
+    relationId: null,
+    startClientX: 0,
+    startClientY: 0,
+    moved: false
+};
+
+// 関連線の端点ドラッグ状態（端点ポチをつかんで上下左右4スナップで動かす）
+let relationEndpointDragState = {
+    active: false,
+    relationId: null,
+    side: null,             // 'from' | 'to'
+    startClientX: 0,
+    startClientY: 0,
+    moved: false
+};
+
+// 手動ダブルクリック判定（render()でDOMが入れ替わることがあるため、ブラウザのdblclickイベントに頼らない）
+let lastRelationClickInfo = { time: 0, relId: null };
+
+// シングルクリック→メモ入力欄の表示遅延タイマー（ダブルクリック検出と競合しないよう280ms後に起動）
+let pendingRelationLabelEditTimer = null;
+let pendingRelationLabelEditRelId = null;
+// 直近renderでのノード位置（関連線描画やドラッグで参照する）
+let lastRenderedPositions = null;
+

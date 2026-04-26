@@ -28,6 +28,7 @@ const JS_FILES = [
     'drag.js',
     'lasso.js',
     'render.js',
+    'relations.js',
     'keyboard.js',
     'canvas-interaction.js',
     'init.js',

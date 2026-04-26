@@ -81,6 +81,15 @@ html, body {
     height: 10000px;
     overflow: visible;
     transform: translate(-5000px, -5000px);
+    /* SVG 自体は透明部分でイベントを通す。
+       子要素（.connection-line / .relation-line-hit など）が個別に pointer-events を制御する */
+    pointer-events: auto;
+}
+
+/* 関連線の端点ドット専用レイヤー：ノードより前面に重ねる。
+   SVGコンテナ自体は透過してノードクリックを邪魔しない（子の .relation-endpoint だけイベントを拾う） */
+.endpoints-svg {
+    z-index: 100;
     pointer-events: none;
 }
 
@@ -90,6 +99,111 @@ html, body {
     stroke-width: 2;
     stroke-linecap: round;
     pointer-events: none;
+}
+
+/* ノード間関連線（フリー接続線） */
+.relation-line {
+    fill: none;
+    stroke: #22c55e;
+    stroke-width: 1;
+    stroke-dasharray: 4 3;
+    stroke-linecap: round;
+    pointer-events: none; /* 実際のクリックは relation-line-hit が拾う */
+}
+
+.relation-line.selected {
+    stroke: #16a34a;
+    stroke-width: 2;
+}
+
+.relation-line.preview {
+    stroke: #22c55e;
+    stroke-width: 1;
+    stroke-dasharray: 4 3;
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+/* クリック判定用の透明な太いストローク（実線は1pxでも8〜10px幅で当たる） */
+.relation-line-hit {
+    fill: none;
+    stroke: transparent;
+    stroke-width: 10;
+    stroke-linecap: round;
+    pointer-events: stroke;
+    cursor: grab;
+}
+
+.relation-line-hit:active {
+    cursor: grabbing;
+}
+
+/* 関連線の端点ドット（双方のノード側に表示） */
+.relation-endpoint {
+    fill: #22c55e;
+    stroke: none;
+    pointer-events: auto;
+    cursor: grab;
+}
+
+.relation-endpoint.selected {
+    fill: #16a34a;
+}
+
+.relation-endpoint:active {
+    cursor: grabbing;
+}
+
+/* 関連線のメモラベル（線の中央に配置、シングルクリックで編集可能）
+   通常時はノードよりも控えめ：背景・枠なし、線と同じ薄いグリーン文字のみ。
+   キャンバスのドット背景に紛れないよう、薄い白のテキストシャドウで縁取りして可読性を確保。 */
+.relation-label {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    background: transparent;
+    border: none;
+    padding: 0 2px;
+    font-size: 10px;
+    color: #16a34a;
+    z-index: 110;
+    cursor: text;
+    min-width: 8px;
+    line-height: 1.3;
+    white-space: pre;
+    pointer-events: auto;
+    outline: none;
+    user-select: text;
+    font-family: inherit;
+    text-shadow:
+        0 0 3px #ffffff,
+        0 0 3px #ffffff,
+        0 0 3px #ffffff;
+}
+
+/* 編集中はノードと同じくらい明確に表示する（白背景＋枠） */
+.relation-label:focus {
+    background: #ffffff;
+    border: 1px solid #22c55e;
+    border-radius: 4px;
+    padding: 2px 6px;
+    color: #37352f;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25);
+    text-shadow: none;
+}
+
+.relation-label.empty-placeholder:empty::before {
+    content: 'メモ';
+    color: #b0aea3;
+    pointer-events: none;
+}
+
+/* 接続待機モード中はカーソルを十字に */
+body.connection-mode,
+body.connection-mode .canvas-container,
+body.connection-mode .canvas,
+body.connection-mode .canvas-inner,
+body.connection-mode .node {
+    cursor: crosshair !important;
 }
 
 /* ========================================
@@ -1256,6 +1370,33 @@ html, body {
     text-underline-offset: 2px;
 }
 
+/* ノード接続ボタン（🔗の右隣） */
+.connect-control {
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+    overflow: hidden;
+}
+.canvas-float-btns .float-connect-btn {
+    color: #37352f;
+    line-height: 1;
+}
+.canvas-float-btns .float-connect-btn svg {
+    display: block;
+}
+/* 接続待機中のハイライト */
+.canvas-float-btns .float-connect-btn.active {
+    background: #e8e8e8;
+}
+
+/* 関連線用コンテキストメニュー（右クリック） */
+.relation-ctx-menu {
+    position: fixed;
+    z-index: 3001;
+}
+
 /* リンク設定モーダル */
 .link-modal-overlay {
     position: fixed;
@@ -1963,6 +2104,8 @@ body.readonly-mode .sidebar-float-toggle {
         <div class="canvas" id="canvas">
             <div class="canvas-inner" id="canvasInner">
                 <svg class="lines-svg" id="linesSvg"></svg>
+                <!-- 関連線の端点ドット専用レイヤー（ノードより前面に表示するため別SVG） -->
+                <svg class="lines-svg endpoints-svg" id="endpointsSvg"></svg>
             </div>
         </div>
     </div>
@@ -2045,6 +2188,17 @@ body.readonly-mode .sidebar-float-toggle {
         </div>
         <div class="link-control">
             <button class="float-action-btn float-link-btn" id="linkFloatBtn" title="リンクを挿入 (Option+Cmd+K)" aria-label="リンクを挿入" disabled>🔗</button>
+        </div>
+        <div class="connect-control">
+            <button class="float-action-btn float-connect-btn" id="connectFloatBtn" title="ノードを接続" aria-label="ノードを接続">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                    <!-- 2つの円を線で結び、右端に小さな矢印を添えたコネクションアイコン -->
+                    <line x1="7" y1="12" x2="17" y2="12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                    <circle cx="6" cy="12" r="2.4" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                    <circle cx="18" cy="12" r="2.4" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                    <polyline points="20.5,10 22,12 20.5,14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
         </div>
     </div>
 
@@ -15966,6 +16120,45 @@ let lassoState = {
 // Context menu state
 let ctxMenuTargetMapId = null;
 
+// ノード間関連線（フリー接続）の状態管理
+// connectionMode: 接続待機モード中かどうか・元ノード・現在のマウス位置（プレビュー用）
+let connectionMode = {
+    active: false,
+    fromNodeId: null,
+    mouseCanvasX: 0,
+    mouseCanvasY: 0
+};
+// 現在選択中の関連線ID（最大1本）
+let selectedRelationId = null;
+// 関連線ドラッグ状態（点線本体・制御点どちらをつかんでも使う）
+// active=true でmousedown済み、moved=true で実際に閾値以上動いた（曲線として確定）
+let relationCtrlDragState = {
+    active: false,
+    relationId: null,
+    startClientX: 0,
+    startClientY: 0,
+    moved: false
+};
+
+// 関連線の端点ドラッグ状態（端点ポチをつかんで上下左右4スナップで動かす）
+let relationEndpointDragState = {
+    active: false,
+    relationId: null,
+    side: null,             // 'from' | 'to'
+    startClientX: 0,
+    startClientY: 0,
+    moved: false
+};
+
+// 手動ダブルクリック判定（render()でDOMが入れ替わることがあるため、ブラウザのdblclickイベントに頼らない）
+let lastRelationClickInfo = { time: 0, relId: null };
+
+// シングルクリック→メモ入力欄の表示遅延タイマー（ダブルクリック検出と競合しないよう280ms後に起動）
+let pendingRelationLabelEditTimer = null;
+let pendingRelationLabelEditRelId = null;
+// 直近renderでのノード位置（関連線描画やドラッグで参照する）
+let lastRenderedPositions = null;
+
 
 // ========================================
 // Utility Functions
@@ -16501,6 +16694,17 @@ function deleteNode(nodeId) {
     }
     var result = findNode(nodeId);
     if (!result || !result.parent) return false;
+    // 削除されるノードと、その全子孫の関連線を一緒に削除する
+    if (typeof removeRelationsForNode === 'function') {
+        var idsToCleanup = [];
+        (function collectIds(n) {
+            idsToCleanup.push(n.id);
+            if (n.children) for (var i = 0; i < n.children.length; i++) collectIds(n.children[i]);
+        })(result.node);
+        for (var k = 0; k < idsToCleanup.length; k++) {
+            removeRelationsForNode(idsToCleanup[k]);
+        }
+    }
     result.parent.children.splice(result.index, 1);
     saveState();
     if (result.parent.children.length > 0) {
@@ -16526,6 +16730,17 @@ function deleteSelectedNodes() {
     for (var i = 0; i < filtered.length; i++) {
         var r = findNode(filtered[i]);
         if (r && r.parent) {
+            // 削除対象ノード＋子孫の関連線を一緒に削除
+            if (typeof removeRelationsForNode === 'function') {
+                var ids2 = [];
+                (function collectIds2(n) {
+                    ids2.push(n.id);
+                    if (n.children) for (var k = 0; k < n.children.length; k++) collectIds2(n.children[k]);
+                })(r.node);
+                for (var ki = 0; ki < ids2.length; ki++) {
+                    removeRelationsForNode(ids2[ki]);
+                }
+            }
             lastParent = r.parent;
             r.parent.children.splice(r.index, 1);
         }
@@ -16610,6 +16825,11 @@ function selectNode(nodeId) {
         selectedNodeIds.add(nodeId);
         lastSelectedNodeId = nodeId;
         selectionAnchorId = nodeId;
+        // ノード選択は関連線選択と相互排他（render()ではなく差分更新）
+        if (typeof selectedRelationId !== 'undefined' && selectedRelationId) {
+            selectedRelationId = null;
+            if (typeof updateRelationVisualSelection === 'function') updateRelationVisualSelection();
+        }
         updateSelectionDisplay();
         scrollNodeIntoView(nodeId);
     }
@@ -16625,6 +16845,11 @@ function clearSelection() {
     document.querySelectorAll('.sidebar-preview-line.active').forEach(function(el) {
         el.classList.remove('active');
     });
+    // 関連線の選択もまとめて解除（差分更新）
+    if (typeof selectedRelationId !== 'undefined' && selectedRelationId) {
+        selectedRelationId = null;
+        if (typeof updateRelationVisualSelection === 'function') updateRelationVisualSelection();
+    }
 }
 
 function updateSelectionDisplay() {
@@ -17531,8 +17756,10 @@ function endLasso() {
 function render() {
     var container = document.getElementById('canvasInner');
     var svg = document.getElementById('linesSvg');
+    var endpointsSvg = document.getElementById('endpointsSvg');
     container.querySelectorAll('.node').forEach(function(n) { n.remove(); });
     svg.innerHTML = '';
+    if (endpointsSvg) endpointsSvg.innerHTML = '';
 
     // Pass 1: Measure actual node dimensions by creating temporary elements
     var nodeDims = measureNodeDimensions(mindMapData.root, container);
@@ -17544,6 +17771,12 @@ function render() {
     // Pass 3: Render nodes and lines
     renderNodes(mindMapData.root, container, positions);
     renderLines(mindMapData.root, svg, positions);
+    // 関連線（フリー接続）の描画。ノード追従はpositionsベースなので自動で追従する
+    if (typeof renderRelations === 'function') {
+        renderRelations(svg, positions);
+    }
+    // 直近の位置情報を関連線まわり（制御点ドラッグ等）から参照できるよう保存
+    lastRenderedPositions = positions;
     updateSelectionDisplay();
     updateView();
     // Auto-save to localStorage after every render (post-mutation state)
@@ -17691,6 +17924,12 @@ function renderNodes(node, container, positions) {
                 return;
             }
 
+            // 接続待機モード中：クリックされたノードを接続先として確定
+            if (typeof isConnectionModeActive === 'function' && isConnectionModeActive()) {
+                completeConnection(nodeData.id);
+                return;
+            }
+
             var isMac = /Mac/.test(navigator.platform);
             var cmdKey = isMac ? e.metaKey : e.ctrlKey;
 
@@ -17747,6 +17986,12 @@ function renderNodes(node, container, positions) {
             if (e.button !== 0) return;
             if (editingNodeId) return;
             if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+            // 接続待機モード中はドラッグせず、クリック側で接続確定を処理する
+            if (typeof isConnectionModeActive === 'function' && isConnectionModeActive()) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
             e.preventDefault();
             e.stopPropagation();
             startNodeDrag(nodeData.id, e.clientX, e.clientY, nodeElement);
@@ -17801,6 +18046,812 @@ function resetView() {
     updateView();
 }
 
+
+// ========================================
+// Relations (ノード間関連線・フリー接続)
+// ========================================
+// データ構造: mindMapData.relations = [
+//   { id: 'rel-xxxx', fromNodeId: 'node-aaa', toNodeId: 'node-bbb', controlPoint: {x, y} | null }
+// ]
+// controlPoint は「両端の中点からのオフセット (dx, dy)」を保持する（仕様8）。
+// 直線時は null（または微小値）で表現。
+
+// SVGの座標オフセット（既存の親子接続線と揃える）
+var RELATION_SVG_OFFSET = 5000;
+// 制御点が「中点」とみなされる近さの閾値（ピクセル）
+var RELATION_STRAIGHT_THRESHOLD = 1.5;
+
+function ensureRelationsArray() {
+    if (!mindMapData.relations) {
+        mindMapData.relations = [];
+    }
+}
+
+function generateRelationId() {
+    return 'rel-' + Date.now().toString(36) + '-' + Math.floor(Math.random() * 100000).toString(36);
+}
+
+function getRelations() {
+    ensureRelationsArray();
+    return mindMapData.relations;
+}
+
+function findRelation(relationId) {
+    var arr = getRelations();
+    for (var i = 0; i < arr.length; i++) {
+        if (arr[i].id === relationId) return arr[i];
+    }
+    return null;
+}
+
+function addRelation(fromId, toId) {
+    ensureRelationsArray();
+    var rel = {
+        id: generateRelationId(),
+        fromNodeId: fromId,
+        toNodeId: toId,
+        controlPoint: null
+    };
+    mindMapData.relations.push(rel);
+    return rel;
+}
+
+function removeRelationById(relationId) {
+    ensureRelationsArray();
+    var arr = mindMapData.relations;
+    for (var i = 0; i < arr.length; i++) {
+        if (arr[i].id === relationId) {
+            arr.splice(i, 1);
+            break;
+        }
+    }
+    if (selectedRelationId === relationId) selectedRelationId = null;
+}
+
+// ノードが削除されたときに、そのノードを端点とする関連線も削除する
+function removeRelationsForNode(nodeId) {
+    ensureRelationsArray();
+    var arr = mindMapData.relations;
+    var i = 0;
+    while (i < arr.length) {
+        if (arr[i].fromNodeId === nodeId || arr[i].toNodeId === nodeId) {
+            if (selectedRelationId === arr[i].id) selectedRelationId = null;
+            arr.splice(i, 1);
+        } else {
+            i++;
+        }
+    }
+}
+
+// 矩形の中心から (targetX, targetY) に向かう線が矩形境界と交わる点を返す
+function getEdgePointTowards(left, top, right, bottom, targetX, targetY) {
+    var cx = (left + right) / 2;
+    var cy = (top + bottom) / 2;
+    var dx = targetX - cx;
+    var dy = targetY - cy;
+    if (dx === 0 && dy === 0) return { x: cx, y: cy };
+    var halfW = (right - left) / 2;
+    var halfH = (bottom - top) / 2;
+    var absDx = Math.abs(dx);
+    var absDy = Math.abs(dy);
+    // 縦・横どちらの辺に当たるかを判定
+    var scaleX = absDx > 0 ? halfW / absDx : Infinity;
+    var scaleY = absDy > 0 ? halfH / absDy : Infinity;
+    var scale = Math.min(scaleX, scaleY);
+    return { x: cx + dx * scale, y: cy + dy * scale };
+}
+
+// positions[id] = {x, y, width, height} から矩形情報を返す
+// （render側のyは縦中心、xは左端）
+function getNodeRectFromPositions(positions, nodeId) {
+    var p = positions && positions[nodeId];
+    if (!p) return null;
+    return {
+        left: p.x,
+        top: p.y - p.height / 2,
+        right: p.x + p.width,
+        bottom: p.y + p.height / 2,
+        cx: p.x + p.width / 2,
+        cy: p.y
+    };
+}
+
+// ノード矩形の上下左右のアンカーポイントを返す
+function getAnchorPoint(rect, anchor) {
+    var cx = (rect.left + rect.right) / 2;
+    var cy = (rect.top + rect.bottom) / 2;
+    switch (anchor) {
+        case 'top':    return { x: cx, y: rect.top };
+        case 'bottom': return { x: cx, y: rect.bottom };
+        case 'left':   return { x: rect.left, y: cy };
+        case 'right':  return { x: rect.right, y: cy };
+    }
+    return null;
+}
+
+// マウス座標（キャンバス内）から、ノードの上下左右どのアンカーが最寄りかを返す
+function computeNearestAnchor(rect, mouseX, mouseY) {
+    var cx = (rect.left + rect.right) / 2;
+    var cy = (rect.top + rect.bottom) / 2;
+    var dx = mouseX - cx;
+    var dy = mouseY - cy;
+    if (Math.abs(dx) >= Math.abs(dy)) {
+        return dx >= 0 ? 'right' : 'left';
+    }
+    return dy >= 0 ? 'bottom' : 'top';
+}
+
+// 関連線の幾何情報を計算（描画にもクリック判定にも使う）
+// rel.fromAnchor / rel.toAnchor が指定されていればそのアンカー位置、なければ自動計算（既存挙動）
+function computeRelationGeometry(rel, positions) {
+    var fromRect = getNodeRectFromPositions(positions, rel.fromNodeId);
+    var toRect = getNodeRectFromPositions(positions, rel.toNodeId);
+    if (!fromRect || !toRect) return null;
+    var p1 = rel.fromAnchor
+        ? getAnchorPoint(fromRect, rel.fromAnchor)
+        : getEdgePointTowards(fromRect.left, fromRect.top, fromRect.right, fromRect.bottom, toRect.cx, toRect.cy);
+    var p2 = rel.toAnchor
+        ? getAnchorPoint(toRect, rel.toAnchor)
+        : getEdgePointTowards(toRect.left, toRect.top, toRect.right, toRect.bottom, fromRect.cx, fromRect.cy);
+    if (!p1 || !p2) return null;
+    var midX = (p1.x + p2.x) / 2;
+    var midY = (p1.y + p2.y) / 2;
+    var offX = rel.controlPoint ? rel.controlPoint.x : 0;
+    var offY = rel.controlPoint ? rel.controlPoint.y : 0;
+    var ctrlX = midX + offX; // ユーザーが見る制御点（曲線が通る点）
+    var ctrlY = midY + offY;
+    var isStraight = Math.abs(offX) < RELATION_STRAIGHT_THRESHOLD && Math.abs(offY) < RELATION_STRAIGHT_THRESHOLD;
+    // 二次ベジェの制御点 B は、曲線が ctrlX,ctrlY を通るように B = 2*ctrl - mid と置く
+    var bezX = 2 * ctrlX - midX;
+    var bezY = 2 * ctrlY - midY;
+    return {
+        p1: p1, p2: p2,
+        midX: midX, midY: midY,
+        ctrlX: ctrlX, ctrlY: ctrlY,
+        bezX: bezX, bezY: bezY,
+        isStraight: isStraight
+    };
+}
+
+function buildRelationPathD(geom) {
+    var off = RELATION_SVG_OFFSET;
+    if (geom.isStraight) {
+        return 'M ' + (geom.p1.x + off) + ' ' + (geom.p1.y + off) +
+               ' L ' + (geom.p2.x + off) + ' ' + (geom.p2.y + off);
+    }
+    return 'M ' + (geom.p1.x + off) + ' ' + (geom.p1.y + off) +
+           ' Q ' + (geom.bezX + off) + ' ' + (geom.bezY + off) +
+           ' ' + (geom.p2.x + off) + ' ' + (geom.p2.y + off);
+}
+
+// 関連線をSVGに描画する（render() の終盤から呼ばれる）
+// 線本体は背景レイヤー（svg = linesSvg）、端点ドットはノードより前面のレイヤー（endpointsSvg）に分けて描画
+function renderRelations(svg, positions) {
+    ensureRelationsArray();
+    var endpointsSvg = document.getElementById('endpointsSvg');
+    var rels = mindMapData.relations;
+    for (var i = 0; i < rels.length; i++) {
+        var rel = rels[i];
+        var geom = computeRelationGeometry(rel, positions);
+        // 仕様7: 端のいずれかが折りたたまれて非表示なら描画しない
+        if (!geom) continue;
+        var d = buildRelationPathD(geom);
+        var isSelected = (selectedRelationId === rel.id);
+
+        // クリック判定用の透明な太いパス（仕様: 8〜10px幅）
+        var hitPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        hitPath.setAttribute('d', d);
+        hitPath.setAttribute('class', 'relation-line-hit');
+        hitPath.setAttribute('data-rel-id', rel.id);
+        svg.appendChild(hitPath);
+
+        // 見た目の本体
+        var visPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        visPath.setAttribute('d', d);
+        var cls = 'relation-line';
+        if (isSelected) cls += ' selected';
+        visPath.setAttribute('class', cls);
+        visPath.setAttribute('data-rel-id', rel.id);
+        svg.appendChild(visPath);
+
+        // 端点の丸ポチ（双方のノード側に1つずつ。線と同じグリーン）— ノードより前面に表示するため別SVGに描画
+        // data-side でどちら側の端点（fromNodeId 側 / toNodeId 側）かを識別
+        if (endpointsSvg) {
+            var endA = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            endA.setAttribute('cx', String(geom.p1.x + RELATION_SVG_OFFSET));
+            endA.setAttribute('cy', String(geom.p1.y + RELATION_SVG_OFFSET));
+            endA.setAttribute('r', '3.5');
+            endA.setAttribute('class', 'relation-endpoint' + (isSelected ? ' selected' : ''));
+            endA.setAttribute('data-rel-id', rel.id);
+            endA.setAttribute('data-side', 'from');
+            endpointsSvg.appendChild(endA);
+
+            var endB = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            endB.setAttribute('cx', String(geom.p2.x + RELATION_SVG_OFFSET));
+            endB.setAttribute('cy', String(geom.p2.y + RELATION_SVG_OFFSET));
+            endB.setAttribute('r', '3.5');
+            endB.setAttribute('class', 'relation-endpoint' + (isSelected ? ' selected' : ''));
+            endB.setAttribute('data-rel-id', rel.id);
+            endB.setAttribute('data-side', 'to');
+            endpointsSvg.appendChild(endB);
+        }
+    }
+
+    // 接続待機モード中ならプレビュー線も描画
+    if (connectionMode.active && connectionMode.fromNodeId) {
+        renderConnectionPreview(svg, positions);
+    }
+
+    // メモラベルを描画（label が非空のものだけ）
+    renderRelationLabels(positions);
+}
+
+// 関連線のメモラベル（中央に配置されたHTML div）を描画する
+function renderRelationLabels(positions) {
+    var container = document.getElementById('canvasInner');
+    if (!container) return;
+    // 既存のラベルを除去（編集中のものは render() を呼ばない設計なので問題ない）
+    var oldLabels = container.querySelectorAll('.relation-label');
+    for (var li = 0; li < oldLabels.length; li++) {
+        oldLabels[li].parentNode.removeChild(oldLabels[li]);
+    }
+    ensureRelationsArray();
+    var rels = mindMapData.relations;
+    for (var i = 0; i < rels.length; i++) {
+        var rel = rels[i];
+        // ラベルが空ならDOMに置かない（クリック時に startRelationLabelEditing が動的生成）
+        if (!rel.label) continue;
+        var geom = computeRelationGeometry(rel, positions);
+        if (!geom) continue;
+        var labelEl = createRelationLabelElement(rel, geom, false);
+        container.appendChild(labelEl);
+    }
+}
+
+// メモラベルのDOM要素を生成（編集モード初期化はせず、必要時に focus() を呼ぶ）
+function createRelationLabelElement(rel, geom, isEditing) {
+    var labelEl = document.createElement('div');
+    labelEl.className = 'relation-label';
+    labelEl.setAttribute('data-rel-id', rel.id);
+    labelEl.setAttribute('contenteditable', 'true');
+    labelEl.style.left = geom.ctrlX + 'px';
+    labelEl.style.top = geom.ctrlY + 'px';
+    labelEl.textContent = rel.label || '';
+    if (!rel.label) labelEl.classList.add('empty-placeholder');
+    attachRelationLabelHandlers(labelEl, rel.id);
+    return labelEl;
+}
+
+function attachRelationLabelHandlers(labelEl, relationId) {
+    labelEl.addEventListener('mousedown', function(e) {
+        // ラベル内クリックは線のドラッグに繋げない
+        e.stopPropagation();
+    });
+    labelEl.addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+    labelEl.addEventListener('dblclick', function(e) {
+        // ラベル内のダブルクリックは選択操作のためのもの。線の取り消しメニューには繋げない
+        e.stopPropagation();
+    });
+    labelEl.addEventListener('focus', function() {
+        labelEl.classList.remove('empty-placeholder');
+    });
+    labelEl.addEventListener('blur', function() {
+        commitRelationLabelEdit(labelEl, relationId);
+    });
+    labelEl.addEventListener('keydown', function(e) {
+        // メモ編集中のキー入力はドキュメント側の handleKeyDown に届けない
+        // （Backspace で関連線が消える、Tab で新しいノードが作られる等の事故防止）
+        e.stopPropagation();
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            labelEl.blur();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            labelEl.blur();
+        }
+        // Shift+Enter: そのまま改行
+    });
+}
+
+// ラベル編集の確定（テキスト保存／空なら削除）
+function commitRelationLabelEdit(labelEl, relationId) {
+    var rel = findRelation(relationId);
+    if (!rel) {
+        if (labelEl && labelEl.parentNode) labelEl.parentNode.removeChild(labelEl);
+        return;
+    }
+    var newText = (labelEl.textContent || '').replace(/​/g, ''); // ゼロ幅スペース除去
+    // 末尾の改行は素直にtrim、内部の改行は維持
+    newText = newText.replace(/\n+$/, '').replace(/^\n+/, '');
+    var oldText = rel.label || '';
+    if (newText === oldText) {
+        if (!newText) {
+            // 空のまま離脱 → ラベル要素は除去
+            if (labelEl.parentNode) labelEl.parentNode.removeChild(labelEl);
+        } else {
+            // テキスト変更なし → 表示用に戻すだけ
+            labelEl.classList.remove('empty-placeholder');
+        }
+        return;
+    }
+    if (newText) {
+        rel.label = newText;
+    } else {
+        delete rel.label;
+    }
+    saveState();
+    // 次のレンダーでラベルが正規化されるため、ここでは render() を呼ぶ
+    render();
+}
+
+// 線をシングルクリックしたときに呼ばれる：ラベルを表示してフォーカス
+function startRelationLabelEditing(relationId) {
+    var rel = findRelation(relationId);
+    if (!rel) return;
+    var positions = lastRenderedPositions;
+    if (!positions) return;
+    var geom = computeRelationGeometry(rel, positions);
+    if (!geom) return;
+    // 既に同じ関連線のラベルがDOM上にあればフォーカスだけする
+    var container = document.getElementById('canvasInner');
+    var existing = container.querySelector('.relation-label[data-rel-id="' + relationId + '"]');
+    var labelEl = existing;
+    if (!labelEl) {
+        labelEl = createRelationLabelElement(rel, geom, true);
+        container.appendChild(labelEl);
+    }
+    // フォーカス＋カーソルを末尾に
+    labelEl.focus();
+    try {
+        var range = document.createRange();
+        range.selectNodeContents(labelEl);
+        range.collapse(false);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+    } catch (e) {}
+}
+
+// 編集中のラベルを強制的に確定して閉じる（取り消しメニュー表示時などに使用）
+function finishAnyRelationLabelEditing() {
+    var labels = document.querySelectorAll('.relation-label');
+    for (var i = 0; i < labels.length; i++) {
+        if (document.activeElement === labels[i]) {
+            labels[i].blur();
+        }
+    }
+}
+
+// 接続待機モード中のプレビュー線（元ノードからマウス位置へ）
+function renderConnectionPreview(svg, positions) {
+    var fromRect = getNodeRectFromPositions(positions, connectionMode.fromNodeId);
+    if (!fromRect) return;
+    var mx = connectionMode.mouseCanvasX;
+    var my = connectionMode.mouseCanvasY;
+    var p1 = getEdgePointTowards(fromRect.left, fromRect.top, fromRect.right, fromRect.bottom, mx, my);
+    var off = RELATION_SVG_OFFSET;
+    var d = 'M ' + (p1.x + off) + ' ' + (p1.y + off) + ' L ' + (mx + off) + ' ' + (my + off);
+    var preview = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    preview.setAttribute('d', d);
+    preview.setAttribute('class', 'relation-line preview');
+    svg.appendChild(preview);
+}
+
+// マウス座標（ページ座標）をキャンバス内座標に変換する
+function clientToCanvasCoords(clientX, clientY) {
+    var container = document.getElementById('canvasContainer');
+    var rect = container.getBoundingClientRect();
+    var x = (clientX - rect.left - viewState.panX) / viewState.zoom;
+    var y = (clientY - rect.top - viewState.panY) / viewState.zoom;
+    return { x: x, y: y };
+}
+
+// ========================================
+// 接続待機モード制御
+// ========================================
+function startConnectionMode(fromNodeId) {
+    if (!fromNodeId) return;
+    if (typeof finishEditing === 'function') finishEditing();
+    connectionMode.active = true;
+    connectionMode.fromNodeId = fromNodeId;
+    document.body.classList.add('connection-mode');
+    var btn = document.getElementById('connectFloatBtn');
+    if (btn) btn.classList.add('active');
+    // プレビュー描画のために再描画
+    render();
+}
+
+function cancelConnectionMode() {
+    if (!connectionMode.active) return;
+    connectionMode.active = false;
+    connectionMode.fromNodeId = null;
+    document.body.classList.remove('connection-mode');
+    var btn = document.getElementById('connectFloatBtn');
+    if (btn) btn.classList.remove('active');
+    render();
+}
+
+function isConnectionModeActive() {
+    return !!(connectionMode && connectionMode.active);
+}
+
+// 接続先ノードへ接続を確定する
+function completeConnection(toNodeId) {
+    var fromId = connectionMode.fromNodeId;
+    if (!fromId || !toNodeId) {
+        cancelConnectionMode();
+        return;
+    }
+    if (fromId === toNodeId) {
+        // 同じノードクリックは無効（待機モードを継続）
+        return;
+    }
+    addRelation(fromId, toNodeId);
+    saveState();
+    cancelConnectionMode();
+    showToast('関連線を追加しました');
+}
+
+// ========================================
+// 関連線の選択・削除
+// ========================================
+function selectRelation(relationId) {
+    if (selectedRelationId === relationId) return; // 既に選択中なら何もしない（DOMを変更しない）
+    selectedRelationId = relationId;
+    // ノード選択は解除する（相互排他）
+    selectedNodeIds.clear();
+    lastSelectedNodeId = null;
+    selectionAnchorId = null;
+    document.querySelectorAll('.node.selected').forEach(function(el) {
+        el.classList.remove('selected');
+    });
+    if (typeof updateLinkButtonState === 'function') updateLinkButtonState();
+    // render() は呼ばず、SVG内のクラス・制御点だけ差分更新
+    updateRelationVisualSelection();
+}
+
+function clearSelectedRelation() {
+    if (selectedRelationId) {
+        selectedRelationId = null;
+        updateRelationVisualSelection();
+    }
+}
+
+// 関連線の選択状態（.selected クラス）だけをDOMに反映する。
+// render() でSVGパスを破棄せず、要素のIDが変わらないため、ブラウザのクリック判定が継続して動く。
+function updateRelationVisualSelection() {
+    var svg = document.getElementById('linesSvg');
+    if (!svg) return;
+    // 関連線本体の .selected クラスを更新（linesSvg 内）
+    var lines = svg.querySelectorAll('.relation-line');
+    for (var j = 0; j < lines.length; j++) {
+        var rid = lines[j].getAttribute('data-rel-id');
+        if (rid && rid === selectedRelationId) {
+            lines[j].classList.add('selected');
+        } else {
+            lines[j].classList.remove('selected');
+        }
+    }
+    // 端点ドット（.relation-endpoint）の選択ハイライト — endpointsSvg にあるので document 全体から取得
+    var endpoints = document.querySelectorAll('.relation-endpoint');
+    for (var k = 0; k < endpoints.length; k++) {
+        var rid2 = endpoints[k].getAttribute('data-rel-id');
+        if (rid2 && rid2 === selectedRelationId) {
+            endpoints[k].classList.add('selected');
+        } else {
+            endpoints[k].classList.remove('selected');
+        }
+    }
+}
+
+function deleteSelectedRelationWithConfirm() {
+    if (!selectedRelationId) return;
+    if (!confirm('この関連線を削除しますか？')) return;
+    deleteSelectedRelation();
+}
+
+function deleteSelectedRelation() {
+    if (!selectedRelationId) return;
+    var id = selectedRelationId;
+    removeRelationById(id);
+    saveState();
+    render();
+    showToast('関連線を削除しました');
+}
+
+// ========================================
+// イベントハンドラの初期化
+// ========================================
+var relationsEventsInitialized = false;
+
+function initRelationsEvents() {
+    if (relationsEventsInitialized) return;
+    relationsEventsInitialized = true;
+
+    var svg = document.getElementById('linesSvg');
+    var endpointsSvg = document.getElementById('endpointsSvg');
+    var canvas = document.getElementById('canvas');
+    var canvasContainer = document.getElementById('canvasContainer');
+
+    // 関連線本体・端点ドット — どれを掴んでも即ドラッグで曲げられる
+    // mousedownで選択＋ドラッグ準備、mousemoveで一定距離動いたら制御点更新、mouseupで保存
+    // 同じ関連線を400ms以内に2回mousedownしたらダブルクリック扱いで「取り消し」メニュー表示
+    var relationMousedownHandler = function(e) {
+        if (e.button !== 0) return; // 左クリックのみ
+        var t = e.target;
+        if (!t || !t.classList) return;
+        var isLine = t.classList.contains('relation-line-hit') || t.classList.contains('relation-line');
+        var isEndpoint = t.classList.contains('relation-endpoint');
+        if (!isLine && !isEndpoint) return;
+        if (connectionMode.active) return; // 接続待機モード中は無視
+        var relId = t.getAttribute('data-rel-id');
+        if (!relId) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        // 手動ダブルクリック判定 → 取り消しメニューを表示
+        var now = Date.now();
+        if (lastRelationClickInfo.relId === relId && (now - lastRelationClickInfo.time) < 400) {
+            lastRelationClickInfo.time = 0;
+            lastRelationClickInfo.relId = null;
+            // ドラッグ準備をキャンセル
+            relationCtrlDragState.active = false;
+            relationCtrlDragState.relationId = null;
+            relationCtrlDragState.moved = false;
+            // 待機中のメモ編集タイマーがあればキャンセル（ラベル表示前に取り消しメニューを優先）
+            if (pendingRelationLabelEditTimer) {
+                clearTimeout(pendingRelationLabelEditTimer);
+                pendingRelationLabelEditTimer = null;
+                pendingRelationLabelEditRelId = null;
+            }
+            // 既に開いているラベル編集があれば確定して閉じる
+            finishAnyRelationLabelEditing();
+            showRelationContextMenu(relId, e.clientX, e.clientY);
+            return;
+        }
+        lastRelationClickInfo.time = now;
+        lastRelationClickInfo.relId = relId;
+
+        // 選択（render()は呼ばずに見た目だけ差分更新する）
+        selectRelation(relId);
+
+        if (isEndpoint) {
+            // 端点ドラッグ：4スナップで接続位置を切り替える
+            var side = t.getAttribute('data-side'); // 'from' or 'to'
+            relationEndpointDragState.active = true;
+            relationEndpointDragState.relationId = relId;
+            relationEndpointDragState.side = side || 'from';
+            relationEndpointDragState.startClientX = e.clientX;
+            relationEndpointDragState.startClientY = e.clientY;
+            relationEndpointDragState.moved = false;
+        } else {
+            // 線本体ドラッグ：曲線を曲げる（既存挙動）
+            relationCtrlDragState.active = true;
+            relationCtrlDragState.relationId = relId;
+            relationCtrlDragState.startClientX = e.clientX;
+            relationCtrlDragState.startClientY = e.clientY;
+            relationCtrlDragState.moved = false;
+        }
+    };
+    // 線本体は linesSvg、端点ドットは endpointsSvg にあるので両方に同じハンドラを登録
+    svg.addEventListener('mousedown', relationMousedownHandler);
+    if (endpointsSvg) endpointsSvg.addEventListener('mousedown', relationMousedownHandler);
+
+    // ドラッグ中のマウス追従、および接続待機モード中のプレビュー追従
+    document.addEventListener('mousemove', function(e) {
+        if (relationCtrlDragState.active && relationCtrlDragState.relationId) {
+            // しきい値（3px）以下の微動はクリックとみなしてドラッグ扱いしない
+            if (!relationCtrlDragState.moved) {
+                var dxs = e.clientX - relationCtrlDragState.startClientX;
+                var dys = e.clientY - relationCtrlDragState.startClientY;
+                if (dxs * dxs + dys * dys < 9) return;
+                relationCtrlDragState.moved = true;
+            }
+            var rel = findRelation(relationCtrlDragState.relationId);
+            if (!rel) return;
+            var coords = clientToCanvasCoords(e.clientX, e.clientY);
+            var positions = lastRenderedPositions;
+            var fromRect = positions ? getNodeRectFromPositions(positions, rel.fromNodeId) : null;
+            var toRect = positions ? getNodeRectFromPositions(positions, rel.toNodeId) : null;
+            if (!fromRect || !toRect) return;
+            // アンカーが指定されていればその位置、なければ自動計算（描画時と同じロジックを使う）
+            var p1 = rel.fromAnchor
+                ? getAnchorPoint(fromRect, rel.fromAnchor)
+                : getEdgePointTowards(fromRect.left, fromRect.top, fromRect.right, fromRect.bottom, toRect.cx, toRect.cy);
+            var p2 = rel.toAnchor
+                ? getAnchorPoint(toRect, rel.toAnchor)
+                : getEdgePointTowards(toRect.left, toRect.top, toRect.right, toRect.bottom, fromRect.cx, fromRect.cy);
+            if (!p1 || !p2) return;
+            var midX = (p1.x + p2.x) / 2;
+            var midY = (p1.y + p2.y) / 2;
+            rel.controlPoint = { x: coords.x - midX, y: coords.y - midY };
+            render();
+            return;
+        }
+
+        // 端点ドラッグ：4スナップでアンカー位置を更新
+        if (relationEndpointDragState.active && relationEndpointDragState.relationId) {
+            if (!relationEndpointDragState.moved) {
+                var dxe = e.clientX - relationEndpointDragState.startClientX;
+                var dye = e.clientY - relationEndpointDragState.startClientY;
+                if (dxe * dxe + dye * dye < 9) return;
+                relationEndpointDragState.moved = true;
+            }
+            var relE = findRelation(relationEndpointDragState.relationId);
+            if (!relE) return;
+            var nodeIdE = relationEndpointDragState.side === 'from' ? relE.fromNodeId : relE.toNodeId;
+            var rectE = lastRenderedPositions ? getNodeRectFromPositions(lastRenderedPositions, nodeIdE) : null;
+            if (!rectE) return;
+            var coordsE = clientToCanvasCoords(e.clientX, e.clientY);
+            var newAnchor = computeNearestAnchor(rectE, coordsE.x, coordsE.y);
+            if (relationEndpointDragState.side === 'from') {
+                if (relE.fromAnchor !== newAnchor) {
+                    relE.fromAnchor = newAnchor;
+                    render();
+                }
+            } else {
+                if (relE.toAnchor !== newAnchor) {
+                    relE.toAnchor = newAnchor;
+                    render();
+                }
+            }
+            return;
+        }
+
+        if (connectionMode.active) {
+            var c = clientToCanvasCoords(e.clientX, e.clientY);
+            connectionMode.mouseCanvasX = c.x;
+            connectionMode.mouseCanvasY = c.y;
+            // プレビュー線だけを更新（再描画は重いので、プレビュー要素だけ動的更新）
+            updateConnectionPreviewOnly();
+        }
+    });
+
+    document.addEventListener('mouseup', function(e) {
+        // 端点ドラッグの終了
+        if (relationEndpointDragState.active) {
+            var didMoveE = relationEndpointDragState.moved;
+            var relIdE = relationEndpointDragState.relationId;
+            relationEndpointDragState.active = false;
+            relationEndpointDragState.relationId = null;
+            relationEndpointDragState.side = null;
+            relationEndpointDragState.moved = false;
+            if (didMoveE) {
+                saveState();
+            } else if (relIdE) {
+                // ドラッグなし＝端点シングルクリック → 線本体クリックと同じくメモ編集をスケジュール
+                if (pendingRelationLabelEditTimer) clearTimeout(pendingRelationLabelEditTimer);
+                pendingRelationLabelEditRelId = relIdE;
+                pendingRelationLabelEditTimer = setTimeout(function() {
+                    var rid = pendingRelationLabelEditRelId;
+                    pendingRelationLabelEditTimer = null;
+                    pendingRelationLabelEditRelId = null;
+                    if (rid) startRelationLabelEditing(rid);
+                }, 280);
+            }
+            return;
+        }
+
+        if (relationCtrlDragState.active) {
+            var didMove = relationCtrlDragState.moved;
+            var relIdJustClicked = relationCtrlDragState.relationId;
+            relationCtrlDragState.active = false;
+            relationCtrlDragState.relationId = null;
+            relationCtrlDragState.moved = false;
+            if (didMove) {
+                // 実際にドラッグして曲線が変わった場合のみ履歴に記録
+                saveState();
+            } else if (relIdJustClicked) {
+                // ドラッグなし＝シングルクリック扱い。ダブルクリック検出（400ms）を待ってからメモ編集を起動
+                if (pendingRelationLabelEditTimer) clearTimeout(pendingRelationLabelEditTimer);
+                pendingRelationLabelEditRelId = relIdJustClicked;
+                pendingRelationLabelEditTimer = setTimeout(function() {
+                    var rid = pendingRelationLabelEditRelId;
+                    pendingRelationLabelEditTimer = null;
+                    pendingRelationLabelEditRelId = null;
+                    if (rid) startRelationLabelEditing(rid);
+                }, 280);
+            }
+        }
+    });
+
+    // ダブルクリックは mousedown 内の手動判定で処理する（DOM入れ替えに強い実装）
+
+    // 接続ボタン
+    var connectBtn = document.getElementById('connectFloatBtn');
+    if (connectBtn) {
+        connectBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            handleConnectButtonClick();
+        });
+    }
+}
+
+// 接続ボタンが押されたときの分岐処理
+function handleConnectButtonClick() {
+    // 関連線が選択されている → 削除確認ダイアログ
+    if (selectedRelationId) {
+        deleteSelectedRelationWithConfirm();
+        return;
+    }
+    // 既に待機モード中 → キャンセル
+    if (connectionMode.active) {
+        cancelConnectionMode();
+        return;
+    }
+    // ノードが選択されている → 接続待機モードへ
+    var nid = getSelectedNodeId();
+    if (!nid) {
+        showToast('先にノードを選択してください');
+        return;
+    }
+    startConnectionMode(nid);
+}
+
+// プレビュー線だけを差分更新する（mousemove時のパフォーマンス向上）
+function updateConnectionPreviewOnly() {
+    var svg = document.getElementById('linesSvg');
+    if (!svg) return;
+    var existing = svg.querySelector('.relation-line.preview');
+    if (existing) existing.parentNode.removeChild(existing);
+    if (!lastRenderedPositions) return;
+    renderConnectionPreview(svg, lastRenderedPositions);
+}
+
+// ========================================
+// 関連線用コンテキストメニュー（ダブルクリックで表示）
+// ========================================
+function showRelationContextMenu(relationId, clientX, clientY) {
+    var menu = ensureRelationCtxMenuEl();
+    menu.dataset.relId = relationId;
+    menu.style.left = clientX + 'px';
+    menu.style.top = clientY + 'px';
+    menu.classList.add('show');
+    // 直後に来る click（mousedown起源）で閉じてしまうのを防ぐ
+    menu.dataset._justShown = '1';
+}
+
+function hideRelationContextMenu() {
+    var menu = document.getElementById('relationCtxMenu');
+    if (menu) menu.classList.remove('show');
+}
+
+function ensureRelationCtxMenuEl() {
+    var menu = document.getElementById('relationCtxMenu');
+    if (menu) return menu;
+    menu = document.createElement('div');
+    menu.id = 'relationCtxMenu';
+    menu.className = 'ctx-menu relation-ctx-menu';
+    var item = document.createElement('div');
+    item.className = 'ctx-menu-item danger';
+    item.textContent = '取り消し';
+    item.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var relId = menu.dataset.relId;
+        hideRelationContextMenu();
+        if (!relId) return;
+        removeRelationById(relId);
+        saveState();
+        render();
+        showToast('関連線を削除しました');
+    });
+    menu.appendChild(item);
+    document.body.appendChild(menu);
+    // 画面のどこかをクリックしたら閉じる。
+    // ただし「メニューを表示した直後に来る同じmousedown起源のclick」では閉じない（dataset._justShownフラグ方式）
+    document.addEventListener('click', function(e) {
+        if (menu.dataset._justShown === '1') {
+            menu.dataset._justShown = '0';
+            return;
+        }
+        if (!menu.contains(e.target)) {
+            hideRelationContextMenu();
+        }
+    });
+    return menu;
+}
 
 // ========================================
 // Keyboard Handler
@@ -17904,6 +18955,13 @@ function handleKeyDown(e) {
     // リンク設定モーダル表示中は、モーダル内の handler（input/button）のみで処理する
     if (typeof isLinkModalOpen === 'function' && isLinkModalOpen()) return;
 
+    // 接続待機モード中：Escでキャンセル（他のキーは通常処理に通す）
+    if (typeof isConnectionModeActive === 'function' && isConnectionModeActive() && e.key === 'Escape') {
+        e.preventDefault();
+        cancelConnectionMode();
+        return;
+    }
+
     // Read-only mode: only allow zoom/pan shortcuts, block all editing
     if (window._isReadOnly) {
         var isMacRO = /Mac/.test(navigator.platform);
@@ -17923,6 +18981,10 @@ function handleKeyDown(e) {
         (activeEl.classList.contains('map-item-name') && activeEl.contentEditable === 'true'))) {
         // Allow default behavior for the rename input
         // Only handle Enter/Escape which are handled by the input's own listener
+        return;
+    }
+    // 関連線のメモラベル編集中：キーをアプリショートカットに使わない（Backspaceで関連線削除しない、等）
+    if (activeEl && activeEl.classList && activeEl.classList.contains('relation-label')) {
         return;
     }
 
@@ -18026,6 +19088,11 @@ function handleKeyDown(e) {
         case 'Delete':
         case 'Backspace':
             e.preventDefault();
+            // 関連線が選択されていれば、それを削除（確認ダイアログなし）
+            if (typeof selectedRelationId !== 'undefined' && selectedRelationId) {
+                deleteSelectedRelation();
+                break;
+            }
             if (selectedNodeIds.size > 1) deleteSelectedNodes();
             else if (currentId && currentId !== 'root') deleteNode(currentId);
             break;
@@ -18135,6 +19202,10 @@ function initCanvasInteraction() {
 
         // Left-click on background: start lasso
         if (e.button === 0) {
+            // 接続待機モード中はラッソを開始しない（mouseup側でモード解除する）
+            if (typeof isConnectionModeActive === 'function' && isConnectionModeActive()) {
+                return;
+            }
             finishEditing();
             startLasso(e.clientX, e.clientY);
         }
@@ -18174,6 +19245,12 @@ function initCanvasInteraction() {
             e.target.classList.contains('lines-svg'));
 
         if (!isBackground) return;
+
+        // 接続待機モード中の空白クリック：モード解除（点線は引かない）
+        if (typeof isConnectionModeActive === 'function' && isConnectionModeActive()) {
+            cancelConnectionMode();
+            return;
+        }
 
         // Don't clear if lasso just selected nodes
         if (lassoState.didSelect) {
@@ -18405,6 +19482,7 @@ function init() {
         document.addEventListener('keydown', handleKeyDown);
         initCanvasInteraction();
         initZoomControl();
+        if (typeof initRelationsEvents === 'function') initRelationsEvents();
         document.getElementById('copyBtn').addEventListener('click', copyToClipboard);
         document.getElementById('expandAllBtn').addEventListener('click', expandAllNodes);
         document.getElementById('collapseAllBtn').addEventListener('click', collapseAllNodes);
