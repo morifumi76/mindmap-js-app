@@ -5,8 +5,10 @@
 function render() {
     var container = document.getElementById('canvasInner');
     var svg = document.getElementById('linesSvg');
+    var endpointsSvg = document.getElementById('endpointsSvg');
     container.querySelectorAll('.node').forEach(function(n) { n.remove(); });
     svg.innerHTML = '';
+    if (endpointsSvg) endpointsSvg.innerHTML = '';
 
     // Pass 1: Measure actual node dimensions by creating temporary elements
     var nodeDims = measureNodeDimensions(mindMapData.root, container);
@@ -18,6 +20,12 @@ function render() {
     // Pass 3: Render nodes and lines
     renderNodes(mindMapData.root, container, positions);
     renderLines(mindMapData.root, svg, positions);
+    // 関連線（フリー接続）の描画。ノード追従はpositionsベースなので自動で追従する
+    if (typeof renderRelations === 'function') {
+        renderRelations(svg, positions);
+    }
+    // 直近の位置情報を関連線まわり（制御点ドラッグ等）から参照できるよう保存
+    lastRenderedPositions = positions;
     updateSelectionDisplay();
     updateView();
     // Auto-save to localStorage after every render (post-mutation state)
@@ -165,6 +173,12 @@ function renderNodes(node, container, positions) {
                 return;
             }
 
+            // 接続待機モード中：クリックされたノードを接続先として確定
+            if (typeof isConnectionModeActive === 'function' && isConnectionModeActive()) {
+                completeConnection(nodeData.id);
+                return;
+            }
+
             var isMac = /Mac/.test(navigator.platform);
             var cmdKey = isMac ? e.metaKey : e.ctrlKey;
 
@@ -221,6 +235,12 @@ function renderNodes(node, container, positions) {
             if (e.button !== 0) return;
             if (editingNodeId) return;
             if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+            // 接続待機モード中はドラッグせず、クリック側で接続確定を処理する
+            if (typeof isConnectionModeActive === 'function' && isConnectionModeActive()) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
             e.preventDefault();
             e.stopPropagation();
             startNodeDrag(nodeData.id, e.clientX, e.clientY, nodeElement);

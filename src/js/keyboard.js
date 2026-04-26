@@ -100,6 +100,13 @@ function handleKeyDown(e) {
     // リンク設定モーダル表示中は、モーダル内の handler（input/button）のみで処理する
     if (typeof isLinkModalOpen === 'function' && isLinkModalOpen()) return;
 
+    // 接続待機モード中：Escでキャンセル（他のキーは通常処理に通す）
+    if (typeof isConnectionModeActive === 'function' && isConnectionModeActive() && e.key === 'Escape') {
+        e.preventDefault();
+        cancelConnectionMode();
+        return;
+    }
+
     // Read-only mode: only allow zoom/pan shortcuts, block all editing
     if (window._isReadOnly) {
         var isMacRO = /Mac/.test(navigator.platform);
@@ -119,6 +126,10 @@ function handleKeyDown(e) {
         (activeEl.classList.contains('map-item-name') && activeEl.contentEditable === 'true'))) {
         // Allow default behavior for the rename input
         // Only handle Enter/Escape which are handled by the input's own listener
+        return;
+    }
+    // 関連線のメモラベル編集中：キーをアプリショートカットに使わない（Backspaceで関連線削除しない、等）
+    if (activeEl && activeEl.classList && activeEl.classList.contains('relation-label')) {
         return;
     }
 
@@ -222,6 +233,11 @@ function handleKeyDown(e) {
         case 'Delete':
         case 'Backspace':
             e.preventDefault();
+            // 関連線が選択されていれば、それを削除（確認ダイアログなし）
+            if (typeof selectedRelationId !== 'undefined' && selectedRelationId) {
+                deleteSelectedRelation();
+                break;
+            }
             if (selectedNodeIds.size > 1) deleteSelectedNodes();
             else if (currentId && currentId !== 'root') deleteNode(currentId);
             break;

@@ -51,6 +51,7 @@ function init() {
         document.addEventListener('keydown', handleKeyDown);
         initCanvasInteraction();
         initZoomControl();
+        if (typeof initRelationsEvents === 'function') initRelationsEvents();
         document.getElementById('copyBtn').addEventListener('click', copyToClipboard);
         document.getElementById('expandAllBtn').addEventListener('click', expandAllNodes);
         document.getElementById('collapseAllBtn').addEventListener('click', collapseAllNodes);

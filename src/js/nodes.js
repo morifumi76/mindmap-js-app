@@ -89,6 +89,17 @@ function deleteNode(nodeId) {
     }
     var result = findNode(nodeId);
     if (!result || !result.parent) return false;
+    // 削除されるノードと、その全子孫の関連線を一緒に削除する
+    if (typeof removeRelationsForNode === 'function') {
+        var idsToCleanup = [];
+        (function collectIds(n) {
+            idsToCleanup.push(n.id);
+            if (n.children) for (var i = 0; i < n.children.length; i++) collectIds(n.children[i]);
+        })(result.node);
+        for (var k = 0; k < idsToCleanup.length; k++) {
+            removeRelationsForNode(idsToCleanup[k]);
+        }
+    }
     result.parent.children.splice(result.index, 1);
     saveState();
     if (result.parent.children.length > 0) {
@@ -114,6 +125,17 @@ function deleteSelectedNodes() {
     for (var i = 0; i < filtered.length; i++) {
         var r = findNode(filtered[i]);
         if (r && r.parent) {
+            // 削除対象ノード＋子孫の関連線を一緒に削除
+            if (typeof removeRelationsForNode === 'function') {
+                var ids2 = [];
+                (function collectIds2(n) {
+                    ids2.push(n.id);
+                    if (n.children) for (var k = 0; k < n.children.length; k++) collectIds2(n.children[k]);
+                })(r.node);
+                for (var ki = 0; ki < ids2.length; ki++) {
+                    removeRelationsForNode(ids2[ki]);
+                }
+            }
             lastParent = r.parent;
             r.parent.children.splice(r.index, 1);
         }

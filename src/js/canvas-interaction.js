@@ -28,6 +28,10 @@ function initCanvasInteraction() {
 
         // Left-click on background: start lasso
         if (e.button === 0) {
+            // 接続待機モード中はラッソを開始しない（mouseup側でモード解除する）
+            if (typeof isConnectionModeActive === 'function' && isConnectionModeActive()) {
+                return;
+            }
             finishEditing();
             startLasso(e.clientX, e.clientY);
         }
@@ -67,6 +71,12 @@ function initCanvasInteraction() {
             e.target.classList.contains('lines-svg'));
 
         if (!isBackground) return;
+
+        // 接続待機モード中の空白クリック：モード解除（点線は引かない）
+        if (typeof isConnectionModeActive === 'function' && isConnectionModeActive()) {
+            cancelConnectionMode();
+            return;
+        }
 
         // Don't clear if lasso just selected nodes
         if (lassoState.didSelect) {

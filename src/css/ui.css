@@ -236,6 +236,33 @@
     text-underline-offset: 2px;
 }
 
+/* ノード接続ボタン（🔗の右隣） */
+.connect-control {
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+    overflow: hidden;
+}
+.canvas-float-btns .float-connect-btn {
+    color: #37352f;
+    line-height: 1;
+}
+.canvas-float-btns .float-connect-btn svg {
+    display: block;
+}
+/* 接続待機中のハイライト */
+.canvas-float-btns .float-connect-btn.active {
+    background: #e8e8e8;
+}
+
+/* 関連線用コンテキストメニュー（右クリック） */
+.relation-ctx-menu {
+    position: fixed;
+    z-index: 3001;
+}
+
 /* リンク設定モーダル */
 .link-modal-overlay {
     position: fixed;

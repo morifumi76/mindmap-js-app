@@ -8,6 +8,11 @@ function selectNode(nodeId) {
         selectedNodeIds.add(nodeId);
         lastSelectedNodeId = nodeId;
         selectionAnchorId = nodeId;
+        // ノード選択は関連線選択と相互排他（render()ではなく差分更新）
+        if (typeof selectedRelationId !== 'undefined' && selectedRelationId) {
+            selectedRelationId = null;
+            if (typeof updateRelationVisualSelection === 'function') updateRelationVisualSelection();
+        }
         updateSelectionDisplay();
         scrollNodeIntoView(nodeId);
     }
@@ -23,6 +28,11 @@ function clearSelection() {
     document.querySelectorAll('.sidebar-preview-line.active').forEach(function(el) {
         el.classList.remove('active');
     });
+    // 関連線の選択もまとめて解除（差分更新）
+    if (typeof selectedRelationId !== 'undefined' && selectedRelationId) {
+        selectedRelationId = null;
+        if (typeof updateRelationVisualSelection === 'function') updateRelationVisualSelection();
+    }
 }
 
 function updateSelectionDisplay() {
