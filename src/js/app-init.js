@@ -24,18 +24,48 @@
     }
 
     // ---- Supabase debounced sync (called from storage.js hook) ----
+    // 保留中の同期対象マップID（フラッシュ時に参照）
+    var pendingSyncMapId = null;
+    // デバウンス時間（短いほどデータロスのリスクが減る／長いほど通信回数が減る）
+    var SAVE_DEBOUNCE_MS = 800;
+
     window._supaQueueSync = function(localId) {
         if (!window._supa) return;
         clearTimeout(saveDebounceTimer);
+        pendingSyncMapId = localId;
+        // 通信前に未同期マーカーを localStorage に書く（同期書き込みなので即座に永続化）
+        // → タブを閉じても次回起動時に拾われる
+        try {
+            var p = JSON.parse(localStorage.getItem('mindmap-pending-sync') || '{}');
+            p[String(localId)] = 1;
+            localStorage.setItem('mindmap-pending-sync', JSON.stringify(p));
+        } catch(e) {}
         showSaveIndicator('保存中...');
         saveDebounceTimer = setTimeout(function() {
-            doSupabaseSync(localId);
-        }, 2000);
+            saveDebounceTimer = null;
+            var idToSync = pendingSyncMapId;
+            pendingSyncMapId = null;
+            doSupabaseSync(idToSync);
+        }, SAVE_DEBOUNCE_MS);
     };
 
+    // 保留中のデバウンス保存を即時実行する（離脱時・マップ切替時・ログアウト時に使用）
+    // 戻り値: Supabase 保存完了の Promise（保留が無い場合は即解決）
+    function flushSupabaseSyncImmediate() {
+        if (!saveDebounceTimer) return Promise.resolve();
+        clearTimeout(saveDebounceTimer);
+        saveDebounceTimer = null;
+        var idToSync = pendingSyncMapId;
+        pendingSyncMapId = null;
+        if (!idToSync) return Promise.resolve();
+        return doSupabaseSync(idToSync);
+    }
+    // 他モジュール（sidebar-left.js など）から呼び出せるよう公開
+    window._supaFlushSync = flushSupabaseSyncImmediate;
+
     function doSupabaseSync(localId) {
-        if (!window._supa) return;
-        window._supa.getCurrentUser().then(function(user) {
+        if (!window._supa || !localId) return Promise.resolve();
+        return window._supa.getCurrentUser().then(function(user) {
             if (!user) return;
             var metaList;
             try { metaList = JSON.parse(localStorage.getItem('mindmap-meta') || '[]'); } catch(e) { metaList = []; }
@@ -60,7 +90,7 @@
                 data._starred   = !!meta.starred;
                 data._starOrder = meta.starOrder || 0;
             } catch(e) {}
-            window._supa.saveMap(localId, meta.name, data, meta.folderId).then(function() {
+            return window._supa.saveMap(localId, meta.name, data, meta.folderId).then(function() {
                 showSaveIndicator('保存済み');
             }).catch(function() {
                 showSaveIndicator('⚠️ 保存失敗（ローカルに保存済み）');
@@ -71,6 +101,15 @@
             });
         });
     }
+
+    // ---- 離脱時の強制保存 ----
+    // タブを閉じる・リロード・別ページ遷移・PC スリープ等で
+    // デバウンス中の保存が消えないよう即時フラッシュする
+    window.addEventListener('pagehide', function() { flushSupabaseSyncImmediate(); });
+    window.addEventListener('beforeunload', function() { flushSupabaseSyncImmediate(); });
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden') flushSupabaseSyncImmediate();
+    });
 
     // ---- Share URL detection ----
     function getShareIdFromUrl() {
@@ -384,7 +423,11 @@
         if (!btn) return;
         btn.addEventListener('click', function() {
             if (!confirm('ログアウトしますか？')) return;
-            window._supa.logout().then(function() {
+            // ログアウト前に保留中の保存を Supabase へ強制フラッシュしてから logout する
+            // （直前2秒以内の編集がクラウドに届かず消える事故を防ぐ）
+            flushSupabaseSyncImmediate().then(function() {
+                return window._supa.logout();
+            }).then(function() {
                 // Clear Supabase-related localStorage
                 var toRemove = [];
                 for (var i = 0; i < localStorage.length; i++) {

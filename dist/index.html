@@ -1711,8 +1711,9 @@ body.connection-mode .node {
 
 #saveIndicator {
     position: fixed;
-    bottom: 16px;
-    right: 20px;
+    /* 🌲 トグルボタン（bottom:24 right:24 / 52×52）の左横に配置して重なりを回避 */
+    bottom: 24px;
+    right: 90px;
     font-family: 'Meiryo UI', Meiryo, sans-serif;
     font-size: 12px;
     color: #6b6b6b;
@@ -15521,6 +15522,33 @@ ${suffix}`;
   var MAP_KEY_PREFIX = "mindmap-supabase-map-";
   var FOLDER_KEY_PREFIX = "mindmap-supabase-folder-";
   var MIGRATED_KEY = "mindmap-migrated-supabase";
+  var PENDING_KEY = "mindmap-pending-sync";
+  function markPendingSync(localId) {
+    try {
+      const p = JSON.parse(localStorage.getItem(PENDING_KEY) || "{}");
+      p[String(localId)] = 1;
+      localStorage.setItem(PENDING_KEY, JSON.stringify(p));
+    } catch (e) {
+    }
+  }
+  function clearPendingSync(localId) {
+    try {
+      const p = JSON.parse(localStorage.getItem(PENDING_KEY) || "{}");
+      delete p[String(localId)];
+      localStorage.setItem(PENDING_KEY, JSON.stringify(p));
+    } catch (e) {
+    }
+  }
+  function generateUuid() {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return crypto.randomUUID();
+    }
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === "x" ? r : r & 3 | 8;
+      return v.toString(16);
+    });
+  }
   async function login(email, password) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
@@ -15571,11 +15599,77 @@ ${suffix}`;
     }
     toRemove.forEach((k) => localStorage.removeItem(k));
   }
+  async function replayPendingSyncs() {
+    let pending;
+    try {
+      pending = JSON.parse(localStorage.getItem(PENDING_KEY) || "{}");
+    } catch (e) {
+      return;
+    }
+    const ids = pending ? Object.keys(pending) : [];
+    if (ids.length === 0) return;
+    let metaList;
+    try {
+      metaList = JSON.parse(localStorage.getItem("mindmap-meta") || "[]");
+    } catch (e) {
+      return;
+    }
+    for (const localIdStr of ids) {
+      const localId = parseInt(localIdStr, 10);
+      if (!localId) continue;
+      const meta = metaList.find((m) => m.id === localId && m.type === "page");
+      if (!meta) {
+        clearPendingSync(localId);
+        continue;
+      }
+      let data;
+      try {
+        data = JSON.parse(localStorage.getItem("mindmap-data-" + localId));
+      } catch (e) {
+        continue;
+      }
+      if (!data) {
+        clearPendingSync(localId);
+        continue;
+      }
+      try {
+        const gray = localStorage.getItem("mindmap-node-grayout-" + localId);
+        const hl = localStorage.getItem("mindmap-node-highlight-" + localId);
+        const cy = localStorage.getItem("mindmap-node-cyan-" + localId);
+        const rt = localStorage.getItem("mindmap-node-redtext-" + localId);
+        data._grayout = gray ? JSON.parse(gray) : {};
+        data._highlight = hl ? JSON.parse(hl) : {};
+        data._cyan = cy ? JSON.parse(cy) : {};
+        data._redtext = rt ? JSON.parse(rt) : {};
+        data._starred = !!meta.starred;
+        data._starOrder = meta.starOrder || 0;
+      } catch (e) {
+      }
+      try {
+        await saveMap(localId, meta.name, data, meta.folderId);
+      } catch (e) {
+        return;
+      }
+    }
+  }
   async function loadUserData() {
     const user = await getCurrentUser();
     if (!user) return false;
+    try {
+      await replayPendingSyncs();
+    } catch (e) {
+    }
     const prevLastLocalId = parseInt(localStorage.getItem("mindmap-last-active-id"), 10) || null;
     const prevLastSupabaseUuid = prevLastLocalId ? getSupabaseMapId(prevLastLocalId) : null;
+    let urlIdSupabaseUuid = null;
+    let urlIdParsed = null;
+    try {
+      const _urlParams = new URLSearchParams(window.location.search);
+      const _raw = _urlParams.get("id");
+      urlIdParsed = _raw ? parseInt(_raw, 10) : null;
+      if (urlIdParsed) urlIdSupabaseUuid = getSupabaseMapId(urlIdParsed);
+    } catch (e) {
+    }
     const [{ data: folders, error: fErr }, { data: maps, error: mErr }] = await Promise.all([
       supabase.from("folders").select("*").eq("user_id", user.id).order("sort_order"),
       supabase.from("maps").select("*").eq("user_id", user.id).order("updated_at", { ascending: false })
@@ -15677,30 +15771,42 @@ ${suffix}`;
       } catch (e) {
       }
     }
+    try {
+      if (urlIdSupabaseUuid && mapSupabaseToLocal[urlIdSupabaseUuid]) {
+        const newLocalId = mapSupabaseToLocal[urlIdSupabaseUuid];
+        if (newLocalId !== urlIdParsed) {
+          const _u = new URL(window.location.href);
+          _u.searchParams.set("id", String(newLocalId));
+          window.history.replaceState(null, "", _u.toString());
+        }
+      } else if (urlIdParsed !== null) {
+        const _u = new URL(window.location.href);
+        _u.searchParams.delete("id");
+        window.history.replaceState(null, "", _u.toString());
+      }
+    } catch (e) {
+    }
     return true;
   }
   async function saveMap(localId, name, data, localFolderId) {
     const user = await getCurrentUser();
     if (!user) return;
-    const supabaseMapId = getSupabaseMapId(localId);
+    markPendingSync(localId);
+    let supabaseMapId = getSupabaseMapId(localId);
     const supabaseFolderId = localFolderId ? getSupabaseFolderId(localFolderId) : null;
-    if (supabaseMapId) {
-      const { error } = await supabase.from("maps").update({
-        name,
-        data,
-        folder_id: supabaseFolderId
-      }).eq("id", supabaseMapId);
-      if (error) throw error;
-    } else {
-      const { data: newMap, error } = await supabase.from("maps").insert({
-        user_id: user.id,
-        name,
-        data,
-        folder_id: supabaseFolderId
-      }).select().single();
-      if (error) throw error;
-      setSupabaseMapId(localId, newMap.id);
+    if (!supabaseMapId) {
+      supabaseMapId = generateUuid();
+      setSupabaseMapId(localId, supabaseMapId);
     }
+    const { error } = await supabase.from("maps").upsert({
+      id: supabaseMapId,
+      user_id: user.id,
+      name,
+      data,
+      folder_id: supabaseFolderId
+    });
+    if (error) throw error;
+    clearPendingSync(localId);
   }
   async function deleteMap(localId) {
     const uuid = getSupabaseMapId(localId);
@@ -21948,6 +22054,10 @@ function deleteFolderMultiple(folderIds) {
 function switchToMap(mapId) {
     if (mapId === currentMapId) return;
 
+    // 直前マップの保留中 Supabase 保存を強制フラッシュ
+    // （切替後にデバウンスタイマーが新マップ用に上書きされ、直前マップの保存が消えるのを防ぐ）
+    if (typeof window._supaFlushSync === 'function') window._supaFlushSync();
+
     // Save current map
     saveToLocalStorage();
 
@@ -22015,6 +22125,8 @@ function duplicateMap(mapId) {
     metaList.push(newMeta);
     saveMetaList(metaList);
     try { localStorage.setItem(getMapDataKey(newId), JSON.stringify(deepClone(srcData))); } catch(e) {}
+    // Supabase へも保存（リロードで複製マップが消える事故を防ぐ）
+    if (window._supa) window._supa.saveMap(newId, newMeta.name, srcData, folderId).catch(function(){});
 
     renderMapList();
     showToast('📑 マップを複製しました');
@@ -22198,18 +22310,48 @@ window.toggleNodeHighlight = toggleNodeHighlight;
     }
 
     // ---- Supabase debounced sync (called from storage.js hook) ----
+    // 保留中の同期対象マップID（フラッシュ時に参照）
+    var pendingSyncMapId = null;
+    // デバウンス時間（短いほどデータロスのリスクが減る／長いほど通信回数が減る）
+    var SAVE_DEBOUNCE_MS = 800;
+
     window._supaQueueSync = function(localId) {
         if (!window._supa) return;
         clearTimeout(saveDebounceTimer);
+        pendingSyncMapId = localId;
+        // 通信前に未同期マーカーを localStorage に書く（同期書き込みなので即座に永続化）
+        // → タブを閉じても次回起動時に拾われる
+        try {
+            var p = JSON.parse(localStorage.getItem('mindmap-pending-sync') || '{}');
+            p[String(localId)] = 1;
+            localStorage.setItem('mindmap-pending-sync', JSON.stringify(p));
+        } catch(e) {}
         showSaveIndicator('保存中...');
         saveDebounceTimer = setTimeout(function() {
-            doSupabaseSync(localId);
-        }, 2000);
+            saveDebounceTimer = null;
+            var idToSync = pendingSyncMapId;
+            pendingSyncMapId = null;
+            doSupabaseSync(idToSync);
+        }, SAVE_DEBOUNCE_MS);
     };
 
+    // 保留中のデバウンス保存を即時実行する（離脱時・マップ切替時・ログアウト時に使用）
+    // 戻り値: Supabase 保存完了の Promise（保留が無い場合は即解決）
+    function flushSupabaseSyncImmediate() {
+        if (!saveDebounceTimer) return Promise.resolve();
+        clearTimeout(saveDebounceTimer);
+        saveDebounceTimer = null;
+        var idToSync = pendingSyncMapId;
+        pendingSyncMapId = null;
+        if (!idToSync) return Promise.resolve();
+        return doSupabaseSync(idToSync);
+    }
+    // 他モジュール（sidebar-left.js など）から呼び出せるよう公開
+    window._supaFlushSync = flushSupabaseSyncImmediate;
+
     function doSupabaseSync(localId) {
-        if (!window._supa) return;
-        window._supa.getCurrentUser().then(function(user) {
+        if (!window._supa || !localId) return Promise.resolve();
+        return window._supa.getCurrentUser().then(function(user) {
             if (!user) return;
             var metaList;
             try { metaList = JSON.parse(localStorage.getItem('mindmap-meta') || '[]'); } catch(e) { metaList = []; }
@@ -22234,7 +22376,7 @@ window.toggleNodeHighlight = toggleNodeHighlight;
                 data._starred   = !!meta.starred;
                 data._starOrder = meta.starOrder || 0;
             } catch(e) {}
-            window._supa.saveMap(localId, meta.name, data, meta.folderId).then(function() {
+            return window._supa.saveMap(localId, meta.name, data, meta.folderId).then(function() {
                 showSaveIndicator('保存済み');
             }).catch(function() {
                 showSaveIndicator('⚠️ 保存失敗（ローカルに保存済み）');
@@ -22245,6 +22387,15 @@ window.toggleNodeHighlight = toggleNodeHighlight;
             });
         });
     }
+
+    // ---- 離脱時の強制保存 ----
+    // タブを閉じる・リロード・別ページ遷移・PC スリープ等で
+    // デバウンス中の保存が消えないよう即時フラッシュする
+    window.addEventListener('pagehide', function() { flushSupabaseSyncImmediate(); });
+    window.addEventListener('beforeunload', function() { flushSupabaseSyncImmediate(); });
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden') flushSupabaseSyncImmediate();
+    });
 
     // ---- Share URL detection ----
     function getShareIdFromUrl() {
@@ -22558,7 +22709,11 @@ window.toggleNodeHighlight = toggleNodeHighlight;
         if (!btn) return;
         btn.addEventListener('click', function() {
             if (!confirm('ログアウトしますか？')) return;
-            window._supa.logout().then(function() {
+            // ログアウト前に保留中の保存を Supabase へ強制フラッシュしてから logout する
+            // （直前2秒以内の編集がクラウドに届かず消える事故を防ぐ）
+            flushSupabaseSyncImmediate().then(function() {
+                return window._supa.logout();
+            }).then(function() {
                 // Clear Supabase-related localStorage
                 var toRemove = [];
                 for (var i = 0; i < localStorage.length; i++) {

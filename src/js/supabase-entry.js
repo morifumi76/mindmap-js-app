@@ -15,6 +15,38 @@ const MAP_KEY_PREFIX    = 'mindmap-supabase-map-';
 const FOLDER_KEY_PREFIX = 'mindmap-supabase-folder-';
 const MIGRATED_KEY      = 'mindmap-migrated-supabase';
 
+// ---- 未同期キュー（クラッシュ・離脱対策） ----
+// 編集が発生したら同期書き込みでマーカーを立て、Supabase保存成功で消す。
+// 次回ページ起動時にマーカーが残っていれば、データロード前にリプレイして追いつく。
+const PENDING_KEY = 'mindmap-pending-sync';
+
+function markPendingSync(localId) {
+    try {
+        const p = JSON.parse(localStorage.getItem(PENDING_KEY) || '{}');
+        p[String(localId)] = 1;
+        localStorage.setItem(PENDING_KEY, JSON.stringify(p));
+    } catch(e) {}
+}
+function clearPendingSync(localId) {
+    try {
+        const p = JSON.parse(localStorage.getItem(PENDING_KEY) || '{}');
+        delete p[String(localId)];
+        localStorage.setItem(PENDING_KEY, JSON.stringify(p));
+    } catch(e) {}
+}
+
+// クライアント側で UUID v4 を生成（通信中断でも UUID が保持されるよう、insert 前に確定させるため）
+function generateUuid() {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
 // ---- Auth ----
 async function login(email, password) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -88,14 +120,76 @@ function clearMindmapData() {
     toRemove.forEach(k => localStorage.removeItem(k));
 }
 
+// ---- 未同期キューをリプレイする ----
+// 前回のセッションで Supabase に届かなかった編集を、
+// データロード前に再送信して追いつかせる
+async function replayPendingSyncs() {
+    let pending;
+    try {
+        pending = JSON.parse(localStorage.getItem(PENDING_KEY) || '{}');
+    } catch(e) { return; }
+    const ids = pending ? Object.keys(pending) : [];
+    if (ids.length === 0) return;
+
+    let metaList;
+    try {
+        metaList = JSON.parse(localStorage.getItem('mindmap-meta') || '[]');
+    } catch(e) { return; }
+
+    for (const localIdStr of ids) {
+        const localId = parseInt(localIdStr, 10);
+        if (!localId) continue;
+        const meta = metaList.find(m => m.id === localId && m.type === 'page');
+        if (!meta) { clearPendingSync(localId); continue; }
+        let data;
+        try {
+            data = JSON.parse(localStorage.getItem('mindmap-data-' + localId));
+        } catch(e) { continue; }
+        if (!data) { clearPendingSync(localId); continue; }
+        try {
+            const gray = localStorage.getItem('mindmap-node-grayout-' + localId);
+            const hl   = localStorage.getItem('mindmap-node-highlight-' + localId);
+            const cy   = localStorage.getItem('mindmap-node-cyan-' + localId);
+            const rt   = localStorage.getItem('mindmap-node-redtext-' + localId);
+            data._grayout   = gray  ? JSON.parse(gray)  : {};
+            data._highlight = hl    ? JSON.parse(hl)    : {};
+            data._cyan      = cy    ? JSON.parse(cy)    : {};
+            data._redtext   = rt    ? JSON.parse(rt)    : {};
+            data._starred   = !!meta.starred;
+            data._starOrder = meta.starOrder || 0;
+        } catch(e) {}
+        try {
+            await saveMap(localId, meta.name, data, meta.folderId);
+        } catch(e) {
+            // ネットワーク失敗等：マーカーは残したまま次回起動時に再試行
+            return;
+        }
+    }
+}
+
 // ---- Load all user data from Supabase into localStorage ----
 async function loadUserData() {
     const user = await getCurrentUser();
     if (!user) return false;
 
+    // 前回の未同期分を先にリプレイして Supabase へ追いつかせる
+    // （タブクローズ・リロード・クラッシュ・オフライン中の編集を救う）
+    try { await replayPendingSyncs(); } catch(e) {}
+
     // 現在開いているマップのSupabase UUIDを保存（ID再採番後に復元するため）
     const prevLastLocalId = parseInt(localStorage.getItem('mindmap-last-active-id'), 10) || null;
     const prevLastSupabaseUuid = prevLastLocalId ? getSupabaseMapId(prevLastLocalId) : null;
+
+    // URLの ?id=X もリロード前の local ID。clearMindmapData の前に対応する Supabase UUID を捕捉しておく
+    // （再採番後に古い ?id=X が別マップを指してしまう不具合を防ぐ）
+    let urlIdSupabaseUuid = null;
+    let urlIdParsed = null;
+    try {
+        const _urlParams = new URLSearchParams(window.location.search);
+        const _raw = _urlParams.get('id');
+        urlIdParsed = _raw ? parseInt(_raw, 10) : null;
+        if (urlIdParsed) urlIdSupabaseUuid = getSupabaseMapId(urlIdParsed);
+    } catch(e) {}
 
     const [{ data: folders, error: fErr }, { data: maps, error: mErr }] = await Promise.all([
         supabase.from('folders').select('*').eq('user_id', user.id).order('sort_order'),
@@ -202,6 +296,24 @@ async function loadUserData() {
         try { localStorage.setItem('mindmap-last-active-id', String(restoredLastActiveId)); } catch(e) {}
     }
 
+    // URLの ?id=X を再採番後の新しい local ID に更新する
+    // （URL 側は古い local ID のままだと、init() が URL 優先で別マップを開いてしまうため）
+    try {
+        if (urlIdSupabaseUuid && mapSupabaseToLocal[urlIdSupabaseUuid]) {
+            const newLocalId = mapSupabaseToLocal[urlIdSupabaseUuid];
+            if (newLocalId !== urlIdParsed) {
+                const _u = new URL(window.location.href);
+                _u.searchParams.set('id', String(newLocalId));
+                window.history.replaceState(null, '', _u.toString());
+            }
+        } else if (urlIdParsed !== null) {
+            // URLのIDに対応するマップが見つからない（削除済み等）→ URL から id を除去
+            const _u = new URL(window.location.href);
+            _u.searchParams.delete('id');
+            window.history.replaceState(null, '', _u.toString());
+        }
+    } catch(e) {}
+
     return true;
 }
 
@@ -210,26 +322,31 @@ async function saveMap(localId, name, data, localFolderId) {
     const user = await getCurrentUser();
     if (!user) return;
 
-    const supabaseMapId = getSupabaseMapId(localId);
+    // 通信前に未同期マーカーを立てる（成功するまで残しておく）
+    markPendingSync(localId);
+
+    let supabaseMapId = getSupabaseMapId(localId);
     const supabaseFolderId = localFolderId ? getSupabaseFolderId(localFolderId) : null;
 
-    if (supabaseMapId) {
-        const { error } = await supabase.from('maps').update({
-            name,
-            data,
-            folder_id: supabaseFolderId
-        }).eq('id', supabaseMapId);
-        if (error) throw error;
-    } else {
-        const { data: newMap, error } = await supabase.from('maps').insert({
-            user_id: user.id,
-            name,
-            data,
-            folder_id: supabaseFolderId
-        }).select().single();
-        if (error) throw error;
-        setSupabaseMapId(localId, newMap.id);
+    // 新規マップは UUID をクライアント側で先に発行してから保存。
+    // こうすると通信中断・タブクローズで insert が中断されても、
+    // 次回リプレイ時に同じ UUID で upsert するため重複行が発生しない。
+    if (!supabaseMapId) {
+        supabaseMapId = generateUuid();
+        setSupabaseMapId(localId, supabaseMapId);
     }
+
+    const { error } = await supabase.from('maps').upsert({
+        id: supabaseMapId,
+        user_id: user.id,
+        name,
+        data,
+        folder_id: supabaseFolderId
+    });
+    if (error) throw error;
+
+    // 保存成功したのでマーカーを消す
+    clearPendingSync(localId);
 }
 
 // ---- Delete map from Supabase ----

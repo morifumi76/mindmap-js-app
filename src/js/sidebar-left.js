@@ -1730,6 +1730,10 @@ function deleteFolderMultiple(folderIds) {
 function switchToMap(mapId) {
     if (mapId === currentMapId) return;
 
+    // 直前マップの保留中 Supabase 保存を強制フラッシュ
+    // （切替後にデバウンスタイマーが新マップ用に上書きされ、直前マップの保存が消えるのを防ぐ）
+    if (typeof window._supaFlushSync === 'function') window._supaFlushSync();
+
     // Save current map
     saveToLocalStorage();
 
@@ -1797,6 +1801,8 @@ function duplicateMap(mapId) {
     metaList.push(newMeta);
     saveMetaList(metaList);
     try { localStorage.setItem(getMapDataKey(newId), JSON.stringify(deepClone(srcData))); } catch(e) {}
+    // Supabase へも保存（リロードで複製マップが消える事故を防ぐ）
+    if (window._supa) window._supa.saveMap(newId, newMeta.name, srcData, folderId).catch(function(){});
 
     renderMapList();
     showToast('📑 マップを複製しました');
