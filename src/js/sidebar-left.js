@@ -1568,8 +1568,6 @@ function deleteFolder(folderId) {
         return;
     }
 
-    if (!confirm('このフォルダを削除しますか？\n中のページとサブフォルダも含めてすべて削除されます。')) return;
-
     // Collect all descendant folder IDs recursively
     function collectDescendantFolderIds(id) {
         var ids = [id];
@@ -1592,6 +1590,20 @@ function deleteFolder(folderId) {
             pagesToDelete.push(metaList[i].id);
         }
     }
+
+    // 削除内容の件数を確認ダイアログに明示（誤削除防止）
+    var subFolderCount = allFolderIds.length - 1; // 自分自身を除く
+    var pageCount      = pagesToDelete.length;
+    var confirmMsg = '「' + folderMeta.name + '」フォルダを削除しますか？\n\n';
+    if (subFolderCount === 0 && pageCount === 0) {
+        confirmMsg += '（中身は空です）';
+    } else {
+        var parts = [];
+        if (subFolderCount > 0) parts.push('サブフォルダ ' + subFolderCount + '個');
+        if (pageCount > 0)      parts.push('マップ ' + pageCount + '個');
+        confirmMsg += '⚠ 中の ' + parts.join(' と ') + ' もすべて削除されます。\nこの操作は元に戻せません。';
+    }
+    if (!confirm(confirmMsg)) return;
 
     // Delete page data from localStorage
     for (var i = 0; i < pagesToDelete.length; i++) {
@@ -1662,23 +1674,23 @@ function deleteMapMultiple(mapIds) {
 // 複数フォルダを一括削除
 function deleteFolderMultiple(folderIds) {
     if (!folderIds || folderIds.length === 0) return;
-    if (!confirm(folderIds.length + '件のフォルダを削除しますか？\n中のページとサブフォルダも含めてすべて削除されます。')) return;
 
     var metaList = getMetaList();
     var deletedPageIds = [];
 
+    // 子孫フォルダ収集ヘルパー（外側へ移動して件数集計でも使えるようにする）
+    function collectDesc(id) {
+        var ids = [id];
+        for (var i = 0; i < metaList.length; i++) {
+            if (metaList[i].type === 'folder' && (metaList[i].parentFolderId || null) === (id || null)) {
+                ids = ids.concat(collectDesc(metaList[i].id));
+            }
+        }
+        return ids;
+    }
+
     for (var fi = 0; fi < folderIds.length; fi++) {
         var fid = folderIds[fi];
-        // 子孫フォルダIDを収集
-        function collectDesc(id) {
-            var ids = [id];
-            for (var i = 0; i < metaList.length; i++) {
-                if (metaList[i].type === 'folder' && (metaList[i].parentFolderId || null) === (id || null)) {
-                    ids = ids.concat(collectDesc(metaList[i].id));
-                }
-            }
-            return ids;
-        }
         var allIds = collectDesc(fid);
         for (var i = 0; i < metaList.length; i++) {
             if (allIds.indexOf(metaList[i].id) !== -1 && metaList[i].type !== 'folder') {
@@ -1690,18 +1702,29 @@ function deleteFolderMultiple(folderIds) {
         }
     }
 
+    // 削除内容の件数を確認ダイアログに明示
+    var totalFolderSet = {};
+    for (var fi = 0; fi < folderIds.length; fi++) {
+        var allDesc = collectDesc(folderIds[fi]);
+        for (var i = 0; i < allDesc.length; i++) totalFolderSet[allDesc[i]] = true;
+    }
+    var totalFolderCount = Object.keys(totalFolderSet).length;
+    var pageCount        = deletedPageIds.length;
+    var confirmMsg = folderIds.length + '個のフォルダを削除しますか？\n\n';
+    var parts = [];
+    parts.push('フォルダ ' + totalFolderCount + '個（サブフォルダ含む）');
+    if (pageCount > 0) parts.push('マップ ' + pageCount + '個');
+    confirmMsg += '⚠ ' + parts.join(' と ') + ' をすべて削除します。\nこの操作は元に戻せません。';
+    if (!confirm(confirmMsg)) return;
+
     // ページデータを削除
     for (var i = 0; i < deletedPageIds.length; i++) {
         try { localStorage.removeItem(getMapDataKey(deletedPageIds[i])); } catch(e) {}
         if (window._supa) window._supa.deleteMap(deletedPageIds[i]).catch(function(){});
     }
 
-    // メタからフォルダ・ページを除去
-    var allFolderSet = {};
-    for (var fi = 0; fi < folderIds.length; fi++) {
-        var allDesc = collectDesc(folderIds[fi]);
-        for (var i = 0; i < allDesc.length; i++) allFolderSet[allDesc[i]] = true;
-    }
+    // メタからフォルダ・ページを除去（件数集計時に作った totalFolderSet を再利用）
+    var allFolderSet = totalFolderSet;
     var newMeta = metaList.filter(function(m) {
         if (allFolderSet[m.id]) return false;
         if (m.type === 'page' && allFolderSet[m.folderId]) return false;

@@ -1721,15 +1721,38 @@ body.connection-mode .node {
     border: 1px solid #e8e8e8;
     border-radius: 6px;
     padding: 4px 10px;
-    opacity: 0;
-    transition: opacity 0.3s;
+    opacity: 0.85;
+    transition: background 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
     pointer-events: none;
     z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
 }
-
-#saveIndicator.show {
-    opacity: 1;
+#saveIndicator::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #5a9b5a; /* デフォルトは保存済み = 緑 */
+    flex-shrink: 0;
 }
+/* 保存中（黄） */
+#saveIndicator.save-saving::before { background: #d4a017; }
+#saveIndicator.save-saving { color: #6b6b6b; }
+/* 未保存（オレンジ） */
+#saveIndicator.save-pending::before { background: #d97706; }
+#saveIndicator.save-pending { color: #b54708; border-color: #fde9c7; background: #fff8ed; }
+/* 保存失敗（赤） */
+#saveIndicator.save-error::before { background: #dc2626; }
+#saveIndicator.save-error { color: #b91c1c; border-color: #fecaca; background: #fef2f2; opacity: 1; }
+/* オフライン（灰） */
+#saveIndicator.save-offline::before { background: #9ca3af; }
+#saveIndicator.save-offline { color: #6b6b6b; border-color: #e5e7eb; background: #f3f4f6; }
+/* 閲覧専用モードでは非表示 */
+body.readonly-mode #saveIndicator { display: none; }
 
 /* ========================================
    Migration Dialog
@@ -2014,6 +2037,31 @@ body.connection-mode .node {
     display: flex;
 }
 
+/* 接続待機モード中のバナー（body.connection-mode が付いた時だけ表示） */
+#connectionModeBanner {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 8px 16px;
+    background: #1d4ed8;
+    color: #ffffff;
+    font-family: 'Meiryo UI', Meiryo, sans-serif;
+    font-size: 13px;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    animation: connectionBannerPulse 1.6s ease-in-out infinite;
+}
+body.connection-mode #connectionModeBanner {
+    display: flex;
+}
+@keyframes connectionBannerPulse {
+    0%, 100% { background: #1d4ed8; }
+    50%      { background: #2563eb; }
+}
+
 /* 閲覧専用モード時：キャンバスと右サイドバーをバナーの高さ分下にずらす */
 body.readonly-mode .canvas-container {
     top: 32px;
@@ -2256,6 +2304,9 @@ body.readonly-mode .sidebar-float-toggle {
 
     <!-- Read-only banner -->
     <div id="readonlyBanner">閲覧専用モード — このマップは編集できません</div>
+
+    <!-- 接続待機モード中のバナー（接続したいノードをクリックする案内） -->
+    <div id="connectionModeBanner">🔗 接続先のノードをクリックしてください　／　Esc または接続ボタンでキャンセル</div>
 
     <!-- Loading overlay -->
     <div id="loadingOverlay" style="display:none;position:fixed;inset:0;background:#f7f7f5;z-index:9999;align-items:center;justify-content:center;font-family:Meiryo UI,Meiryo,sans-serif;color:#6b6b6b;font-size:14px;">
@@ -18729,7 +18780,9 @@ function deleteSelectedRelation() {
     removeRelationById(id);
     saveState();
     render();
-    showToast('関連線を削除しました');
+    // 取り消し操作のヒントを長めに表示（誤削除に気付きやすくする）
+    var undoKey = /Mac/.test(navigator.platform) ? '⌘Z' : 'Ctrl+Z';
+    showToast('関連線を削除しました（' + undoKey + ' で取り消し）', 5000);
 }
 
 // ========================================
@@ -21957,8 +22010,6 @@ function deleteFolder(folderId) {
         return;
     }
 
-    if (!confirm('このフォルダを削除しますか？\n中のページとサブフォルダも含めてすべて削除されます。')) return;
-
     // Collect all descendant folder IDs recursively
     function collectDescendantFolderIds(id) {
         var ids = [id];
@@ -21981,6 +22032,20 @@ function deleteFolder(folderId) {
             pagesToDelete.push(metaList[i].id);
         }
     }
+
+    // 削除内容の件数を確認ダイアログに明示（誤削除防止）
+    var subFolderCount = allFolderIds.length - 1; // 自分自身を除く
+    var pageCount      = pagesToDelete.length;
+    var confirmMsg = '「' + folderMeta.name + '」フォルダを削除しますか？\n\n';
+    if (subFolderCount === 0 && pageCount === 0) {
+        confirmMsg += '（中身は空です）';
+    } else {
+        var parts = [];
+        if (subFolderCount > 0) parts.push('サブフォルダ ' + subFolderCount + '個');
+        if (pageCount > 0)      parts.push('マップ ' + pageCount + '個');
+        confirmMsg += '⚠ 中の ' + parts.join(' と ') + ' もすべて削除されます。\nこの操作は元に戻せません。';
+    }
+    if (!confirm(confirmMsg)) return;
 
     // Delete page data from localStorage
     for (var i = 0; i < pagesToDelete.length; i++) {
@@ -22051,23 +22116,23 @@ function deleteMapMultiple(mapIds) {
 // 複数フォルダを一括削除
 function deleteFolderMultiple(folderIds) {
     if (!folderIds || folderIds.length === 0) return;
-    if (!confirm(folderIds.length + '件のフォルダを削除しますか？\n中のページとサブフォルダも含めてすべて削除されます。')) return;
 
     var metaList = getMetaList();
     var deletedPageIds = [];
 
+    // 子孫フォルダ収集ヘルパー（外側へ移動して件数集計でも使えるようにする）
+    function collectDesc(id) {
+        var ids = [id];
+        for (var i = 0; i < metaList.length; i++) {
+            if (metaList[i].type === 'folder' && (metaList[i].parentFolderId || null) === (id || null)) {
+                ids = ids.concat(collectDesc(metaList[i].id));
+            }
+        }
+        return ids;
+    }
+
     for (var fi = 0; fi < folderIds.length; fi++) {
         var fid = folderIds[fi];
-        // 子孫フォルダIDを収集
-        function collectDesc(id) {
-            var ids = [id];
-            for (var i = 0; i < metaList.length; i++) {
-                if (metaList[i].type === 'folder' && (metaList[i].parentFolderId || null) === (id || null)) {
-                    ids = ids.concat(collectDesc(metaList[i].id));
-                }
-            }
-            return ids;
-        }
         var allIds = collectDesc(fid);
         for (var i = 0; i < metaList.length; i++) {
             if (allIds.indexOf(metaList[i].id) !== -1 && metaList[i].type !== 'folder') {
@@ -22079,18 +22144,29 @@ function deleteFolderMultiple(folderIds) {
         }
     }
 
+    // 削除内容の件数を確認ダイアログに明示
+    var totalFolderSet = {};
+    for (var fi = 0; fi < folderIds.length; fi++) {
+        var allDesc = collectDesc(folderIds[fi]);
+        for (var i = 0; i < allDesc.length; i++) totalFolderSet[allDesc[i]] = true;
+    }
+    var totalFolderCount = Object.keys(totalFolderSet).length;
+    var pageCount        = deletedPageIds.length;
+    var confirmMsg = folderIds.length + '個のフォルダを削除しますか？\n\n';
+    var parts = [];
+    parts.push('フォルダ ' + totalFolderCount + '個（サブフォルダ含む）');
+    if (pageCount > 0) parts.push('マップ ' + pageCount + '個');
+    confirmMsg += '⚠ ' + parts.join(' と ') + ' をすべて削除します。\nこの操作は元に戻せません。';
+    if (!confirm(confirmMsg)) return;
+
     // ページデータを削除
     for (var i = 0; i < deletedPageIds.length; i++) {
         try { localStorage.removeItem(getMapDataKey(deletedPageIds[i])); } catch(e) {}
         if (window._supa) window._supa.deleteMap(deletedPageIds[i]).catch(function(){});
     }
 
-    // メタからフォルダ・ページを除去
-    var allFolderSet = {};
-    for (var fi = 0; fi < folderIds.length; fi++) {
-        var allDesc = collectDesc(folderIds[fi]);
-        for (var i = 0; i < allDesc.length; i++) allFolderSet[allDesc[i]] = true;
-    }
+    // メタからフォルダ・ページを除去（件数集計時に作った totalFolderSet を再利用）
+    var allFolderSet = totalFolderSet;
     var newMeta = metaList.filter(function(m) {
         if (allFolderSet[m.id]) return false;
         if (m.type === 'page' && allFolderSet[m.folderId]) return false;
@@ -22358,21 +22434,58 @@ window.toggleNodeHighlight = toggleNodeHighlight;
     'use strict';
 
     var saveDebounceTimer = null;
-    var saveIndicatorHideTimer = null;
 
-    // ---- Save indicator ----
-    function showSaveIndicator(text) {
+    // ---- Save indicator (常時表示・状態管理) ----
+    // state: 'saved' | 'saving' | 'pending' | 'error' | 'offline'
+    var SAVE_STATE_CLASS = {
+        saved:   '',                // デフォルトの緑ドット
+        saving:  'save-saving',
+        pending: 'save-pending',
+        error:   'save-error',
+        offline: 'save-offline'
+    };
+    var SAVE_STATE_TEXT = {
+        saved:   '保存済み',
+        saving:  '保存中...',
+        pending: '未保存の変更',
+        error:   '保存失敗（再試行します）',
+        offline: 'オフライン'
+    };
+    var currentSaveState = 'saved';
+
+    function setSaveStatus(state) {
+        if (!SAVE_STATE_CLASS.hasOwnProperty(state)) return;
+        // オフライン時は他の状態より優先（オフラインなら何度同期しても無駄なので明示）
+        if (!navigator.onLine && state !== 'pending' && state !== 'offline') {
+            state = 'offline';
+        }
+        currentSaveState = state;
         var el = document.getElementById('saveIndicator');
         if (!el) return;
-        el.textContent = text;
-        el.classList.add('show');
-        clearTimeout(saveIndicatorHideTimer);
-        if (text === '保存済み') {
-            saveIndicatorHideTimer = setTimeout(function() {
-                el.classList.remove('show');
-            }, 2000);
-        }
+        // すべての状態クラスをクリアして1つだけ付ける
+        el.className = '';
+        if (SAVE_STATE_CLASS[state]) el.classList.add(SAVE_STATE_CLASS[state]);
+        el.textContent = SAVE_STATE_TEXT[state];
     }
+
+    // 後方互換: 旧 showSaveIndicator 呼び出しを新APIにブリッジ
+    function showSaveIndicator(text) {
+        if (text === '保存中...')        setSaveStatus('saving');
+        else if (text === '保存済み')    setSaveStatus('saved');
+        else if (text && text.indexOf('保存失敗') !== -1) setSaveStatus('error');
+    }
+
+    // オンライン/オフライン状態の変化を反映
+    window.addEventListener('online', function() {
+        // オフライン中に未同期なら pending へ
+        var pending = false;
+        try {
+            var p = JSON.parse(localStorage.getItem('mindmap-pending-sync') || '{}');
+            pending = Object.keys(p).length > 0;
+        } catch(e) {}
+        setSaveStatus(pending ? 'pending' : 'saved');
+    });
+    window.addEventListener('offline', function() { setSaveStatus('offline'); });
 
     // ---- Supabase debounced sync (called from storage.js hook) ----
     // 保留中の同期対象マップID（フラッシュ時に参照）
@@ -22442,13 +22555,15 @@ window.toggleNodeHighlight = toggleNodeHighlight;
                 data._starOrder = meta.starOrder || 0;
             } catch(e) {}
             return window._supa.saveMap(localId, meta.name, data, meta.folderId).then(function() {
-                showSaveIndicator('保存済み');
+                // saveMap 成功時に pending マーカーは削除済み。残りのキューをチェックして状態決定
+                var hasPending = false;
+                try {
+                    var p = JSON.parse(localStorage.getItem('mindmap-pending-sync') || '{}');
+                    hasPending = Object.keys(p).length > 0;
+                } catch(e) {}
+                setSaveStatus(hasPending ? 'pending' : 'saved');
             }).catch(function() {
-                showSaveIndicator('⚠️ 保存失敗（ローカルに保存済み）');
-                clearTimeout(saveIndicatorHideTimer);
-                saveIndicatorHideTimer = setTimeout(function() {
-                    document.getElementById('saveIndicator').classList.remove('show');
-                }, 3000);
+                setSaveStatus(navigator.onLine ? 'error' : 'offline');
             });
         });
     }
@@ -22882,6 +22997,15 @@ window.toggleNodeHighlight = toggleNodeHighlight;
 
     // ---- Main DOMContentLoaded handler ----
     document.addEventListener('DOMContentLoaded', function() {
+        // 保存ステータスの初期表示
+        // 未同期キューが残っていれば「未保存」、オフラインなら「オフライン」、それ以外は「保存済み」
+        try {
+            var pendingObj = JSON.parse(localStorage.getItem('mindmap-pending-sync') || '{}');
+            if (!navigator.onLine) setSaveStatus('offline');
+            else if (Object.keys(pendingObj).length > 0) setSaveStatus('pending');
+            else setSaveStatus('saved');
+        } catch(e) { setSaveStatus('saved'); }
+
         if (!window._supa) {
             // Supabase バンドル未ロード時は認証なしで起動
             init();

@@ -139,15 +139,38 @@
     border: 1px solid #e8e8e8;
     border-radius: 6px;
     padding: 4px 10px;
-    opacity: 0;
-    transition: opacity 0.3s;
+    opacity: 0.85;
+    transition: background 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
     pointer-events: none;
     z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
 }
-
-#saveIndicator.show {
-    opacity: 1;
+#saveIndicator::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #5a9b5a; /* デフォルトは保存済み = 緑 */
+    flex-shrink: 0;
 }
+/* 保存中（黄） */
+#saveIndicator.save-saving::before { background: #d4a017; }
+#saveIndicator.save-saving { color: #6b6b6b; }
+/* 未保存（オレンジ） */
+#saveIndicator.save-pending::before { background: #d97706; }
+#saveIndicator.save-pending { color: #b54708; border-color: #fde9c7; background: #fff8ed; }
+/* 保存失敗（赤） */
+#saveIndicator.save-error::before { background: #dc2626; }
+#saveIndicator.save-error { color: #b91c1c; border-color: #fecaca; background: #fef2f2; opacity: 1; }
+/* オフライン（灰） */
+#saveIndicator.save-offline::before { background: #9ca3af; }
+#saveIndicator.save-offline { color: #6b6b6b; border-color: #e5e7eb; background: #f3f4f6; }
+/* 閲覧専用モードでは非表示 */
+body.readonly-mode #saveIndicator { display: none; }
 
 /* ========================================
    Migration Dialog
@@ -430,6 +453,31 @@
 
 #readonlyBanner.show {
     display: flex;
+}
+
+/* 接続待機モード中のバナー（body.connection-mode が付いた時だけ表示） */
+#connectionModeBanner {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 8px 16px;
+    background: #1d4ed8;
+    color: #ffffff;
+    font-family: 'Meiryo UI', Meiryo, sans-serif;
+    font-size: 13px;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    animation: connectionBannerPulse 1.6s ease-in-out infinite;
+}
+body.connection-mode #connectionModeBanner {
+    display: flex;
+}
+@keyframes connectionBannerPulse {
+    0%, 100% { background: #1d4ed8; }
+    50%      { background: #2563eb; }
 }
 
 /* 閲覧専用モード時：キャンバスと右サイドバーをバナーの高さ分下にずらす */

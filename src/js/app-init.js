@@ -7,21 +7,58 @@
     'use strict';
 
     var saveDebounceTimer = null;
-    var saveIndicatorHideTimer = null;
 
-    // ---- Save indicator ----
-    function showSaveIndicator(text) {
+    // ---- Save indicator (常時表示・状態管理) ----
+    // state: 'saved' | 'saving' | 'pending' | 'error' | 'offline'
+    var SAVE_STATE_CLASS = {
+        saved:   '',                // デフォルトの緑ドット
+        saving:  'save-saving',
+        pending: 'save-pending',
+        error:   'save-error',
+        offline: 'save-offline'
+    };
+    var SAVE_STATE_TEXT = {
+        saved:   '保存済み',
+        saving:  '保存中...',
+        pending: '未保存の変更',
+        error:   '保存失敗（再試行します）',
+        offline: 'オフライン'
+    };
+    var currentSaveState = 'saved';
+
+    function setSaveStatus(state) {
+        if (!SAVE_STATE_CLASS.hasOwnProperty(state)) return;
+        // オフライン時は他の状態より優先（オフラインなら何度同期しても無駄なので明示）
+        if (!navigator.onLine && state !== 'pending' && state !== 'offline') {
+            state = 'offline';
+        }
+        currentSaveState = state;
         var el = document.getElementById('saveIndicator');
         if (!el) return;
-        el.textContent = text;
-        el.classList.add('show');
-        clearTimeout(saveIndicatorHideTimer);
-        if (text === '保存済み') {
-            saveIndicatorHideTimer = setTimeout(function() {
-                el.classList.remove('show');
-            }, 2000);
-        }
+        // すべての状態クラスをクリアして1つだけ付ける
+        el.className = '';
+        if (SAVE_STATE_CLASS[state]) el.classList.add(SAVE_STATE_CLASS[state]);
+        el.textContent = SAVE_STATE_TEXT[state];
     }
+
+    // 後方互換: 旧 showSaveIndicator 呼び出しを新APIにブリッジ
+    function showSaveIndicator(text) {
+        if (text === '保存中...')        setSaveStatus('saving');
+        else if (text === '保存済み')    setSaveStatus('saved');
+        else if (text && text.indexOf('保存失敗') !== -1) setSaveStatus('error');
+    }
+
+    // オンライン/オフライン状態の変化を反映
+    window.addEventListener('online', function() {
+        // オフライン中に未同期なら pending へ
+        var pending = false;
+        try {
+            var p = JSON.parse(localStorage.getItem('mindmap-pending-sync') || '{}');
+            pending = Object.keys(p).length > 0;
+        } catch(e) {}
+        setSaveStatus(pending ? 'pending' : 'saved');
+    });
+    window.addEventListener('offline', function() { setSaveStatus('offline'); });
 
     // ---- Supabase debounced sync (called from storage.js hook) ----
     // 保留中の同期対象マップID（フラッシュ時に参照）
@@ -91,13 +128,15 @@
                 data._starOrder = meta.starOrder || 0;
             } catch(e) {}
             return window._supa.saveMap(localId, meta.name, data, meta.folderId).then(function() {
-                showSaveIndicator('保存済み');
+                // saveMap 成功時に pending マーカーは削除済み。残りのキューをチェックして状態決定
+                var hasPending = false;
+                try {
+                    var p = JSON.parse(localStorage.getItem('mindmap-pending-sync') || '{}');
+                    hasPending = Object.keys(p).length > 0;
+                } catch(e) {}
+                setSaveStatus(hasPending ? 'pending' : 'saved');
             }).catch(function() {
-                showSaveIndicator('⚠️ 保存失敗（ローカルに保存済み）');
-                clearTimeout(saveIndicatorHideTimer);
-                saveIndicatorHideTimer = setTimeout(function() {
-                    document.getElementById('saveIndicator').classList.remove('show');
-                }, 3000);
+                setSaveStatus(navigator.onLine ? 'error' : 'offline');
             });
         });
     }
@@ -531,6 +570,15 @@
 
     // ---- Main DOMContentLoaded handler ----
     document.addEventListener('DOMContentLoaded', function() {
+        // 保存ステータスの初期表示
+        // 未同期キューが残っていれば「未保存」、オフラインなら「オフライン」、それ以外は「保存済み」
+        try {
+            var pendingObj = JSON.parse(localStorage.getItem('mindmap-pending-sync') || '{}');
+            if (!navigator.onLine) setSaveStatus('offline');
+            else if (Object.keys(pendingObj).length > 0) setSaveStatus('pending');
+            else setSaveStatus('saved');
+        } catch(e) { setSaveStatus('saved'); }
+
         if (!window._supa) {
             // Supabase バンドル未ロード時は認証なしで起動
             init();

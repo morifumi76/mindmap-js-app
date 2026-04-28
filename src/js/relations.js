@@ -509,7 +509,9 @@ function deleteSelectedRelation() {
     removeRelationById(id);
     saveState();
     render();
-    showToast('関連線を削除しました');
+    // 取り消し操作のヒントを長めに表示（誤削除に気付きやすくする）
+    var undoKey = /Mac/.test(navigator.platform) ? '⌘Z' : 'Ctrl+Z';
+    showToast('関連線を削除しました（' + undoKey + ' で取り消し）', 5000);
 }
 
 // ========================================
