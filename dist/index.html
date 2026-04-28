@@ -22579,6 +22579,16 @@ window.toggleNodeHighlight = toggleNodeHighlight;
 
     window._supaQueueSync = function(localId) {
         if (!window._supa) return;
+        // 異なる mapId が連続して来た場合、前マップの保留分を先に即時フラッシュする。
+        // （以前は debounce タイマーが新マップ用に上書きされて前マップが永久に未同期に
+        //   なる不具合があった。複数マップ編集→ステータスが「未保存の変更」のまま残る）
+        if (saveDebounceTimer && pendingSyncMapId && pendingSyncMapId !== localId) {
+            clearTimeout(saveDebounceTimer);
+            var prevId = pendingSyncMapId;
+            saveDebounceTimer = null;
+            pendingSyncMapId = null;
+            doSupabaseSync(prevId); // fire-and-forget。完了時に pending マーカーが消える
+        }
         clearTimeout(saveDebounceTimer);
         pendingSyncMapId = localId;
         // 通信前に未同期マーカーを localStorage に書く（同期書き込みなので即座に永続化）
@@ -22611,6 +22621,24 @@ window.toggleNodeHighlight = toggleNodeHighlight;
     // 他モジュール（sidebar-left.js など）から呼び出せるよう公開
     window._supaFlushSync = flushSupabaseSyncImmediate;
 
+    // pending マーカーから1件削除し、残りに応じてステータス更新／チェーン続行する
+    function settlePendingAfterStaleEntry(staleId) {
+        try {
+            var p = JSON.parse(localStorage.getItem('mindmap-pending-sync') || '{}');
+            delete p[String(staleId)];
+            localStorage.setItem('mindmap-pending-sync', JSON.stringify(p));
+        } catch(e) {}
+        var remaining;
+        try { remaining = JSON.parse(localStorage.getItem('mindmap-pending-sync') || '{}'); } catch(e) { remaining = {}; }
+        var keys = Object.keys(remaining);
+        if (keys.length > 0) {
+            showSaveIndicator('保存中...');
+            doSupabaseSync(parseInt(keys[0], 10));
+        } else {
+            setSaveStatus('saved');
+        }
+    }
+
     function doSupabaseSync(localId) {
         if (!window._supa || !localId) return Promise.resolve();
         return window._supa.getCurrentUser().then(function(user) {
@@ -22621,10 +22649,14 @@ window.toggleNodeHighlight = toggleNodeHighlight;
             for (var i = 0; i < metaList.length; i++) {
                 if (metaList[i].id === localId) { meta = metaList[i]; break; }
             }
-            if (!meta || meta.type !== 'page') return;
+            if (!meta || meta.type !== 'page') {
+                // 削除済みマップ等で対象が無い → pending を片付けて次へ
+                settlePendingAfterStaleEntry(localId);
+                return;
+            }
             var data;
-            try { data = JSON.parse(localStorage.getItem('mindmap-data-' + localId)); } catch(e) { return; }
-            if (!data) return;
+            try { data = JSON.parse(localStorage.getItem('mindmap-data-' + localId)); } catch(e) { settlePendingAfterStaleEntry(localId); return; }
+            if (!data) { settlePendingAfterStaleEntry(localId); return; }
             // グレーアウト・ハイライト・水色・赤文字状態をデータに含めてSupabaseへ保存
             try {
                 var gray = localStorage.getItem('mindmap-node-grayout-' + localId);
@@ -22639,13 +22671,20 @@ window.toggleNodeHighlight = toggleNodeHighlight;
                 data._starOrder = meta.starOrder || 0;
             } catch(e) {}
             return window._supa.saveMap(localId, meta.name, data, meta.folderId).then(function() {
-                // saveMap 成功時に pending マーカーは削除済み。残りのキューをチェックして状態決定
-                var hasPending = false;
-                try {
-                    var p = JSON.parse(localStorage.getItem('mindmap-pending-sync') || '{}');
-                    hasPending = Object.keys(p).length > 0;
-                } catch(e) {}
-                setSaveStatus(hasPending ? 'pending' : 'saved');
+                // saveMap 成功時に自分の pending マーカーは削除済み。
+                // 他に未同期のマップが残っていれば連続で同期する（取りこぼし防止のチェーン）
+                var pending;
+                try { pending = JSON.parse(localStorage.getItem('mindmap-pending-sync') || '{}'); } catch(e) { pending = {}; }
+                var nextIds = Object.keys(pending).filter(function(id) {
+                    return parseInt(id, 10) && parseInt(id, 10) !== localId;
+                });
+                if (nextIds.length > 0) {
+                    // まだ他に未同期がある → 続けて同期（再帰的に処理される）
+                    showSaveIndicator('保存中...');
+                    doSupabaseSync(parseInt(nextIds[0], 10));
+                } else {
+                    setSaveStatus('saved');
+                }
             }).catch(function() {
                 setSaveStatus(navigator.onLine ? 'error' : 'offline');
             });
