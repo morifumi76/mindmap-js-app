@@ -1711,9 +1711,10 @@ body.connection-mode .node {
 
 #saveIndicator {
     position: fixed;
-    /* 🌲 トグルボタン（bottom:24 right:24 / 52×52）の左横に配置して重なりを回避 */
-    bottom: 24px;
-    right: 90px;
+    /* 画面中央下に配置（🌲 トグル・右サイドバー内コンテキストメニューとの重なりを回避） */
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
     font-family: 'Meiryo UI', Meiryo, sans-serif;
     font-size: 12px;
     color: #6b6b6b;
