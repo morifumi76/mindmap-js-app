@@ -16402,6 +16402,41 @@ function showToast(message, duration) {
     }, duration);
 }
 
+// ----------------------------------------------------------------------
+// 日本語IME（変換）まわりのキーガード
+// ----------------------------------------------------------------------
+// 日本語IMEで「変換確定」のEnterを押したとき、本来は確定だけしたいのに
+// 「送信／編集終了」処理まで一緒に発火してしまう問題を防ぐためのヘルパー。
+//
+// 3層の判定で誤発火を防ぐ：
+//   1) e.isComposing が true       … 変換中
+//   2) e.keyCode === 229          … 古いブラウザ互換（IME変換のキーコード）
+//   3) compositionend 直後のEnter  … Safari 等で keydown が compositionend
+//                                    の後に発火し isComposing=false になる
+//                                    ケース。時刻差で判定（50ms以内）。
+//
+// 使い方:
+//   element.addEventListener('keydown', function(e) {
+//       if (e.key === 'Enter') {
+//           if (isImeRelatedKey(e)) return; // ← 変換確定のEnterは無視
+//           // ここから送信処理 …
+//       }
+//   });
+// ----------------------------------------------------------------------
+var _lastCompositionEndAt = 0;
+// document レベルで compositionend を追跡（個々の入力欄で listener を貼る必要なし）
+document.addEventListener('compositionend', function() {
+    _lastCompositionEndAt = Date.now();
+}, true);
+
+function isImeRelatedKey(e) {
+    if (!e) return false;
+    if (e.isComposing) return true;
+    if (e.keyCode === 229) return true; // 互換性のため
+    // composition 終了直後（同一イベントループ）に発火した Enter も IME確定の影響と見なす
+    if (Date.now() - _lastCompositionEndAt < 50) return true;
+    return false;
+}
 
 // ========================================
 // Multi-Map Storage Layer
@@ -18591,6 +18626,8 @@ function attachRelationLabelHandlers(labelEl, relationId) {
         // （Backspace で関連線が消える、Tab で新しいノードが作られる等の事故防止）
         e.stopPropagation();
         if (e.key === 'Enter' && !e.shiftKey) {
+            // IME変換中・変換確定直後のEnterは編集終了しない
+            if (isImeRelatedKey(e)) return;
             e.preventDefault();
             labelEl.blur();
         } else if (e.key === 'Escape') {
@@ -19247,8 +19284,8 @@ function handleKeyDown(e) {
 
     // While editing
     if (editingNodeId) {
-        // IME入力中（ローマ字→日本語変換）のキーは無視する
-        if (e.isComposing || e.keyCode === 229) return;
+        // IME入力中・変換確定直後のキーは無視する（ Safari 等での誤発火防止）
+        if (isImeRelatedKey(e)) return;
 
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -20141,6 +20178,8 @@ function initLinkModal() {
         // Enter: テキスト選択中→選択解除（カーソル末尾へ）、選択なし→確定
         urlInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
+                // IME変換中・変換確定直後のEnterはモーダル送信しない
+                if (isImeRelatedKey(e)) return;
                 e.preventDefault();
                 if (urlInput.selectionStart !== urlInput.selectionEnd) {
                     urlInput.selectionStart = urlInput.selectionEnd = urlInput.value.length;
@@ -20155,6 +20194,8 @@ function initLinkModal() {
         // テキスト名でEnter → URL未入力ならURL欄へ、選択中なら解除、それ以外は確定
         textInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
+                // IME変換中・変換確定直後のEnterはモーダル送信しない
+                if (isImeRelatedKey(e)) return;
                 e.preventDefault();
                 if (urlInput && !urlInput.value.trim()) {
                     urlInput.focus();
@@ -22393,8 +22434,9 @@ function startInlineRename(mapId) {
     input.addEventListener('keydown', function(e) {
         e.stopPropagation(); // Prevent global keyboard handler
         if (e.key === 'Enter') {
+            // IME変換中・変換確定直後のEnterはリネーム確定しない
+            if (isImeRelatedKey(e)) return;
             e.preventDefault();
-            if (e.isComposing || e.keyCode === 229) return; // 変換中のEnterは無視
             finish(true);
         } else if (e.key === 'Escape') {
             e.preventDefault();

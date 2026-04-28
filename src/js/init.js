@@ -462,6 +462,8 @@ function initLinkModal() {
         // Enter: テキスト選択中→選択解除（カーソル末尾へ）、選択なし→確定
         urlInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
+                // IME変換中・変換確定直後のEnterはモーダル送信しない
+                if (isImeRelatedKey(e)) return;
                 e.preventDefault();
                 if (urlInput.selectionStart !== urlInput.selectionEnd) {
                     urlInput.selectionStart = urlInput.selectionEnd = urlInput.value.length;
@@ -476,6 +478,8 @@ function initLinkModal() {
         // テキスト名でEnter → URL未入力ならURL欄へ、選択中なら解除、それ以外は確定
         textInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
+                // IME変換中・変換確定直後のEnterはモーダル送信しない
+                if (isImeRelatedKey(e)) return;
                 e.preventDefault();
                 if (urlInput && !urlInput.value.trim()) {
                     urlInput.focus();

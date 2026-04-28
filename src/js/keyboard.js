@@ -144,8 +144,8 @@ function handleKeyDown(e) {
 
     // While editing
     if (editingNodeId) {
-        // IME入力中（ローマ字→日本語変換）のキーは無視する
-        if (e.isComposing || e.keyCode === 229) return;
+        // IME入力中・変換確定直後のキーは無視する（ Safari 等での誤発火防止）
+        if (isImeRelatedKey(e)) return;
 
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();

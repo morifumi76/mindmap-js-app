@@ -1927,8 +1927,9 @@ function startInlineRename(mapId) {
     input.addEventListener('keydown', function(e) {
         e.stopPropagation(); // Prevent global keyboard handler
         if (e.key === 'Enter') {
+            // IME変換中・変換確定直後のEnterはリネーム確定しない
+            if (isImeRelatedKey(e)) return;
             e.preventDefault();
-            if (e.isComposing || e.keyCode === 229) return; // 変換中のEnterは無視
             finish(true);
         } else if (e.key === 'Escape') {
             e.preventDefault();

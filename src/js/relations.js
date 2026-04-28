@@ -296,6 +296,8 @@ function attachRelationLabelHandlers(labelEl, relationId) {
         // （Backspace で関連線が消える、Tab で新しいノードが作られる等の事故防止）
         e.stopPropagation();
         if (e.key === 'Enter' && !e.shiftKey) {
+            // IME変換中・変換確定直後のEnterは編集終了しない
+            if (isImeRelatedKey(e)) return;
             e.preventDefault();
             labelEl.blur();
         } else if (e.key === 'Escape') {
