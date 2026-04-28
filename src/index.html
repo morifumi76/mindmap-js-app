@@ -257,12 +257,14 @@
         <div class="migration-card">
             <h2 class="migration-title">📦 データの移行</h2>
             <div class="migration-body">
-                ブラウザに保存されているマインドマップデータが見つかりました。クラウドに移行しますか？
+                このブラウザに保存されているマインドマップデータを、ログイン中のアカウントへ移行します。
+                <div class="migration-account" id="migrationAccount"></div>
                 <div class="migration-count" id="migrationCount"></div>
+                <div class="migration-warn">⚠ 別アカウントで作ったデータが残っている場合は、このアカウントへ混入しないよう「あとで」を選んでください。</div>
             </div>
             <div class="migration-btns">
                 <button class="migration-btn-secondary" id="migrationBtnLater">あとで</button>
-                <button class="migration-btn-primary" id="migrationBtnDo">移行する</button>
+                <button class="migration-btn-primary" id="migrationBtnDo">このアカウントへ移行する</button>
             </div>
         </div>
     </div>

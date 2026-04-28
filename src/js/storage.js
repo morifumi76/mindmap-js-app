@@ -7,11 +7,20 @@ var ID_COUNTER_KEY = 'mindmap-id-counter';
 var LAST_ACTIVE_KEY = 'mindmap-last-active-id';
 var OLD_STORAGE_KEY = 'mindmap_data_v2'; // legacy key for migration
 
+// 共有URL閲覧モードのときは true。localStorage を一切汚さないようガードに使う
+function isSharedReadonly() {
+    return !!(window._isReadOnly && window._sharedMeta);
+}
+
 function getMapDataKey(mapId) {
     return 'mindmap-data-' + mapId;
 }
 
 function getMetaList() {
+    // 共有モードはメモリ上のメタリストを返す（localStorage を読まない）
+    if (isSharedReadonly()) {
+        return JSON.parse(JSON.stringify(window._sharedMeta));
+    }
     try {
         var raw = localStorage.getItem(META_KEY);
         if (raw) return JSON.parse(raw);
@@ -20,10 +29,13 @@ function getMetaList() {
 }
 
 function saveMetaList(metaList) {
+    // 共有モードでは localStorage を絶対に書き換えない
+    if (isSharedReadonly()) return;
     try { localStorage.setItem(META_KEY, JSON.stringify(metaList)); } catch(e) {}
 }
 
 function getNextMapId() {
+    if (isSharedReadonly()) return 0; // 新規ID不要
     var counter = parseInt(localStorage.getItem(ID_COUNTER_KEY), 10) || 0;
     counter++;
     try { localStorage.setItem(ID_COUNTER_KEY, String(counter)); } catch(e) {}
@@ -31,10 +43,12 @@ function getNextMapId() {
 }
 
 function setLastActiveId(mapId) {
+    if (isSharedReadonly()) return;
     try { localStorage.setItem(LAST_ACTIVE_KEY, String(mapId)); } catch(e) {}
 }
 
 function getLastActiveId() {
+    if (isSharedReadonly()) return window._sharedMapId || null;
     return parseInt(localStorage.getItem(LAST_ACTIVE_KEY), 10) || null;
 }
 
@@ -57,6 +71,7 @@ function getSortMode() {
     return localStorage.getItem(SORT_MODE_KEY) || 'none';
 }
 function setSortMode(mode) {
+    if (isSharedReadonly()) return;
     try { localStorage.setItem(SORT_MODE_KEY, mode); } catch(e) {}
 }
 function getCollapseState() {
@@ -67,6 +82,7 @@ function getCollapseState() {
     return {};
 }
 function setCollapseState(state) {
+    if (isSharedReadonly()) return;
     try { localStorage.setItem(COLLAPSE_STATE_KEY, JSON.stringify(state)); } catch(e) {}
 }
 
@@ -105,6 +121,8 @@ function getDefaultFolderId(metaList) {
 
 // ---- Migration from old single-map storage ----
 function migrateIfNeeded() {
+    // 共有モードでは migration を走らせない（localStorage を一切触らない）
+    if (isSharedReadonly()) return;
     // v4 migration: convert old parentId/order schema to folder/page schema
     var existing = getMetaList();
     if (existing.length > 0 && !localStorage.getItem('mindmap-migrated-v4')) {
@@ -338,6 +356,8 @@ function toggleFavorite(mapId) {
 // ---- Save / Load for current map ----
 function saveToLocalStorage() {
     if (!currentMapId) return;
+    // 共有モードでは絶対に localStorage を書き換えない
+    if (isSharedReadonly()) return;
     try {
         localStorage.setItem(getMapDataKey(currentMapId), JSON.stringify(mindMapData));
     } catch(e) {}
@@ -357,6 +377,13 @@ function saveToLocalStorage() {
 }
 
 function loadMapData(mapId) {
+    // 共有モードはメモリ上のデータだけ返す
+    if (isSharedReadonly()) {
+        if (String(mapId) === String(window._sharedMapId) && window._sharedData) {
+            return JSON.parse(JSON.stringify(window._sharedData));
+        }
+        return null;
+    }
     try {
         var raw = localStorage.getItem(getMapDataKey(mapId));
         if (raw) {

@@ -216,10 +216,31 @@
         if (el) el.classList.remove('show');
     }
 
+    // 認証エラーの種類に応じたメッセージを返す
+    function getAuthErrorMessage(err) {
+        if (!navigator.onLine) {
+            return 'インターネット接続が確認できません。接続状況をご確認ください。';
+        }
+        var msg = (err && (err.message || err.error_description)) || '';
+        var lc  = msg.toLowerCase();
+        if (lc.indexOf('invalid login') !== -1 || lc.indexOf('invalid_credentials') !== -1) {
+            return 'メールアドレスまたはパスワードが正しくありません。';
+        }
+        if (lc.indexOf('email not confirmed') !== -1) {
+            return 'メールアドレスの確認が完了していません。受信メールの確認リンクをクリックしてください。';
+        }
+        if (lc.indexOf('network') !== -1 || lc.indexOf('failed to fetch') !== -1) {
+            return 'サーバーに接続できませんでした。しばらくしてから再度お試しください。';
+        }
+        if (lc.indexOf('rate limit') !== -1 || (err && err.status === 429)) {
+            return 'ログイン試行回数が多すぎます。しばらく待ってから再度お試しください。';
+        }
+        return 'ログインに失敗しました。' + (msg ? '（' + msg + '）' : '');
+    }
+
     // ---- Login form ----
     function initLoginForm() {
         var form = document.getElementById('loginForm');
-        console.log('[DEBUG] initLoginForm called, form:', form);
         if (!form) return;
         form.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -227,17 +248,12 @@
             var password = document.getElementById('loginPassword').value;
             var errorEl  = document.getElementById('loginError');
             var btn      = document.getElementById('loginBtn');
-            console.log('[DEBUG] login attempt, email:', email);
-            console.log('[DEBUG] window._supa exists:', !!window._supa);
             errorEl.textContent = '';
             errorEl.style.color = '';
             btn.disabled    = true;
             btn.textContent = 'ログイン中...';
-            window._supa.login(email, password).then(function(user) {
-                console.log('[DEBUG] login success, user:', user);
-            }).catch(function(err) {
-                console.error('[DEBUG] login error:', err);
-                errorEl.textContent = 'メールアドレスまたはパスワードが正しくありません';
+            window._supa.login(email, password).catch(function(err) {
+                errorEl.textContent = getAuthErrorMessage(err);
                 btn.disabled    = false;
                 btn.textContent = 'ログイン';
             });
@@ -252,13 +268,27 @@
         var pages   = metaList.filter(function(m) { return m.type === 'page'; });
         var folders = metaList.filter(function(m) { return m.type === 'folder' && !m.isDefault; });
         if (pages.length === 0) return;
-        var overlay  = document.getElementById('migrationOverlay');
-        var countEl  = document.getElementById('migrationCount');
+        var overlay   = document.getElementById('migrationOverlay');
+        var countEl   = document.getElementById('migrationCount');
+        var accountEl = document.getElementById('migrationAccount');
         if (!overlay) return;
         if (countEl) {
             var txt = 'マップ数: ' + pages.length + '件';
             if (folders.length > 0) txt += '　フォルダ数: ' + folders.length + '件';
             countEl.textContent = txt;
+        }
+        // 移行先アカウントのメールアドレスを明示し、別アカウントへの誤混入を防ぐ
+        if (accountEl) {
+            accountEl.textContent = '移行先: 確認中...';
+            window._supa.getCurrentUser().then(function(user) {
+                if (user && user.email) {
+                    accountEl.textContent = '移行先アカウント: ' + user.email;
+                } else {
+                    accountEl.textContent = '移行先: 不明（ログイン状態を確認してください）';
+                }
+            }).catch(function() {
+                accountEl.textContent = '移行先: 不明';
+            });
         }
         overlay.classList.add('show');
     }
@@ -484,17 +514,14 @@
                 ].join('');
                 return;
             }
-            // Pre-load the shared map data into localStorage under a temp ID
-            try {
-                localStorage.setItem('mindmap-meta', JSON.stringify([
-                    { id: 1, name: '未分類', type: 'folder', order: 999999, isDefault: true, createdAt: '', updatedAt: '' },
-                    { id: 2, name: result.name, type: 'page', folderId: 1, order: 0, createdAt: '', updatedAt: '' }
-                ]));
-                localStorage.setItem('mindmap-id-counter', '2');
-                localStorage.setItem('mindmap-last-active-id', '2');
-                localStorage.setItem('mindmap-data-2', JSON.stringify(result.data));
-                localStorage.setItem('mindmap-migrated-v4', '1');
-            } catch(e) {}
+            // 共有マップは localStorage に一切書き込まずメモリ上にだけ保持する。
+            // （別タブでログイン中のユーザーの localStorage を上書きする事故を防ぐ）
+            window._sharedMeta = [
+                { id: 1, name: '未分類', type: 'folder', order: 999999, isDefault: true, createdAt: '', updatedAt: '' },
+                { id: 2, name: result.name, type: 'page', folderId: 1, order: 0, createdAt: '', updatedAt: '' }
+            ];
+            window._sharedData = result.data;
+            window._sharedMapId = 2;
             enterReadOnlyMode();
             init();
         }).catch(function() {
@@ -504,11 +531,8 @@
 
     // ---- Main DOMContentLoaded handler ----
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('[DEBUG] DOMContentLoaded fired');
-        console.log('[DEBUG] window._supa exists:', !!window._supa);
-
         if (!window._supa) {
-            console.warn('[DEBUG] Supabase bundle not loaded — running without auth');
+            // Supabase バンドル未ロード時は認証なしで起動
             init();
             return;
         }
@@ -524,31 +548,25 @@
 
         // Check for shared URL first
         var shareId = getShareIdFromUrl();
-        console.log('[DEBUG] shareId from URL:', shareId);
         if (shareId) {
             handleSharedAccess(shareId);
             return;
         }
 
         // Check auth state
-        console.log('[DEBUG] checking current user...');
         window._supa.getCurrentUser().then(function(user) {
-            console.log('[DEBUG] getCurrentUser result:', user);
             if (user) {
                 handleLoggedIn();
             } else {
-                console.log('[DEBUG] no user, showing login screen');
                 showLoginScreen();
             }
-        }).catch(function(err) {
-            console.error('[DEBUG] getCurrentUser error:', err);
+        }).catch(function() {
             showLoginScreen();
         });
 
         // Watch for auth changes (login/logout)
         // appInitialized が true のときはトークンリフレッシュによる誤再初期化を防ぐ
         window._supa.onAuthStateChange(function(user, event) {
-            console.log('[DEBUG] onAuthStateChange fired, user:', user, 'event:', event);
             if (user) {
                 // 招待フロー: セッション確立後にパスワード設定画面を表示
                 if (_isInviteFlow) {

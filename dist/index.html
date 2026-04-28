@@ -1779,6 +1779,24 @@ body.connection-mode .node {
     margin-top: 8px;
 }
 
+.migration-body .migration-account {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: #f6f5f3;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #37352f;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    word-break: break-all;
+}
+
+.migration-body .migration-warn {
+    margin-top: 12px;
+    color: #b54708;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
 .migration-btns {
     display: flex;
     gap: 10px;
@@ -2289,12 +2307,14 @@ body.readonly-mode .sidebar-float-toggle {
         <div class="migration-card">
             <h2 class="migration-title">📦 データの移行</h2>
             <div class="migration-body">
-                ブラウザに保存されているマインドマップデータが見つかりました。クラウドに移行しますか？
+                このブラウザに保存されているマインドマップデータを、ログイン中のアカウントへ移行します。
+                <div class="migration-account" id="migrationAccount"></div>
                 <div class="migration-count" id="migrationCount"></div>
+                <div class="migration-warn">⚠ 別アカウントで作ったデータが残っている場合は、このアカウントへ混入しないよう「あとで」を選んでください。</div>
             </div>
             <div class="migration-btns">
                 <button class="migration-btn-secondary" id="migrationBtnLater">あとで</button>
-                <button class="migration-btn-primary" id="migrationBtnDo">移行する</button>
+                <button class="migration-btn-primary" id="migrationBtnDo">このアカウントへ移行する</button>
             </div>
         </div>
     </div>
@@ -15999,6 +16019,10 @@ var NODE_COLLAPSE_KEY_PREFIX = 'mindmap-node-collapse-';
 var NODE_GRAYOUT_KEY_PREFIX = 'mindmap-node-grayout-';
 function getNodeGrayoutState() {
     if (!currentMapId) return {};
+    // 共有モード: 埋め込まれた _grayout から取得（localStorage は触らない）
+    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) {
+        return (window._sharedData && window._sharedData._grayout) || {};
+    }
     try {
         var raw = localStorage.getItem(NODE_GRAYOUT_KEY_PREFIX + currentMapId);
         if (raw) return JSON.parse(raw);
@@ -16007,6 +16031,7 @@ function getNodeGrayoutState() {
 }
 function setNodeGrayoutState(state) {
     if (!currentMapId) return;
+    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
     try { localStorage.setItem(NODE_GRAYOUT_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
 }
 function isNodeGrayedOut(nodeId) {
@@ -16056,6 +16081,9 @@ function isNodeOrAncestorGrayedOut(nodeId) {
 var NODE_HIGHLIGHT_KEY_PREFIX = 'mindmap-node-highlight-';
 function getNodeHighlightState() {
     if (!currentMapId) return {};
+    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) {
+        return (window._sharedData && window._sharedData._highlight) || {};
+    }
     try {
         var raw = localStorage.getItem(NODE_HIGHLIGHT_KEY_PREFIX + currentMapId);
         if (raw) return JSON.parse(raw);
@@ -16064,6 +16092,7 @@ function getNodeHighlightState() {
 }
 function setNodeHighlightState(state) {
     if (!currentMapId) return;
+    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
     try { localStorage.setItem(NODE_HIGHLIGHT_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
 }
 function isNodeHighlighted(nodeId) {
@@ -16095,6 +16124,9 @@ function toggleNodeHighlight(nodeId) {
 var NODE_CYAN_KEY_PREFIX = 'mindmap-node-cyan-';
 function getNodeCyanState() {
     if (!currentMapId) return {};
+    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) {
+        return (window._sharedData && window._sharedData._cyan) || {};
+    }
     try {
         var raw = localStorage.getItem(NODE_CYAN_KEY_PREFIX + currentMapId);
         if (raw) return JSON.parse(raw);
@@ -16103,6 +16135,7 @@ function getNodeCyanState() {
 }
 function setNodeCyanState(state) {
     if (!currentMapId) return;
+    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
     try { localStorage.setItem(NODE_CYAN_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
 }
 function isNodeCyan(nodeId) {
@@ -16114,6 +16147,9 @@ function isNodeCyan(nodeId) {
 var NODE_REDTEXT_KEY_PREFIX = 'mindmap-node-redtext-';
 function getNodeRedTextState() {
     if (!currentMapId) return {};
+    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) {
+        return (window._sharedData && window._sharedData._redtext) || {};
+    }
     try {
         var raw = localStorage.getItem(NODE_REDTEXT_KEY_PREFIX + currentMapId);
         if (raw) return JSON.parse(raw);
@@ -16122,6 +16158,7 @@ function getNodeRedTextState() {
 }
 function setNodeRedTextState(state) {
     if (!currentMapId) return;
+    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
     try { localStorage.setItem(NODE_REDTEXT_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
 }
 function isNodeRedText(nodeId) {
@@ -16161,6 +16198,7 @@ function getNodeCollapseState() {
 }
 function setNodeCollapseState(state) {
     if (!currentMapId) return;
+    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
     try { localStorage.setItem(NODE_COLLAPSE_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
 }
 function isNodeCollapsed(nodeId) {
@@ -16299,11 +16337,20 @@ var ID_COUNTER_KEY = 'mindmap-id-counter';
 var LAST_ACTIVE_KEY = 'mindmap-last-active-id';
 var OLD_STORAGE_KEY = 'mindmap_data_v2'; // legacy key for migration
 
+// 共有URL閲覧モードのときは true。localStorage を一切汚さないようガードに使う
+function isSharedReadonly() {
+    return !!(window._isReadOnly && window._sharedMeta);
+}
+
 function getMapDataKey(mapId) {
     return 'mindmap-data-' + mapId;
 }
 
 function getMetaList() {
+    // 共有モードはメモリ上のメタリストを返す（localStorage を読まない）
+    if (isSharedReadonly()) {
+        return JSON.parse(JSON.stringify(window._sharedMeta));
+    }
     try {
         var raw = localStorage.getItem(META_KEY);
         if (raw) return JSON.parse(raw);
@@ -16312,10 +16359,13 @@ function getMetaList() {
 }
 
 function saveMetaList(metaList) {
+    // 共有モードでは localStorage を絶対に書き換えない
+    if (isSharedReadonly()) return;
     try { localStorage.setItem(META_KEY, JSON.stringify(metaList)); } catch(e) {}
 }
 
 function getNextMapId() {
+    if (isSharedReadonly()) return 0; // 新規ID不要
     var counter = parseInt(localStorage.getItem(ID_COUNTER_KEY), 10) || 0;
     counter++;
     try { localStorage.setItem(ID_COUNTER_KEY, String(counter)); } catch(e) {}
@@ -16323,10 +16373,12 @@ function getNextMapId() {
 }
 
 function setLastActiveId(mapId) {
+    if (isSharedReadonly()) return;
     try { localStorage.setItem(LAST_ACTIVE_KEY, String(mapId)); } catch(e) {}
 }
 
 function getLastActiveId() {
+    if (isSharedReadonly()) return window._sharedMapId || null;
     return parseInt(localStorage.getItem(LAST_ACTIVE_KEY), 10) || null;
 }
 
@@ -16349,6 +16401,7 @@ function getSortMode() {
     return localStorage.getItem(SORT_MODE_KEY) || 'none';
 }
 function setSortMode(mode) {
+    if (isSharedReadonly()) return;
     try { localStorage.setItem(SORT_MODE_KEY, mode); } catch(e) {}
 }
 function getCollapseState() {
@@ -16359,6 +16412,7 @@ function getCollapseState() {
     return {};
 }
 function setCollapseState(state) {
+    if (isSharedReadonly()) return;
     try { localStorage.setItem(COLLAPSE_STATE_KEY, JSON.stringify(state)); } catch(e) {}
 }
 
@@ -16397,6 +16451,8 @@ function getDefaultFolderId(metaList) {
 
 // ---- Migration from old single-map storage ----
 function migrateIfNeeded() {
+    // 共有モードでは migration を走らせない（localStorage を一切触らない）
+    if (isSharedReadonly()) return;
     // v4 migration: convert old parentId/order schema to folder/page schema
     var existing = getMetaList();
     if (existing.length > 0 && !localStorage.getItem('mindmap-migrated-v4')) {
@@ -16630,6 +16686,8 @@ function toggleFavorite(mapId) {
 // ---- Save / Load for current map ----
 function saveToLocalStorage() {
     if (!currentMapId) return;
+    // 共有モードでは絶対に localStorage を書き換えない
+    if (isSharedReadonly()) return;
     try {
         localStorage.setItem(getMapDataKey(currentMapId), JSON.stringify(mindMapData));
     } catch(e) {}
@@ -16649,6 +16707,13 @@ function saveToLocalStorage() {
 }
 
 function loadMapData(mapId) {
+    // 共有モードはメモリ上のデータだけ返す
+    if (isSharedReadonly()) {
+        if (String(mapId) === String(window._sharedMapId) && window._sharedData) {
+            return JSON.parse(JSON.stringify(window._sharedData));
+        }
+        return null;
+    }
     try {
         var raw = localStorage.getItem(getMapDataKey(mapId));
         if (raw) {
@@ -22502,10 +22567,31 @@ window.toggleNodeHighlight = toggleNodeHighlight;
         if (el) el.classList.remove('show');
     }
 
+    // 認証エラーの種類に応じたメッセージを返す
+    function getAuthErrorMessage(err) {
+        if (!navigator.onLine) {
+            return 'インターネット接続が確認できません。接続状況をご確認ください。';
+        }
+        var msg = (err && (err.message || err.error_description)) || '';
+        var lc  = msg.toLowerCase();
+        if (lc.indexOf('invalid login') !== -1 || lc.indexOf('invalid_credentials') !== -1) {
+            return 'メールアドレスまたはパスワードが正しくありません。';
+        }
+        if (lc.indexOf('email not confirmed') !== -1) {
+            return 'メールアドレスの確認が完了していません。受信メールの確認リンクをクリックしてください。';
+        }
+        if (lc.indexOf('network') !== -1 || lc.indexOf('failed to fetch') !== -1) {
+            return 'サーバーに接続できませんでした。しばらくしてから再度お試しください。';
+        }
+        if (lc.indexOf('rate limit') !== -1 || (err && err.status === 429)) {
+            return 'ログイン試行回数が多すぎます。しばらく待ってから再度お試しください。';
+        }
+        return 'ログインに失敗しました。' + (msg ? '（' + msg + '）' : '');
+    }
+
     // ---- Login form ----
     function initLoginForm() {
         var form = document.getElementById('loginForm');
-        console.log('[DEBUG] initLoginForm called, form:', form);
         if (!form) return;
         form.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -22513,17 +22599,12 @@ window.toggleNodeHighlight = toggleNodeHighlight;
             var password = document.getElementById('loginPassword').value;
             var errorEl  = document.getElementById('loginError');
             var btn      = document.getElementById('loginBtn');
-            console.log('[DEBUG] login attempt, email:', email);
-            console.log('[DEBUG] window._supa exists:', !!window._supa);
             errorEl.textContent = '';
             errorEl.style.color = '';
             btn.disabled    = true;
             btn.textContent = 'ログイン中...';
-            window._supa.login(email, password).then(function(user) {
-                console.log('[DEBUG] login success, user:', user);
-            }).catch(function(err) {
-                console.error('[DEBUG] login error:', err);
-                errorEl.textContent = 'メールアドレスまたはパスワードが正しくありません';
+            window._supa.login(email, password).catch(function(err) {
+                errorEl.textContent = getAuthErrorMessage(err);
                 btn.disabled    = false;
                 btn.textContent = 'ログイン';
             });
@@ -22538,13 +22619,27 @@ window.toggleNodeHighlight = toggleNodeHighlight;
         var pages   = metaList.filter(function(m) { return m.type === 'page'; });
         var folders = metaList.filter(function(m) { return m.type === 'folder' && !m.isDefault; });
         if (pages.length === 0) return;
-        var overlay  = document.getElementById('migrationOverlay');
-        var countEl  = document.getElementById('migrationCount');
+        var overlay   = document.getElementById('migrationOverlay');
+        var countEl   = document.getElementById('migrationCount');
+        var accountEl = document.getElementById('migrationAccount');
         if (!overlay) return;
         if (countEl) {
             var txt = 'マップ数: ' + pages.length + '件';
             if (folders.length > 0) txt += '　フォルダ数: ' + folders.length + '件';
             countEl.textContent = txt;
+        }
+        // 移行先アカウントのメールアドレスを明示し、別アカウントへの誤混入を防ぐ
+        if (accountEl) {
+            accountEl.textContent = '移行先: 確認中...';
+            window._supa.getCurrentUser().then(function(user) {
+                if (user && user.email) {
+                    accountEl.textContent = '移行先アカウント: ' + user.email;
+                } else {
+                    accountEl.textContent = '移行先: 不明（ログイン状態を確認してください）';
+                }
+            }).catch(function() {
+                accountEl.textContent = '移行先: 不明';
+            });
         }
         overlay.classList.add('show');
     }
@@ -22770,17 +22865,14 @@ window.toggleNodeHighlight = toggleNodeHighlight;
                 ].join('');
                 return;
             }
-            // Pre-load the shared map data into localStorage under a temp ID
-            try {
-                localStorage.setItem('mindmap-meta', JSON.stringify([
-                    { id: 1, name: '未分類', type: 'folder', order: 999999, isDefault: true, createdAt: '', updatedAt: '' },
-                    { id: 2, name: result.name, type: 'page', folderId: 1, order: 0, createdAt: '', updatedAt: '' }
-                ]));
-                localStorage.setItem('mindmap-id-counter', '2');
-                localStorage.setItem('mindmap-last-active-id', '2');
-                localStorage.setItem('mindmap-data-2', JSON.stringify(result.data));
-                localStorage.setItem('mindmap-migrated-v4', '1');
-            } catch(e) {}
+            // 共有マップは localStorage に一切書き込まずメモリ上にだけ保持する。
+            // （別タブでログイン中のユーザーの localStorage を上書きする事故を防ぐ）
+            window._sharedMeta = [
+                { id: 1, name: '未分類', type: 'folder', order: 999999, isDefault: true, createdAt: '', updatedAt: '' },
+                { id: 2, name: result.name, type: 'page', folderId: 1, order: 0, createdAt: '', updatedAt: '' }
+            ];
+            window._sharedData = result.data;
+            window._sharedMapId = 2;
             enterReadOnlyMode();
             init();
         }).catch(function() {
@@ -22790,11 +22882,8 @@ window.toggleNodeHighlight = toggleNodeHighlight;
 
     // ---- Main DOMContentLoaded handler ----
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('[DEBUG] DOMContentLoaded fired');
-        console.log('[DEBUG] window._supa exists:', !!window._supa);
-
         if (!window._supa) {
-            console.warn('[DEBUG] Supabase bundle not loaded — running without auth');
+            // Supabase バンドル未ロード時は認証なしで起動
             init();
             return;
         }
@@ -22810,31 +22899,25 @@ window.toggleNodeHighlight = toggleNodeHighlight;
 
         // Check for shared URL first
         var shareId = getShareIdFromUrl();
-        console.log('[DEBUG] shareId from URL:', shareId);
         if (shareId) {
             handleSharedAccess(shareId);
             return;
         }
 
         // Check auth state
-        console.log('[DEBUG] checking current user...');
         window._supa.getCurrentUser().then(function(user) {
-            console.log('[DEBUG] getCurrentUser result:', user);
             if (user) {
                 handleLoggedIn();
             } else {
-                console.log('[DEBUG] no user, showing login screen');
                 showLoginScreen();
             }
-        }).catch(function(err) {
-            console.error('[DEBUG] getCurrentUser error:', err);
+        }).catch(function() {
             showLoginScreen();
         });
 
         // Watch for auth changes (login/logout)
         // appInitialized が true のときはトークンリフレッシュによる誤再初期化を防ぐ
         window._supa.onAuthStateChange(function(user, event) {
-            console.log('[DEBUG] onAuthStateChange fired, user:', user, 'event:', event);
             if (user) {
                 // 招待フロー: セッション確立後にパスワード設定画面を表示
                 if (_isInviteFlow) {

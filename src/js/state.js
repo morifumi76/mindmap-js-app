@@ -47,6 +47,10 @@ var NODE_COLLAPSE_KEY_PREFIX = 'mindmap-node-collapse-';
 var NODE_GRAYOUT_KEY_PREFIX = 'mindmap-node-grayout-';
 function getNodeGrayoutState() {
     if (!currentMapId) return {};
+    // 共有モード: 埋め込まれた _grayout から取得（localStorage は触らない）
+    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) {
+        return (window._sharedData && window._sharedData._grayout) || {};
+    }
     try {
         var raw = localStorage.getItem(NODE_GRAYOUT_KEY_PREFIX + currentMapId);
         if (raw) return JSON.parse(raw);
@@ -55,6 +59,7 @@ function getNodeGrayoutState() {
 }
 function setNodeGrayoutState(state) {
     if (!currentMapId) return;
+    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
     try { localStorage.setItem(NODE_GRAYOUT_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
 }
 function isNodeGrayedOut(nodeId) {
@@ -104,6 +109,9 @@ function isNodeOrAncestorGrayedOut(nodeId) {
 var NODE_HIGHLIGHT_KEY_PREFIX = 'mindmap-node-highlight-';
 function getNodeHighlightState() {
     if (!currentMapId) return {};
+    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) {
+        return (window._sharedData && window._sharedData._highlight) || {};
+    }
     try {
         var raw = localStorage.getItem(NODE_HIGHLIGHT_KEY_PREFIX + currentMapId);
         if (raw) return JSON.parse(raw);
@@ -112,6 +120,7 @@ function getNodeHighlightState() {
 }
 function setNodeHighlightState(state) {
     if (!currentMapId) return;
+    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
     try { localStorage.setItem(NODE_HIGHLIGHT_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
 }
 function isNodeHighlighted(nodeId) {
@@ -143,6 +152,9 @@ function toggleNodeHighlight(nodeId) {
 var NODE_CYAN_KEY_PREFIX = 'mindmap-node-cyan-';
 function getNodeCyanState() {
     if (!currentMapId) return {};
+    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) {
+        return (window._sharedData && window._sharedData._cyan) || {};
+    }
     try {
         var raw = localStorage.getItem(NODE_CYAN_KEY_PREFIX + currentMapId);
         if (raw) return JSON.parse(raw);
@@ -151,6 +163,7 @@ function getNodeCyanState() {
 }
 function setNodeCyanState(state) {
     if (!currentMapId) return;
+    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
     try { localStorage.setItem(NODE_CYAN_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
 }
 function isNodeCyan(nodeId) {
@@ -162,6 +175,9 @@ function isNodeCyan(nodeId) {
 var NODE_REDTEXT_KEY_PREFIX = 'mindmap-node-redtext-';
 function getNodeRedTextState() {
     if (!currentMapId) return {};
+    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) {
+        return (window._sharedData && window._sharedData._redtext) || {};
+    }
     try {
         var raw = localStorage.getItem(NODE_REDTEXT_KEY_PREFIX + currentMapId);
         if (raw) return JSON.parse(raw);
@@ -170,6 +186,7 @@ function getNodeRedTextState() {
 }
 function setNodeRedTextState(state) {
     if (!currentMapId) return;
+    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
     try { localStorage.setItem(NODE_REDTEXT_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
 }
 function isNodeRedText(nodeId) {
@@ -209,6 +226,7 @@ function getNodeCollapseState() {
 }
 function setNodeCollapseState(state) {
     if (!currentMapId) return;
+    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
     try { localStorage.setItem(NODE_COLLAPSE_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
 }
 function isNodeCollapsed(nodeId) {
