@@ -2087,13 +2087,18 @@ body.readonly-mode .sidebar-float-toggle {
    ======================================== */
 
 .left-sidebar-footer {
-    padding: 10px 12px;
+    /* サイドバー幅が広がってもフッター内の要素は中央寄せの固定レイアウト */
+    padding: 12px 12px 16px;
     border-top: 1px solid #e8e8e8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
 }
 
 .logout-btn {
-    display: block;
-    width: 100%;
+    /* 固定幅 — サイドバー幅に追従させない */
+    width: 140px;
     padding: 7px 0;
     font-family: 'Meiryo UI', Meiryo, sans-serif;
     font-size: 13px;
@@ -2109,6 +2114,20 @@ body.readonly-mode .sidebar-float-toggle {
 .logout-btn:hover {
     background: #f7f7f5;
     color: #37352f;
+}
+
+/* フッター下部の案内リンク */
+.footer-info-link {
+    font-family: 'Meiryo UI', Meiryo, sans-serif;
+    font-size: 11px;
+    color: #9b9a97;
+    text-decoration: none;
+    text-align: center;
+    transition: color 0.15s;
+}
+.footer-info-link:hover {
+    color: #37352f;
+    text-decoration: underline;
 }
 </style>
 </head>
@@ -2141,6 +2160,10 @@ body.readonly-mode .sidebar-float-toggle {
             <div class="left-sidebar-list" id="mapList"></div>
             <div class="left-sidebar-footer" id="leftSidebarFooter" style="display:none">
                 <button class="logout-btn" id="logoutBtn">ログアウト</button>
+                <a class="footer-info-link"
+                   href="https://johosauce.notion.site/35064d2aa0e880ac9a62db34cf452355"
+                   target="_blank"
+                   rel="noopener noreferrer">このマインドマップについて</a>
             </div>
         </div>
         <div class="left-sidebar-resize-handle" id="leftSidebarResizeHandle"></div>
