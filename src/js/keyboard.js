@@ -124,8 +124,16 @@ function handleKeyDown(e) {
     var activeEl = document.activeElement;
     if (activeEl && (activeEl.classList.contains('map-item-rename-input') ||
         (activeEl.classList.contains('map-item-name') && activeEl.contentEditable === 'true'))) {
-        // Allow default behavior for the rename input
-        // Only handle Enter/Escape which are handled by the input's own listener
+        // Allow default behavior for the rename input (Enter/Escape は input の listener で処理)。
+        // ただし Cmd+V / Cmd+X は、ノードを操作したつもりの誤発火がリネーム入力に
+        // 混ざる事故が報告されているため、ここで preventDefault してブラウザ既定の
+        // ペースト・カット動作を完全に止める（クリップボード内容がページ名に
+        // 流入するのを防ぐ）。 Cmd+C は通常通り（テキスト選択コピー）許可。
+        var _isMacRen = /Mac/.test(navigator.platform);
+        var _cmdRen = _isMacRen ? e.metaKey : e.ctrlKey;
+        if (_cmdRen && (e.key === 'v' || e.key === 'V' || e.key === 'x' || e.key === 'X')) {
+            e.preventDefault();
+        }
         return;
     }
     // 関連線のメモラベル編集中：キーをアプリショートカットに使わない（Backspaceで関連線削除しない、等）

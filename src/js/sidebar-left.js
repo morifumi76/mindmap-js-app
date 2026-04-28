@@ -1757,6 +1757,15 @@ function switchToMap(mapId) {
     // （切替後にデバウンスタイマーが新マップ用に上書きされ、直前マップの保存が消えるのを防ぐ）
     if (typeof window._supaFlushSync === 'function') window._supaFlushSync();
 
+    // フォーカスをクリアする（マップ名のリネーム入力欄等にフォーカスが残っていると、
+    // 切替後のキー入力・ペーストがそちらに流れてしまうため）
+    try {
+        var ae = document.activeElement;
+        if (ae && ae.blur && ae !== document.body) ae.blur();
+    } catch(e) {}
+    // サイドバーナビゲーションモードを解除（切替後はキャンバス操作に戻す）
+    window.sidebarNavigationMode = false;
+
     // Save current map
     saveToLocalStorage();
 
