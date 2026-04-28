@@ -22282,8 +22282,9 @@ function switchToMap(mapId) {
     editingNodeId = null;
     undoHistory = [];
     undoIndex = -1;
-    clipboard = null;
-    clipboardIsCut = false;
+    // クリップボードはページを跨いで保持する（ページ間コピペを可能にするため）。
+    // クリップボードのデータは deep clone 済みで元マップから独立しており、
+    // ペースト時に reassignIds() で全ノードIDを再採番するため衝突も発生しない。
 
     currentMapId = mapId;
     mindMapData = data;
