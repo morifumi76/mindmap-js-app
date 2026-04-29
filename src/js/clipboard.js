@@ -2,13 +2,39 @@
 // Copy, Cut & Paste
 // ========================================
 
+// クリップボードに格納するクローンノードのサブツリーへ、各ノードの色状態を
+// `_capturedColors` という一時プロパティで埋め込む。
+// これによりページを跨いだコピペでも色（grayout/highlight/cyan/redtext）が保持される。
+// 色の実体はマップごとの localStorage に別保存されているため、コピー時のスナップショットを
+// クローン側に同梱しておき、ペースト時に新IDで貼り先マップの localStorage に書き戻す。
+function captureNodeColorsToClone(clonedNode) {
+    var grayState = getNodeGrayoutState();
+    var hlState = getNodeHighlightState();
+    var cyanState = getNodeCyanState();
+    var rtState = getNodeRedTextState();
+    function walk(n) {
+        var captured = {};
+        if (grayState[n.id]) captured.grayout = true;
+        if (hlState[n.id]) captured.highlight = true;
+        if (cyanState[n.id]) captured.cyan = true;
+        if (rtState[n.id]) captured.redtext = true;
+        if (Object.keys(captured).length > 0) n._capturedColors = captured;
+        if (n.children) {
+            for (var i = 0; i < n.children.length; i++) walk(n.children[i]);
+        }
+    }
+    walk(clonedNode);
+}
+
 function copySelectedNodes() {
     if (selectedNodeIds.size === 0) return;
     if (selectedNodeIds.size === 1) {
         var id = getSelectedNodeId();
         var r = findNode(id);
         if (r) {
-            clipboard = deepClone(r.node);
+            var cloned = deepClone(r.node);
+            captureNodeColorsToClone(cloned);
+            clipboard = cloned;
             clipboardIsCut = false;
             showToast('コピーしました');
         }
@@ -17,7 +43,11 @@ function copySelectedNodes() {
         var nodes = [];
         for (var i = 0; i < topLevel.length; i++) {
             var r = findNode(topLevel[i]);
-            if (r) nodes.push(deepClone(r.node));
+            if (r) {
+                var c = deepClone(r.node);
+                captureNodeColorsToClone(c);
+                nodes.push(c);
+            }
         }
         if (nodes.length > 0) {
             clipboard = nodes;
@@ -39,7 +69,11 @@ function cutSelectedNodes() {
     var nodes = [];
     for (var i = 0; i < topLevel.length; i++) {
         var r = findNode(topLevel[i]);
-        if (r) nodes.push(deepClone(r.node));
+        if (r) {
+            var c = deepClone(r.node);
+            captureNodeColorsToClone(c);
+            nodes.push(c);
+        }
     }
     if (nodes.length === 0) return;
     clipboard = nodes.length === 1 ? nodes[0] : nodes;
@@ -71,8 +105,15 @@ function pasteNode() {
     if (!clipboard || !cid) return;
     var r = findNode(cid);
     if (!r) return;
+    // 新IDと貼り付けるべき色情報のペアを収集（reassignIds の最中に詰める）
+    var pendingColors = [];
     function reassignIds(node) {
         node.id = generateId();
+        if (node._capturedColors) {
+            pendingColors.push({ id: node.id, colors: node._capturedColors });
+            // ツリー本体に残ると Supabase / localStorage に余計に永続化されるため必ず削除
+            delete node._capturedColors;
+        }
         if (node.children) {
             for (var i = 0; i < node.children.length; i++) reassignIds(node.children[i]);
         }
@@ -83,6 +124,7 @@ function pasteNode() {
             reassignIds(cloned);
             r.node.children.push(cloned);
         }
+        applyPendingColorsToCurrentMap(pendingColors);
         saveState();
         render();
         showToast(clipboard.length + '個のノードをペーストしました');
@@ -90,6 +132,7 @@ function pasteNode() {
         var cloned = deepClone(clipboard);
         reassignIds(cloned);
         r.node.children.push(cloned);
+        applyPendingColorsToCurrentMap(pendingColors);
         saveState();
         render();
         selectNode(cloned.id);
@@ -99,6 +142,30 @@ function pasteNode() {
         clipboard = null;
         clipboardIsCut = false;
     }
+}
+
+// ペースト後に、新IDに対応する色状態を「貼り先マップ」の localStorage に書き戻す。
+// 色はマップごとの状態として保管されているため、別マップへの貼り付けでも
+// この一括書き戻しによって元の見た目が再現される。
+function applyPendingColorsToCurrentMap(list) {
+    if (!list || list.length === 0) return;
+    var grayState = getNodeGrayoutState();
+    var hlState = getNodeHighlightState();
+    var cyanState = getNodeCyanState();
+    var rtState = getNodeRedTextState();
+    var changedG = false, changedH = false, changedC = false, changedR = false;
+    for (var i = 0; i < list.length; i++) {
+        var nid = list[i].id;
+        var c = list[i].colors || {};
+        if (c.grayout)   { grayState[nid] = true; changedG = true; }
+        if (c.highlight) { hlState[nid] = true;   changedH = true; }
+        if (c.cyan)      { cyanState[nid] = true; changedC = true; }
+        if (c.redtext)   { rtState[nid] = true;   changedR = true; }
+    }
+    if (changedG) setNodeGrayoutState(grayState);
+    if (changedH) setNodeHighlightState(hlState);
+    if (changedC) setNodeCyanState(cyanState);
+    if (changedR) setNodeRedTextState(rtState);
 }
 
 function selectAll() {
