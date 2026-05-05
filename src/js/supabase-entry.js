@@ -216,6 +216,8 @@ async function loadUserData() {
         setSupabaseFolderId(localId, f.id);
     }
     // Pass 2: parentFolderId を含めて metaList に追加
+    // 未分類は廃止済み。レガシーデータに残っている "未分類" だけは isDefault: true を付けて
+    // 後続の cleanupDefaultFolders() がローカル / Supabase の両方から自動削除できるようにする。
     for (const f of folders) {
         const localId = folderLocalIds[f.id];
         metaList.push({
@@ -230,34 +232,15 @@ async function loadUserData() {
         });
     }
 
-    // Ensure 未分類 folder exists locally
-    let defaultFolderId = null;
-    for (const m of metaList) {
-        if (m.type === 'folder' && m.isDefault) { defaultFolderId = m.id; break; }
-    }
-    if (!defaultFolderId) {
-        // Create 未分類 in Supabase and locally
-        const { data: newF } = await supabase
-            .from('folders')
-            .insert({ user_id: user.id, name: '未分類', sort_order: 999999 })
-            .select().single();
-        if (newF) {
-            const localId = nextId();
-            folderLocalIds[newF.id] = localId;
-            setSupabaseFolderId(localId, newF.id);
-            defaultFolderId = localId;
-            metaList.push({ id: localId, name: '未分類', type: 'folder', order: 999999, createdAt: newF.created_at, updatedAt: newF.created_at, isDefault: true });
-        }
-    }
-
     // Process maps
+    // folder_id が無い／対応するローカルフォルダが見つからないページはトップレベル（folderId = null）扱いにする。
     let firstPageLocalId = null;
     const mapSupabaseToLocal = {}; // Supabase UUID → 新しいローカルID
     for (const m of maps) {
         const localId = nextId();
         mapSupabaseToLocal[m.id] = localId;
         setSupabaseMapId(localId, m.id);
-        const fLocalId = m.folder_id ? (folderLocalIds[m.folder_id] || defaultFolderId) : defaultFolderId;
+        const fLocalId = m.folder_id ? (folderLocalIds[m.folder_id] || null) : null;
         metaList.push({
             id: localId,
             name: m.name,

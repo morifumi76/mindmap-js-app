@@ -87,27 +87,9 @@ function setCollapseState(state) {
 }
 
 // ---- Helper: ensure 未分類 folder exists ----
+// 未分類フォルダは廃止済み。互換のため関数は残し、単に metaList をそのまま返す。
+// 既存呼び出し箇所は順次撤去予定。
 function ensureDefaultFolder(metaList) {
-    var hasDefault = false;
-    for (var i = 0; i < metaList.length; i++) {
-        if (metaList[i].type === 'folder' && metaList[i].isDefault) {
-            hasDefault = true;
-            break;
-        }
-    }
-    if (!hasDefault) {
-        var folderId = getNextMapId();
-        var now = nowISO();
-        metaList.push({
-            id: folderId,
-            name: '未分類',
-            type: 'folder',
-            order: 999999, // always last
-            createdAt: now,
-            updatedAt: now,
-            isDefault: true
-        });
-    }
     return metaList;
 }
 
@@ -117,6 +99,62 @@ function getDefaultFolderId(metaList) {
         if (metaList[i].type === 'folder' && metaList[i].isDefault) return metaList[i].id;
     }
     return null;
+}
+
+// 旧仕様で残っている "未分類"（isDefault: true）フォルダを取り除き、
+// 配下のページはトップレベル（folderId = null）に救出する。
+// - ローカル metaList を即時更新
+// - Supabase 側へは「対象ページの folder_id を null に更新 → フォルダ削除」を非同期で実施
+// - 冪等：未分類フォルダが存在しなければ何もしない
+function cleanupDefaultFolders() {
+    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
+    var metaList = getMetaList();
+    var defaultIds = [];
+    for (var i = 0; i < metaList.length; i++) {
+        var m = metaList[i];
+        if (m && m.type === 'folder' && m.isDefault) defaultIds.push(m.id);
+    }
+    if (defaultIds.length === 0) return;
+
+    // 配下ページを集めて folderId を null に救出
+    var rescuedPages = [];
+    for (var i = 0; i < metaList.length; i++) {
+        var p = metaList[i];
+        if (p.type === 'page' && defaultIds.indexOf(p.folderId) !== -1) {
+            p.folderId = null;
+            rescuedPages.push(p);
+        }
+    }
+    // 未分類フォルダ自身を metaList から除去
+    var filtered = [];
+    for (var i = 0; i < metaList.length; i++) {
+        if (defaultIds.indexOf(metaList[i].id) === -1) filtered.push(metaList[i]);
+    }
+    saveMetaList(filtered);
+
+    // Supabase 同期（best-effort、失敗しても次回起動で再試行される）
+    if (window._supa) {
+        // ① 救出ページの folder_id を null に更新（先にやらないと外部キー制約で folder の削除が失敗する可能性がある）
+        var pageUpdatePromises = [];
+        for (var i = 0; i < rescuedPages.length; i++) {
+            var pg = rescuedPages[i];
+            try {
+                var raw = localStorage.getItem(getMapDataKey(pg.id));
+                var data = raw ? JSON.parse(raw) : null;
+                if (data) {
+                    pageUpdatePromises.push(
+                        window._supa.saveMap(pg.id, pg.name, data, null).catch(function(){})
+                    );
+                }
+            } catch(e) {}
+        }
+        // ② すべてのページ更新が完了してから未分類フォルダを Supabase からも削除
+        Promise.all(pageUpdatePromises).then(function() {
+            for (var j = 0; j < defaultIds.length; j++) {
+                try { window._supa.deleteFolder(defaultIds[j]).catch(function(){}); } catch(e) {}
+            }
+        });
+    }
 }
 
 // ---- Migration from old single-map storage ----
@@ -257,20 +295,11 @@ function migrateIfNeeded() {
 
     // v4 flag already set but ensure schema is correct
     if (localStorage.getItem('mindmap-migrated-v4') && existing.length > 0) {
-        // Ensure all entries have type field and 未分類 exists
+        // 未分類は廃止済み。type 欠落のみ補修する（folderId が無いページはトップレベル扱い）
         var needsRepair = false;
         for (var i = 0; i < existing.length; i++) {
             if (!existing[i].type) {
                 existing[i].type = 'page';
-                needsRepair = true;
-            }
-        }
-        existing = ensureDefaultFolder(existing);
-        // Ensure all pages have a folderId
-        var defId = getDefaultFolderId(existing);
-        for (var i = 0; i < existing.length; i++) {
-            if (existing[i].type === 'page' && !existing[i].folderId) {
-                existing[i].folderId = defId;
                 needsRepair = true;
             }
         }
@@ -295,32 +324,21 @@ function migrateIfNeeded() {
     var now = nowISO();
     var initialMeta = [];
 
-    // Create 未分類 folder
-    var defaultFolderId = getNextMapId();
-    initialMeta.push({
-        id: defaultFolderId,
-        name: '未分類',
-        type: 'folder',
-        order: 999999,
-        createdAt: now,
-        updatedAt: now,
-        isDefault: true
-    });
-
+    // 新規ユーザー初期化：未分類フォルダは作らず、最初のページをトップレベル（folderId = null）に置く
     if (oldData) {
-        // Migrate existing data as page in 未分類
+        // 旧データを移行してトップレベルに配置
         var mapId = getNextMapId();
         var mapName = oldData.root.text || '無題のマップ';
-        initialMeta.push({ id: mapId, name: mapName, type: 'page', folderId: defaultFolderId, order: 0, createdAt: now, updatedAt: now });
+        initialMeta.push({ id: mapId, name: mapName, type: 'page', folderId: null, order: 0, createdAt: now, updatedAt: now });
         saveMetaList(initialMeta);
         try { localStorage.setItem(getMapDataKey(mapId), JSON.stringify(oldData)); } catch(e) {}
         setLastActiveId(mapId);
         try { localStorage.removeItem(OLD_STORAGE_KEY); } catch(e) {}
     } else {
-        // No existing data: create initial empty page in 未分類
+        // 既存データなし：空ページをトップレベルに作成
         var mapId = getNextMapId();
         var defaultData = { root: { id: 'root', text: '中心テーマ', children: [] } };
-        initialMeta.push({ id: mapId, name: '無題のマップ', type: 'page', folderId: defaultFolderId, order: 0, createdAt: now, updatedAt: now });
+        initialMeta.push({ id: mapId, name: '無題のマップ', type: 'page', folderId: null, order: 0, createdAt: now, updatedAt: now });
         saveMetaList(initialMeta);
         try { localStorage.setItem(getMapDataKey(mapId), JSON.stringify(defaultData)); } catch(e) {}
         setLastActiveId(mapId);

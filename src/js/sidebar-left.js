@@ -615,8 +615,6 @@ function renderMapList() {
     var list = document.getElementById('mapList');
     if (!list) return;
     var metaList = getMetaList();
-    metaList = ensureDefaultFolder(metaList);
-    saveMetaList(metaList);
     var sortMode = getSortMode();
     var collapseState = getCollapseState();
 
@@ -628,12 +626,12 @@ function renderMapList() {
     starredPages.sort(function(a, b) { return (a.starOrder || 0) - (b.starOrder || 0); });
 
     // Build maps for quick lookup
-    var pagesByFolder = {};   // folderId -> [pages]
+    var pagesByFolder = {};   // folderId -> [pages]（folderId 無しはトップレベル）
     var subFoldersByParent = {}; // parentFolderId -> [folders]
-    var defFolderId = getDefaultFolderId(metaList);
 
     for (var i = 0; i < pages.length; i++) {
-        var fid = pages[i].folderId || defFolderId;
+        // folderId が無いページはトップレベル（pagesByFolder[null] = "プライベート" 直下）
+        var fid = pages[i].folderId || null;
         if (!pagesByFolder[fid]) pagesByFolder[fid] = [];
         pagesByFolder[fid].push(pages[i]);
     }
@@ -1420,30 +1418,52 @@ function hideAllContextMenus() {
 
 // ---- CRUD: Pages ----
 function createNewMap() {
-    // Creates a new page in the currently selected folder (or 未分類)
+    // 新規ページの配置先優先順位:
+    //   ① サイドバーで選択中のアイテムがフォルダ → そのフォルダ内
+    //   ② サイドバーで選択中のアイテムがページ → そのページのフォルダ内
+    //   ③ アクティブなマップがあればそのページのフォルダ内
+    //   ④ いずれも該当なし → トップレベル（folderId = null）
     saveToLocalStorage();
 
     var metaList = getMetaList();
-    var defFolderId = getDefaultFolderId(metaList);
 
-    // Determine target folder: use folder of current active page, or 未分類
-    var targetFolderId = defFolderId;
-    if (currentMapId) {
-        var currentMeta = findMetaById(currentMapId);
-        if (currentMeta && currentMeta.type === 'page' && currentMeta.folderId) {
-            targetFolderId = currentMeta.folderId;
+    var targetFolderId = null;
+    // ① / ② サイドバーの選択を最優先（明示的なユーザーの操作なので）
+    if (typeof sidebarSelectedIds !== 'undefined' && sidebarSelectedIds.size > 0) {
+        var firstSelectedId = null;
+        sidebarSelectedIds.forEach(function(id) {
+            if (firstSelectedId === null) firstSelectedId = id;
+        });
+        if (firstSelectedId !== null) {
+            var selMeta = findMetaById(firstSelectedId);
+            if (selMeta) {
+                if (selMeta.type === 'folder') {
+                    targetFolderId = selMeta.id;
+                } else if (selMeta.type === 'page') {
+                    targetFolderId = selMeta.folderId || null;
+                }
+            }
         }
     }
+    // ③ サイドバー未選択なら、アクティブなマップのフォルダにフォールバック
+    if (targetFolderId === null && currentMapId) {
+        var currentMeta = findMetaById(currentMapId);
+        if (currentMeta && currentMeta.type === 'page') {
+            targetFolderId = currentMeta.folderId || null;
+        }
+    }
+    // ④ いずれも無ければトップレベル（targetFolderId は null のまま）
 
     var newId = getNextMapId();
     var now = nowISO();
     var defaultData = { root: { id: 'root', text: '中心テーマ', children: [] } };
 
-    // Get max order among pages in target folder
+    // 同じ親（targetFolderId）内のページの最大 order を取得して末尾に置く
     var maxOrder = 0;
     for (var i = 0; i < metaList.length; i++) {
-        if (metaList[i].type === 'page' && metaList[i].folderId === targetFolderId && (metaList[i].order || 0) >= maxOrder) {
-            maxOrder = (metaList[i].order || 0) + 1;
+        var mi = metaList[i];
+        if (mi.type === 'page' && (mi.folderId || null) === targetFolderId && (mi.order || 0) >= maxOrder) {
+            maxOrder = (mi.order || 0) + 1;
         }
     }
 
@@ -1452,10 +1472,12 @@ function createNewMap() {
     saveMetaList(metaList);
     try { localStorage.setItem(getMapDataKey(newId), JSON.stringify(defaultData)); } catch(e) {}
 
-    // Expand the target folder
-    var cs = getCollapseState();
-    cs[targetFolderId] = false;
-    setCollapseState(cs);
+    // 配置先がフォルダなら展開しておく
+    if (targetFolderId) {
+        var cs = getCollapseState();
+        cs[targetFolderId] = false;
+        setCollapseState(cs);
+    }
 
     switchToMap(newId);
     showToast('新しいマップを作成しました');
@@ -1580,7 +1602,6 @@ function deleteFolder(folderId) {
     for (var i = 0; i < allFolderIds.length; i++) folderIdSet[allFolderIds[i]] = true;
 
     // Remove pages in those folders
-    var defFolderId = getDefaultFolderId(metaList);
     var pagesToDelete = [];
     for (var i = 0; i < metaList.length; i++) {
         if (metaList[i].type === 'page' && folderIdSet[metaList[i].folderId]) {

@@ -6,6 +6,8 @@ var appInitialized = false;
 function init() {
     // Run migration from old storage format
     migrateIfNeeded();
+    // 旧仕様の "未分類" フォルダが残っていれば取り除き、配下ページはトップレベルに救出する
+    if (typeof cleanupDefaultFolders === 'function') cleanupDefaultFolders();
 
     // Determine which map to load (only pages can be loaded)
     var urlParams = new URLSearchParams(window.location.search);
@@ -23,14 +25,11 @@ function init() {
         pages.sort(function(a, b) { return (b.updatedAt || '').localeCompare(a.updatedAt || ''); });
         currentMapId = pages[0].id;
     } else {
-        // No pages exist at all, create one in 未分類
-        metaList = ensureDefaultFolder(metaList);
-        saveMetaList(metaList);
-        var defFolderId = getDefaultFolderId(metaList);
+        // ページが一つもないとき：トップレベル（folderId = null）に新規ページを作成する
         var newId = getNextMapId();
         var now = nowISO();
         var defaultData = { root: { id: 'root', text: '中心テーマ', children: [] } };
-        metaList.push({ id: newId, name: '無題のマップ', type: 'page', folderId: defFolderId, order: 0, createdAt: now, updatedAt: now });
+        metaList.push({ id: newId, name: '無題のマップ', type: 'page', folderId: null, order: 0, createdAt: now, updatedAt: now });
         saveMetaList(metaList);
         try { localStorage.setItem(getMapDataKey(newId), JSON.stringify(defaultData)); } catch(e) {}
         currentMapId = newId;
