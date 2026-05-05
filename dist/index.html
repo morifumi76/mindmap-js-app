@@ -21472,22 +21472,19 @@ function createFolderElement(folder, hasPages, isCollapsed, isDndEnabled, depth,
 
             if (mapDragState.draggingType === 'folder') {
                 if (folderMeta.isDefault) return;
-                if (getSortMode() === 'alpha') {
-                    // アルファ順モード：フォルダ全体を "into" ゾーンにする（同階層並び替え不可）
+                // 上25% → above, 下25% → below, 中央 → into（ネスト）
+                // アルファ順モードでも有効化する：並び順は名前で再ソートされるが、
+                // above/below は「ターゲットと同じ親に揃える（=階層の変更）」という意味を持つため
+                // 塞いでしまうとサブフォルダを上位階層に出せなくなる。
+                if (relY < h * 0.25) {
+                    itemEl.classList.add('drag-over-above');
+                    mapDragState.dropTarget = { id: folderId, position: 'above', type: 'folder' };
+                } else if (relY > h * 0.75) {
+                    itemEl.classList.add('drag-over-below');
+                    mapDragState.dropTarget = { id: folderId, position: 'below', type: 'folder' };
+                } else {
                     itemEl.classList.add('drag-over-into');
                     mapDragState.dropTarget = { id: folderId, position: 'into', type: 'folder' };
-                } else {
-                    // 手動順モード：上25% → above, 下25% → below, 中央 → into（ネスト）
-                    if (relY < h * 0.25) {
-                        itemEl.classList.add('drag-over-above');
-                        mapDragState.dropTarget = { id: folderId, position: 'above', type: 'folder' };
-                    } else if (relY > h * 0.75) {
-                        itemEl.classList.add('drag-over-below');
-                        mapDragState.dropTarget = { id: folderId, position: 'below', type: 'folder' };
-                    } else {
-                        itemEl.classList.add('drag-over-into');
-                        mapDragState.dropTarget = { id: folderId, position: 'into', type: 'folder' };
-                    }
                 }
             } else {
                 // Page dropped onto folder: move page into this folder
