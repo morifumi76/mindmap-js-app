@@ -21755,26 +21755,53 @@ function handleMultiPageDrop(dragIds, targetId, position) {
         targetFolderId = targetId;
     } else if (targetMeta.type === 'page') {
         // ページの上/下へドロップ → そのページと同じフォルダへ移動
-        targetFolderId = targetMeta.folderId;
+        targetFolderId = targetMeta.folderId || null;
     } else if (targetMeta.type === 'folder') {
         targetFolderId = targetId;
     } else {
         return;
     }
 
-    // 選択ページをターゲットフォルダへ移動
+    // 移動先フォルダの現在の最大 order を求める（手動順モードで末尾に配置するため）
+    var maxOrder = -1;
     for (var i = 0; i < metaList.length; i++) {
-        if (dragIds.indexOf(String(metaList[i].id)) !== -1 && metaList[i].type === 'page') {
-            metaList[i].folderId = targetFolderId;
+        var mi = metaList[i];
+        if (mi.type === 'page' && (mi.folderId || null) === (targetFolderId || null) && dragIds.indexOf(String(mi.id)) === -1) {
+            if ((mi.order || 0) > maxOrder) maxOrder = (mi.order || 0);
         }
     }
 
-    // ターゲットフォルダを展開
-    var cs = getCollapseState();
-    cs[targetFolderId] = false;
-    setCollapseState(cs);
+    // 選択ページをターゲットフォルダへ移動し、移動したページを記録
+    var movedPages = [];
+    for (var i = 0; i < metaList.length; i++) {
+        if (dragIds.indexOf(String(metaList[i].id)) !== -1 && metaList[i].type === 'page') {
+            metaList[i].folderId = targetFolderId;
+            maxOrder++;
+            metaList[i].order = maxOrder;
+            movedPages.push(metaList[i]);
+        }
+    }
+
+    // ターゲットフォルダを展開（targetFolderId が null = トップレベルなら展開不要）
+    if (targetFolderId) {
+        var cs = getCollapseState();
+        cs[targetFolderId] = false;
+        setCollapseState(cs);
+    }
 
     saveMetaList(metaList);
+
+    // Supabase へ移動を反映（これが無いとリロード時に元の場所へ戻ってしまう）
+    if (window._supa) {
+        for (var i = 0; i < movedPages.length; i++) {
+            var mp = movedPages[i];
+            var mpData = loadMapData(mp.id);
+            if (mpData) {
+                window._supa.saveMap(mp.id, mp.name, mpData, mp.folderId).catch(function(){});
+            }
+        }
+    }
+
     renderMapList();
     showToast(dragIds.length + '件を移動しました');
 }
