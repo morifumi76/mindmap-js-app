@@ -64,15 +64,18 @@ function addChildNode(parentId, text, autoEdit) {
     return newNode;
 }
 
-function addSiblingNode(nodeId, text, autoEdit) {
+function addSiblingNode(nodeId, text, autoEdit, insertBefore) {
     if (text === undefined) text = '新しいノード';
     if (autoEdit === undefined) autoEdit = true;
+    if (insertBefore === undefined) insertBefore = false;
     var result = findNode(nodeId);
     if (!result || !result.parent) {
         return addChildNode(nodeId, text, autoEdit);
     }
     var newNode = { id: generateId(), text: text, children: [] };
-    result.parent.children.splice(result.index + 1, 0, newNode);
+    // insertBefore が true なら基準ノードの上（同じindex位置）、それ以外は下（index+1）
+    var insertIndex = insertBefore ? result.index : result.index + 1;
+    result.parent.children.splice(insertIndex, 0, newNode);
     saveState();
     render();
     selectNode(newNode.id);

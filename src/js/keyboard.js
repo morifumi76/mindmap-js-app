@@ -231,7 +231,8 @@ function handleKeyDown(e) {
     switch (e.key) {
         case 'Enter':
             e.preventDefault();
-            if (currentId) addSiblingNode(currentId);
+            // Shift+Enter は上に、通常の Enter は下に同階層ノードを追加
+            if (currentId) addSiblingNode(currentId, undefined, undefined, e.shiftKey);
             break;
         case 'Tab':
             e.preventDefault();
