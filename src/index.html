@@ -144,6 +144,14 @@
 
     <!-- Floating action buttons (top-center of canvas) -->
     <div class="canvas-float-btns" id="canvasFloatBtns">
+        <div class="fast-mode-control" id="fastModeControl" title="Enter連打で次のノードを自動作成（上級者向け）">
+            <span class="fast-mode-label">高速モード</span>
+            <button class="fast-mode-toggle" id="fastModeToggle" role="switch" aria-checked="false" aria-label="高速モード">
+                <span class="fast-mode-toggle-text fast-mode-toggle-text-on">ON</span>
+                <span class="fast-mode-toggle-text fast-mode-toggle-text-off">OFF</span>
+                <span class="fast-mode-toggle-knob"></span>
+            </button>
+        </div>
         <div class="expand-collapse-control" id="expandCollapseControl">
             <button class="expand-collapse-btn" id="collapseAllBtn" title="すべて閉じる">«</button>
             <button class="expand-collapse-btn" id="expandAllBtn" title="すべて開く">»</button>

@@ -155,9 +155,29 @@ function handleKeyDown(e) {
         // IME入力中・変換確定直後のキーは無視する（ Safari 等での誤発火防止）
         if (isImeRelatedKey(e)) return;
 
-        if (e.key === 'Enter' && !e.shiftKey) {
+        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey
+            && typeof getFastMode === 'function' && getFastMode()) {
+            // 高速モード Cmd/Ctrl+Enter: 編集確定のみ（兄弟ノードは追加しない／空でも残す）。
+            // proactive な「ここで打ち止め」操作。IME変換中は上の isImeRelatedKey で早期returnされるため、
+            // ここに来るのは確定済みの状態のみ。
             e.preventDefault();
             finishEditing();
+        } else if (e.key === 'Enter' && !e.shiftKey) {
+            // OFF時の Cmd/Ctrl+Enter もここに流れる（既存挙動：finishEditing のみ）
+            e.preventDefault();
+            if (typeof getFastMode === 'function' && getFastMode() && !e.metaKey && !e.ctrlKey && !e.altKey) {
+                // 高速モード：編集確定後、同階層に兄弟ノードを自動追加して編集モードへ突入。
+                // ただしルートノード編集時はルート階層に兄弟を作らない（仕様）。
+                // 新ノードのテキストは空文字にすることで、Escでそのまま破棄できるようにする。
+                var prevId = editingNodeId;
+                var prevInfo = findNode(prevId);
+                finishEditing();
+                if (prevInfo && prevInfo.parent) {
+                    addSiblingNode(prevId, '', true, false);
+                }
+            } else {
+                finishEditing();
+            }
         } else if (e.key === 'Enter' && e.shiftKey) {
             // Shift+Enter: insert line break
             e.preventDefault();
@@ -181,7 +201,27 @@ function handleKeyDown(e) {
             }
         } else if (e.key === 'Escape') {
             e.preventDefault();
-            finishEditing();
+            if (typeof getFastMode === 'function' && getFastMode()) {
+                // 高速モード：空ノードは破棄、テキストありは編集確定
+                var _editId = editingNodeId;
+                var _nodeEl = document.querySelector('[data-id="' + _editId + '"]');
+                var _textEl = _nodeEl ? _nodeEl.querySelector('.node-text') : null;
+                // ゼロ幅スペース（Shift+Enter改行時にキャレット用に挿入される）を除いて空判定する
+                var _currentText = _textEl ? _textEl.textContent.replace(/​/g, '').trim() : '';
+                if (_currentText === '' && _editId !== 'root') {
+                    // 編集モードを抜けてからノード削除（finishEditing は呼ばずに直接後始末）
+                    if (_textEl) {
+                        _textEl.contentEditable = 'false';
+                        _nodeEl.classList.remove('editing');
+                    }
+                    editingNodeId = null;
+                    deleteNode(_editId);
+                } else {
+                    finishEditing();
+                }
+            } else {
+                finishEditing();
+            }
         } else if (e.key === 'Tab') {
             e.preventDefault();
             finishEditing();
@@ -231,8 +271,14 @@ function handleKeyDown(e) {
     switch (e.key) {
         case 'Enter':
             e.preventDefault();
-            // Shift+Enter は上に、通常の Enter は下に同階層ノードを追加
-            if (currentId) addSiblingNode(currentId, undefined, undefined, e.shiftKey);
+            if (typeof getFastMode === 'function' && getFastMode()) {
+                // 高速モード：選択中ノードを編集モードに突入させる（HHKB等F2なしユーザー向け）。
+                // ON 時の選択モードでは Shift+Enter は無効化（仕様）。
+                if (currentId && !e.shiftKey) startEditing(currentId);
+            } else {
+                // 既存仕様：Shift+Enter は上に、通常の Enter は下に同階層ノードを追加
+                if (currentId) addSiblingNode(currentId, undefined, undefined, e.shiftKey);
+            }
             break;
         case 'Tab':
             e.preventDefault();

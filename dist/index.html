@@ -1544,6 +1544,79 @@ body.connection-mode .node {
     user-select: none;
 }
 
+/* 高速モードトグル（ツールバー左端、«の左に配置） */
+.fast-mode-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    padding: 0 10px;
+    height: 28px;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+    box-sizing: border-box;
+    user-select: none;
+}
+.fast-mode-label {
+    font-size: 12px;
+    color: #37352f;
+    white-space: nowrap;
+}
+.fast-mode-toggle {
+    position: relative;
+    width: 52px;
+    height: 20px;
+    border: none;
+    padding: 0;
+    border-radius: 10px;
+    background: #c6c5c0;
+    cursor: pointer;
+    transition: background 0.18s;
+    flex-shrink: 0;
+}
+.fast-mode-toggle.on {
+    background: #2383e2;
+}
+.fast-mode-toggle-knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+    transition: left 0.18s;
+}
+.fast-mode-toggle.on .fast-mode-toggle-knob {
+    left: 34px;
+}
+.fast-mode-toggle-text {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+    pointer-events: none;
+    transition: opacity 0.18s;
+    letter-spacing: 0.5px;
+}
+.fast-mode-toggle-text-off {
+    right: 6px;
+    opacity: 1;
+}
+.fast-mode-toggle-text-on {
+    left: 6px;
+    opacity: 0;
+}
+.fast-mode-toggle.on .fast-mode-toggle-text-off {
+    opacity: 0;
+}
+.fast-mode-toggle.on .fast-mode-toggle-text-on {
+    opacity: 1;
+}
+
 /* Expand/Collapse all nodes control (left of zoom) */
 .expand-collapse-control {
     display: flex;
@@ -2262,6 +2335,14 @@ body.readonly-mode .sidebar-float-toggle {
 
     <!-- Floating action buttons (top-center of canvas) -->
     <div class="canvas-float-btns" id="canvasFloatBtns">
+        <div class="fast-mode-control" id="fastModeControl" title="Enter連打で次のノードを自動作成（上級者向け）">
+            <span class="fast-mode-label">高速モード</span>
+            <button class="fast-mode-toggle" id="fastModeToggle" role="switch" aria-checked="false" aria-label="高速モード">
+                <span class="fast-mode-toggle-text fast-mode-toggle-text-on">ON</span>
+                <span class="fast-mode-toggle-text fast-mode-toggle-text-off">OFF</span>
+                <span class="fast-mode-toggle-knob"></span>
+            </button>
+        </div>
         <div class="expand-collapse-control" id="expandCollapseControl">
             <button class="expand-collapse-btn" id="collapseAllBtn" title="すべて閉じる">«</button>
             <button class="expand-collapse-btn" id="expandAllBtn" title="すべて開く">»</button>
@@ -16361,6 +16442,32 @@ let pendingRelationLabelEditRelId = null;
 // 直近renderでのノード位置（関連線描画やドラッグで参照する）
 let lastRenderedPositions = null;
 
+// ========================================
+// 高速モード（Fast Mode）
+// Enter 連打で次のノードを自動作成する上級者向けキー操作モード。
+// localStorage で永続化し、デフォルトは OFF（既存挙動）。
+// ========================================
+var FAST_MODE_STORAGE_KEY = 'mindmap.fastMode';
+function getFastMode() {
+    try {
+        return localStorage.getItem(FAST_MODE_STORAGE_KEY) === 'true';
+    } catch (e) { return false; }
+}
+function setFastMode(enabled) {
+    try {
+        localStorage.setItem(FAST_MODE_STORAGE_KEY, enabled ? 'true' : 'false');
+    } catch (e) {}
+    syncFastModeToggleUI();
+}
+function syncFastModeToggleUI() {
+    var on = getFastMode();
+    var toggleEl = document.getElementById('fastModeToggle');
+    if (toggleEl) {
+        toggleEl.setAttribute('aria-checked', on ? 'true' : 'false');
+        toggleEl.classList.toggle('on', on);
+    }
+}
+
 
 // ========================================
 // Utility Functions
@@ -19366,9 +19473,29 @@ function handleKeyDown(e) {
         // IME入力中・変換確定直後のキーは無視する（ Safari 等での誤発火防止）
         if (isImeRelatedKey(e)) return;
 
-        if (e.key === 'Enter' && !e.shiftKey) {
+        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey
+            && typeof getFastMode === 'function' && getFastMode()) {
+            // 高速モード Cmd/Ctrl+Enter: 編集確定のみ（兄弟ノードは追加しない／空でも残す）。
+            // proactive な「ここで打ち止め」操作。IME変換中は上の isImeRelatedKey で早期returnされるため、
+            // ここに来るのは確定済みの状態のみ。
             e.preventDefault();
             finishEditing();
+        } else if (e.key === 'Enter' && !e.shiftKey) {
+            // OFF時の Cmd/Ctrl+Enter もここに流れる（既存挙動：finishEditing のみ）
+            e.preventDefault();
+            if (typeof getFastMode === 'function' && getFastMode() && !e.metaKey && !e.ctrlKey && !e.altKey) {
+                // 高速モード：編集確定後、同階層に兄弟ノードを自動追加して編集モードへ突入。
+                // ただしルートノード編集時はルート階層に兄弟を作らない（仕様）。
+                // 新ノードのテキストは空文字にすることで、Escでそのまま破棄できるようにする。
+                var prevId = editingNodeId;
+                var prevInfo = findNode(prevId);
+                finishEditing();
+                if (prevInfo && prevInfo.parent) {
+                    addSiblingNode(prevId, '', true, false);
+                }
+            } else {
+                finishEditing();
+            }
         } else if (e.key === 'Enter' && e.shiftKey) {
             // Shift+Enter: insert line break
             e.preventDefault();
@@ -19392,7 +19519,27 @@ function handleKeyDown(e) {
             }
         } else if (e.key === 'Escape') {
             e.preventDefault();
-            finishEditing();
+            if (typeof getFastMode === 'function' && getFastMode()) {
+                // 高速モード：空ノードは破棄、テキストありは編集確定
+                var _editId = editingNodeId;
+                var _nodeEl = document.querySelector('[data-id="' + _editId + '"]');
+                var _textEl = _nodeEl ? _nodeEl.querySelector('.node-text') : null;
+                // ゼロ幅スペース（Shift+Enter改行時にキャレット用に挿入される）を除いて空判定する
+                var _currentText = _textEl ? _textEl.textContent.replace(/​/g, '').trim() : '';
+                if (_currentText === '' && _editId !== 'root') {
+                    // 編集モードを抜けてからノード削除（finishEditing は呼ばずに直接後始末）
+                    if (_textEl) {
+                        _textEl.contentEditable = 'false';
+                        _nodeEl.classList.remove('editing');
+                    }
+                    editingNodeId = null;
+                    deleteNode(_editId);
+                } else {
+                    finishEditing();
+                }
+            } else {
+                finishEditing();
+            }
         } else if (e.key === 'Tab') {
             e.preventDefault();
             finishEditing();
@@ -19442,8 +19589,14 @@ function handleKeyDown(e) {
     switch (e.key) {
         case 'Enter':
             e.preventDefault();
-            // Shift+Enter は上に、通常の Enter は下に同階層ノードを追加
-            if (currentId) addSiblingNode(currentId, undefined, undefined, e.shiftKey);
+            if (typeof getFastMode === 'function' && getFastMode()) {
+                // 高速モード：選択中ノードを編集モードに突入させる（HHKB等F2なしユーザー向け）。
+                // ON 時の選択モードでは Shift+Enter は無効化（仕様）。
+                if (currentId && !e.shiftKey) startEditing(currentId);
+            } else {
+                // 既存仕様：Shift+Enter は上に、通常の Enter は下に同階層ノードを追加
+                if (currentId) addSiblingNode(currentId, undefined, undefined, e.shiftKey);
+            }
             break;
         case 'Tab':
             e.preventDefault();
@@ -19850,6 +20003,17 @@ function init() {
         document.getElementById('copyBtn').addEventListener('click', copyToClipboard);
         document.getElementById('expandAllBtn').addEventListener('click', expandAllNodes);
         document.getElementById('collapseAllBtn').addEventListener('click', collapseAllNodes);
+
+        // 高速モードトグル：localStorageから初期状態を反映し、クリックで切り替え
+        var fastToggle = document.getElementById('fastModeToggle');
+        if (fastToggle) {
+            syncFastModeToggleUI();
+            fastToggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                setFastMode(!getFastMode());
+            });
+        }
     }
 
     // Grey-out floating button

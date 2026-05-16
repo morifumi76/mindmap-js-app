@@ -54,6 +54,17 @@ function init() {
         document.getElementById('copyBtn').addEventListener('click', copyToClipboard);
         document.getElementById('expandAllBtn').addEventListener('click', expandAllNodes);
         document.getElementById('collapseAllBtn').addEventListener('click', collapseAllNodes);
+
+        // 高速モードトグル：localStorageから初期状態を反映し、クリックで切り替え
+        var fastToggle = document.getElementById('fastModeToggle');
+        if (fastToggle) {
+            syncFastModeToggleUI();
+            fastToggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                setFastMode(!getFastMode());
+            });
+        }
     }
 
     // Grey-out floating button

@@ -331,3 +331,29 @@ let pendingRelationLabelEditRelId = null;
 // 直近renderでのノード位置（関連線描画やドラッグで参照する）
 let lastRenderedPositions = null;
 
+// ========================================
+// 高速モード（Fast Mode）
+// Enter 連打で次のノードを自動作成する上級者向けキー操作モード。
+// localStorage で永続化し、デフォルトは OFF（既存挙動）。
+// ========================================
+var FAST_MODE_STORAGE_KEY = 'mindmap.fastMode';
+function getFastMode() {
+    try {
+        return localStorage.getItem(FAST_MODE_STORAGE_KEY) === 'true';
+    } catch (e) { return false; }
+}
+function setFastMode(enabled) {
+    try {
+        localStorage.setItem(FAST_MODE_STORAGE_KEY, enabled ? 'true' : 'false');
+    } catch (e) {}
+    syncFastModeToggleUI();
+}
+function syncFastModeToggleUI() {
+    var on = getFastMode();
+    var toggleEl = document.getElementById('fastModeToggle');
+    if (toggleEl) {
+        toggleEl.setAttribute('aria-checked', on ? 'true' : 'false');
+        toggleEl.classList.toggle('on', on);
+    }
+}
+
