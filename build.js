@@ -78,6 +78,16 @@ html = html.replace(
 if (!fs.existsSync(DIST)) fs.mkdirSync(DIST, { recursive: true });
 fs.writeFileSync(path.join(DIST, 'index.html'), html, 'utf-8');
 
+// 静的アセット（OGP 画像など）を dist/assets/ にコピー
+const SRC_ASSETS  = path.join(SRC, 'assets');
+const DIST_ASSETS = path.join(DIST, 'assets');
+if (fs.existsSync(SRC_ASSETS)) {
+    if (!fs.existsSync(DIST_ASSETS)) fs.mkdirSync(DIST_ASSETS, { recursive: true });
+    for (const file of fs.readdirSync(SRC_ASSETS)) {
+        fs.copyFileSync(path.join(SRC_ASSETS, file), path.join(DIST_ASSETS, file));
+    }
+}
+
 // Netlify リダイレクト設定（/share/* → index.html）
 const redirectsPath = path.join(DIST, '_redirects');
 if (!fs.existsSync(redirectsPath)) {
