@@ -150,10 +150,12 @@ async function replayPendingSyncs() {
             const gray = localStorage.getItem('mindmap-node-grayout-' + localId);
             const hl   = localStorage.getItem('mindmap-node-highlight-' + localId);
             const cy   = localStorage.getItem('mindmap-node-cyan-' + localId);
+            const gr   = localStorage.getItem('mindmap-node-green-' + localId);
             const rt   = localStorage.getItem('mindmap-node-redtext-' + localId);
             data._grayout   = gray  ? JSON.parse(gray)  : {};
             data._highlight = hl    ? JSON.parse(hl)    : {};
             data._cyan      = cy    ? JSON.parse(cy)    : {};
+            data._green     = gr    ? JSON.parse(gr)    : {};
             data._redtext   = rt    ? JSON.parse(rt)    : {};
             data._starred   = !!meta.starred;
             data._starOrder = meta.starOrder || 0;
@@ -260,6 +262,7 @@ async function loadUserData() {
                 if (m.data._grayout)   localStorage.setItem('mindmap-node-grayout-'   + localId, JSON.stringify(m.data._grayout));
                 if (m.data._highlight) localStorage.setItem('mindmap-node-highlight-' + localId, JSON.stringify(m.data._highlight));
                 if (m.data._cyan)      localStorage.setItem('mindmap-node-cyan-'      + localId, JSON.stringify(m.data._cyan));
+                if (m.data._green)     localStorage.setItem('mindmap-node-green-'     + localId, JSON.stringify(m.data._green));
                 if (m.data._redtext)   localStorage.setItem('mindmap-node-redtext-'   + localId, JSON.stringify(m.data._redtext));
             } catch(e) {}
             try { localStorage.setItem('mindmap-data-' + localId, JSON.stringify(m.data)); } catch(e) {}

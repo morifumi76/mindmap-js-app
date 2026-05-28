@@ -171,6 +171,29 @@ function isNodeCyan(nodeId) {
     return state[nodeId] === true;
 }
 
+// Node green state: { [nodeId]: true } - per map, saved in localStorage
+var NODE_GREEN_KEY_PREFIX = 'mindmap-node-green-';
+function getNodeGreenState() {
+    if (!currentMapId) return {};
+    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) {
+        return (window._sharedData && window._sharedData._green) || {};
+    }
+    try {
+        var raw = localStorage.getItem(NODE_GREEN_KEY_PREFIX + currentMapId);
+        if (raw) return JSON.parse(raw);
+    } catch(e) {}
+    return {};
+}
+function setNodeGreenState(state) {
+    if (!currentMapId) return;
+    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
+    try { localStorage.setItem(NODE_GREEN_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
+}
+function isNodeGreen(nodeId) {
+    var state = getNodeGreenState();
+    return state[nodeId] === true;
+}
+
 // Node red-text state: { [nodeId]: true } - per map, saved in localStorage
 var NODE_REDTEXT_KEY_PREFIX = 'mindmap-node-redtext-';
 function getNodeRedTextState() {

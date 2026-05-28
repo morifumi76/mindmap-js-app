@@ -151,10 +151,12 @@
                 var gray = localStorage.getItem('mindmap-node-grayout-' + localId);
                 var hl   = localStorage.getItem('mindmap-node-highlight-' + localId);
                 var cy   = localStorage.getItem('mindmap-node-cyan-' + localId);
+                var gr   = localStorage.getItem('mindmap-node-green-' + localId);
                 var rt   = localStorage.getItem('mindmap-node-redtext-' + localId);
                 data._grayout   = gray  ? JSON.parse(gray)  : {};
                 data._highlight = hl    ? JSON.parse(hl)    : {};
                 data._cyan      = cy    ? JSON.parse(cy)    : {};
+                data._green     = gr    ? JSON.parse(gr)    : {};
                 data._redtext   = rt    ? JSON.parse(rt)    : {};
                 data._starred   = !!meta.starred;
                 data._starOrder = meta.starOrder || 0;

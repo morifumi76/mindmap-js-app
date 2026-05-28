@@ -10,18 +10,21 @@ function applyGrayoutToSelection() {
     var grayState = getNodeGrayoutState();
     var hlState   = getNodeHighlightState();
     var cyanState = getNodeCyanState();
+    var greenState = getNodeGreenState();
     nodes.forEach(function(node) {
         if (allOn) {
             delete grayState[node.id];
         } else {
             delete hlState[node.id];
             delete cyanState[node.id];
+            delete greenState[node.id];
             grayState[node.id] = true;
         }
     });
     setNodeGrayoutState(grayState);
     setNodeHighlightState(hlState);
     setNodeCyanState(cyanState);
+    setNodeGreenState(greenState);
     render();
     saveState();
     showToast(allOn ? 'グレーアウトを解除しました' : 'グレーアウトしました');
@@ -35,18 +38,21 @@ function applyHighlightToSelection() {
     var hlState   = getNodeHighlightState();
     var grayState = getNodeGrayoutState();
     var cyanState = getNodeCyanState();
+    var greenState = getNodeGreenState();
     nodes.forEach(function(node) {
         if (allOn) {
             delete hlState[node.id];
         } else {
             delete grayState[node.id];
             delete cyanState[node.id];
+            delete greenState[node.id];
             hlState[node.id] = true;
         }
     });
     setNodeHighlightState(hlState);
     setNodeGrayoutState(grayState);
     setNodeCyanState(cyanState);
+    setNodeGreenState(greenState);
     render();
     saveState();
     showToast(allOn ? 'ハイライトを解除しました' : 'ハイライトしました');
@@ -60,21 +66,53 @@ function applyCyanToSelection() {
     var cyanState = getNodeCyanState();
     var grayState = getNodeGrayoutState();
     var hlState   = getNodeHighlightState();
+    var greenState = getNodeGreenState();
     nodes.forEach(function(node) {
         if (allOn) {
             delete cyanState[node.id];
         } else {
             delete grayState[node.id];
             delete hlState[node.id];
+            delete greenState[node.id];
             cyanState[node.id] = true;
         }
     });
     setNodeCyanState(cyanState);
     setNodeGrayoutState(grayState);
     setNodeHighlightState(hlState);
+    setNodeGreenState(greenState);
     render();
     saveState();
     showToast(allOn ? '水色を解除しました' : '水色にしました');
+}
+
+// 選択中の全ノードに緑ハイライトを適用（Cmd+Opt+M）
+function applyGreenToSelection() {
+    var nodes = getSelectedNodes();
+    if (nodes.length === 0) return;
+    var allOn = nodes.every(function(node) { return isNodeGreen(node.id); });
+    var greenState = getNodeGreenState();
+    var grayState  = getNodeGrayoutState();
+    var hlState    = getNodeHighlightState();
+    var cyanState  = getNodeCyanState();
+    nodes.forEach(function(node) {
+        if (allOn) {
+            delete greenState[node.id];
+        } else {
+            // 緑ON時はグレーアウト・ハイライト・水色を解除（相互排他）
+            delete grayState[node.id];
+            delete hlState[node.id];
+            delete cyanState[node.id];
+            greenState[node.id] = true;
+        }
+    });
+    setNodeGreenState(greenState);
+    setNodeGrayoutState(grayState);
+    setNodeHighlightState(hlState);
+    setNodeCyanState(cyanState);
+    render();
+    saveState();
+    showToast(allOn ? '緑を解除しました' : '緑にしました');
 }
 
 // 選択中の全ノードに赤文字を適用（Cmd+Opt+A）
@@ -154,6 +192,17 @@ function handleKeyDown(e) {
     if (editingNodeId) {
         // IME入力中・変換確定直後のキーは無視する（ Safari 等での誤発火防止）
         if (isImeRelatedKey(e)) return;
+
+        // 色ショートカット：編集中でも編集を確定してから色を適用する
+        // 特に Option+Cmd+M は Mac のウィンドウ最小化と衝突するため、
+        // 編集中でも先に preventDefault を呼んで OS の動作を抑える。
+        if (e.altKey && cmdKey) {
+            if (e.code === 'KeyG') { e.preventDefault(); finishEditing(); applyGrayoutToSelection();   return; }
+            if (e.code === 'KeyY') { e.preventDefault(); finishEditing(); applyHighlightToSelection(); return; }
+            if (e.code === 'KeyB') { e.preventDefault(); finishEditing(); applyCyanToSelection();      return; }
+            if (e.code === 'KeyM') { e.preventDefault(); finishEditing(); applyGreenToSelection();     return; }
+            if (e.code === 'KeyA') { e.preventDefault(); finishEditing(); applyRedTextToSelection();   return; }
+        }
 
         if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey
             && typeof getFastMode === 'function' && getFastMode()) {
@@ -253,6 +302,11 @@ function handleKeyDown(e) {
         if (e.code === 'KeyB') {
             e.preventDefault();
             applyCyanToSelection();
+            return;
+        }
+        if (e.code === 'KeyM') {
+            e.preventDefault();
+            applyGreenToSelection();
             return;
         }
         if (e.code === 'KeyA') {
