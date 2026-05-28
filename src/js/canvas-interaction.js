@@ -110,10 +110,11 @@ function initCanvasInteraction() {
         var mouseX = e.clientX - rect.left;
         var mouseY = e.clientY - rect.top;
 
-        // ctrlKey is set by browser during trackpad pinch gesture
-        if (e.ctrlKey) {
-            // Pinch zoom
-            var zoomDelta = -e.deltaY * 0.01;
+        // Zoom: trackpad pinch (browser sets ctrlKey) OR Cmd/Ctrl + scroll
+        // deltaY をスケールして滑らかさを出しつつ、ホイール系の大きな値は上限で抑える
+        if (e.ctrlKey || e.metaKey) {
+            var rawDelta = -e.deltaY * 0.01;
+            var zoomDelta = Math.max(-0.1, Math.min(0.1, rawDelta));
             applyZoom(mouseX, mouseY, zoomDelta);
             return;
         }
