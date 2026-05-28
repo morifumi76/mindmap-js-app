@@ -96,6 +96,26 @@
 }
 
 /* ========================================
+   Green Highlight Node Styles
+   ======================================== */
+.node.green-hl {
+    background: #6FCF97 !important;
+    border-color: #6FCF97 !important;
+    color: #1a5e3a !important;
+    box-shadow: none !important;
+}
+
+.node.green-hl .node-text {
+    color: #1a5e3a !important;
+}
+
+.node.green-hl.selected {
+    background: #5EBF87 !important;
+    border-color: #4DAF77 !important;
+    box-shadow: 0 0 0 3px rgba(111, 207, 151, 0.4) !important;
+}
+
+/* ========================================
    Cyan Highlight Node Styles
    ======================================== */
 .node.cyan-hl {
@@ -193,6 +213,10 @@
 
 .canvas-float-btns .float-dot-yellow::after {
     background: #F2C94C;
+}
+
+.canvas-float-btns .float-dot-green::after {
+    background: #6FCF97;
 }
 
 .canvas-float-btns .float-dot-cyan::after {
