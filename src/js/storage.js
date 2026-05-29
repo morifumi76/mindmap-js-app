@@ -66,6 +66,7 @@ function nowISO() {
 
 var SORT_MODE_KEY = 'mindmap-sort-mode';
 var COLLAPSE_STATE_KEY = 'mindmap-collapse-state';
+var TITLE_DATE_MODE_KEY = 'mindmap-title-date-mode';
 
 function getSortMode() {
     return localStorage.getItem(SORT_MODE_KEY) || 'none';
@@ -73,6 +74,27 @@ function getSortMode() {
 function setSortMode(mode) {
     if (isSharedReadonly()) return;
     try { localStorage.setItem(SORT_MODE_KEY, mode); } catch(e) {}
+}
+
+// 「タイトルに日付」モード（ON時、新規作成タイトルが YYYYMMDD_ になる）。初期値は OFF。
+function getTitleDateMode() {
+    return localStorage.getItem(TITLE_DATE_MODE_KEY) === 'on';
+}
+function setTitleDateMode(on) {
+    if (isSharedReadonly()) return;
+    try { localStorage.setItem(TITLE_DATE_MODE_KEY, on ? 'on' : 'off'); } catch(e) {}
+}
+// 端末ローカルの今日の日付を YYYYMMDD 形式（ゼロ埋め）で返す
+function getTodayDatePrefix() {
+    var d = new Date();
+    var y = d.getFullYear();
+    var m = String(d.getMonth() + 1).padStart(2, '0');
+    var day = String(d.getDate()).padStart(2, '0');
+    return y + m + day;
+}
+// 新規マップのデフォルトタイトル（モードONなら YYYYMMDD_、OFFなら 無題のマップ）
+function getDefaultNewMapName() {
+    return getTitleDateMode() ? (getTodayDatePrefix() + '_') : '無題のマップ';
 }
 function getCollapseState() {
     try {

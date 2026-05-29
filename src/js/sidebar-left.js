@@ -1494,7 +1494,8 @@ function createNewMap() {
         }
     }
 
-    var meta = { id: newId, name: '無題のマップ', type: 'page', folderId: targetFolderId, order: maxOrder, createdAt: now, updatedAt: now };
+    var defaultName = getDefaultNewMapName();
+    var meta = { id: newId, name: defaultName, type: 'page', folderId: targetFolderId, order: maxOrder, createdAt: now, updatedAt: now };
     metaList.push(meta);
     saveMetaList(metaList);
     try { localStorage.setItem(getMapDataKey(newId), JSON.stringify(defaultData)); } catch(e) {}
@@ -1510,7 +1511,11 @@ function createNewMap() {
     showToast('新しいマップを作成しました');
     // Supabase: create map (will be synced on first save via saveToLocalStorage)
     if (window._supa) {
-        window._supa.saveMap(newId, '無題のマップ', defaultData, targetFolderId).catch(function(){});
+        window._supa.saveMap(newId, defaultName, defaultData, targetFolderId).catch(function(){});
+    }
+    // タイトル日付モードON時は新規作成後すぐリネーム入力モードに入り、_ の直後にカーソル
+    if (getTitleDateMode()) {
+        setTimeout(function() { startInlineRename(newId, { cursorAtEnd: true }); }, 200);
     }
 }
 
@@ -1531,7 +1536,8 @@ function createPageInFolder(folderId) {
         }
     }
 
-    var meta = { id: newId, name: '無題のマップ', type: 'page', folderId: folderId, order: maxOrder, createdAt: now, updatedAt: now };
+    var defaultName = getDefaultNewMapName();
+    var meta = { id: newId, name: defaultName, type: 'page', folderId: folderId, order: maxOrder, createdAt: now, updatedAt: now };
     metaList.push(meta);
     saveMetaList(metaList);
     try { localStorage.setItem(getMapDataKey(newId), JSON.stringify(defaultData)); } catch(e) {}
@@ -1543,9 +1549,12 @@ function createPageInFolder(folderId) {
 
     switchToMap(newId);
     showToast('新しいマップを作成しました');
-    setTimeout(function() { startInlineRename(newId); }, 200);
+    // タイトル日付モードON時は _ の直後にカーソル、OFF時は従来通り全選択
+    setTimeout(function() {
+        startInlineRename(newId, getTitleDateMode() ? { cursorAtEnd: true } : undefined);
+    }, 200);
     if (window._supa) {
-        window._supa.saveMap(newId, '無題のマップ', defaultData, folderId).catch(function(){});
+        window._supa.saveMap(newId, defaultName, defaultData, folderId).catch(function(){});
     }
 }
 
@@ -1917,7 +1926,7 @@ function deleteMap(mapId) {
     showToast('🗑 マップを削除しました');
 }
 
-function startInlineRename(mapId) {
+function startInlineRename(mapId, options) {
     var item = document.querySelector('.map-item[data-map-id="' + mapId + '"]');
     if (!item) return;
     var nameEl = item.querySelector('.map-item-name');
@@ -1938,7 +1947,13 @@ function startInlineRename(mapId) {
     nameEl.style.display = 'none';
     nameEl.parentNode.insertBefore(input, nameEl.nextSibling);
     input.focus();
-    input.select();
+    // options.cursorAtEnd が true なら末尾にカーソル、それ以外は全選択（既存挙動）
+    if (options && options.cursorAtEnd) {
+        var endPos = input.value.length;
+        input.setSelectionRange(endPos, endPos);
+    } else {
+        input.select();
+    }
 
     var finished = false;
     function finish(save) {

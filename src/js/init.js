@@ -282,6 +282,15 @@ function init() {
         });
     }
 
+    // Title date mode toggle
+    var titleDateInput = document.getElementById('titleDateToggleInput');
+    if (titleDateInput) {
+        titleDateInput.checked = getTitleDateMode();
+        titleDateInput.addEventListener('change', function() {
+            setTitleDateMode(this.checked);
+        });
+    }
+
     // Toggle switch: ひよこ ON/OFF
     document.getElementById('toggleHiyokoInput').addEventListener('change', function() {
         var formatEl = document.getElementById('copyFormat');

@@ -2272,6 +2272,13 @@ body.readonly-mode .sidebar-float-toggle {
                         <span class="sort-toggle-slider"></span>
                     </label>
                 </div>
+                <div class="left-sidebar-sort-row">
+                    <span class="left-sidebar-sort-label">タイトルに日付</span>
+                    <label class="sort-toggle-switch" id="titleDateToggle">
+                        <input type="checkbox" id="titleDateToggleInput">
+                        <span class="sort-toggle-slider"></span>
+                    </label>
+                </div>
                 <button class="left-sidebar-new-btn" id="newMapBtn">＋ 新規作成</button>
                 <div class="left-sidebar-separator"></div>
             </div>
@@ -16668,6 +16675,7 @@ function nowISO() {
 
 var SORT_MODE_KEY = 'mindmap-sort-mode';
 var COLLAPSE_STATE_KEY = 'mindmap-collapse-state';
+var TITLE_DATE_MODE_KEY = 'mindmap-title-date-mode';
 
 function getSortMode() {
     return localStorage.getItem(SORT_MODE_KEY) || 'none';
@@ -16675,6 +16683,27 @@ function getSortMode() {
 function setSortMode(mode) {
     if (isSharedReadonly()) return;
     try { localStorage.setItem(SORT_MODE_KEY, mode); } catch(e) {}
+}
+
+// 「タイトルに日付」モード（ON時、新規作成タイトルが YYYYMMDD_ になる）。初期値は OFF。
+function getTitleDateMode() {
+    return localStorage.getItem(TITLE_DATE_MODE_KEY) === 'on';
+}
+function setTitleDateMode(on) {
+    if (isSharedReadonly()) return;
+    try { localStorage.setItem(TITLE_DATE_MODE_KEY, on ? 'on' : 'off'); } catch(e) {}
+}
+// 端末ローカルの今日の日付を YYYYMMDD 形式（ゼロ埋め）で返す
+function getTodayDatePrefix() {
+    var d = new Date();
+    var y = d.getFullYear();
+    var m = String(d.getMonth() + 1).padStart(2, '0');
+    var day = String(d.getDate()).padStart(2, '0');
+    return y + m + day;
+}
+// 新規マップのデフォルトタイトル（モードONなら YYYYMMDD_、OFFなら 無題のマップ）
+function getDefaultNewMapName() {
+    return getTitleDateMode() ? (getTodayDatePrefix() + '_') : '無題のマップ';
 }
 function getCollapseState() {
     try {
@@ -20358,6 +20387,15 @@ function init() {
         });
     }
 
+    // Title date mode toggle
+    var titleDateInput = document.getElementById('titleDateToggleInput');
+    if (titleDateInput) {
+        titleDateInput.checked = getTitleDateMode();
+        titleDateInput.addEventListener('change', function() {
+            setTitleDateMode(this.checked);
+        });
+    }
+
     // Toggle switch: ひよこ ON/OFF
     document.getElementById('toggleHiyokoInput').addEventListener('change', function() {
         var formatEl = document.getElementById('copyFormat');
@@ -22416,7 +22454,8 @@ function createNewMap() {
         }
     }
 
-    var meta = { id: newId, name: '無題のマップ', type: 'page', folderId: targetFolderId, order: maxOrder, createdAt: now, updatedAt: now };
+    var defaultName = getDefaultNewMapName();
+    var meta = { id: newId, name: defaultName, type: 'page', folderId: targetFolderId, order: maxOrder, createdAt: now, updatedAt: now };
     metaList.push(meta);
     saveMetaList(metaList);
     try { localStorage.setItem(getMapDataKey(newId), JSON.stringify(defaultData)); } catch(e) {}
@@ -22432,7 +22471,11 @@ function createNewMap() {
     showToast('新しいマップを作成しました');
     // Supabase: create map (will be synced on first save via saveToLocalStorage)
     if (window._supa) {
-        window._supa.saveMap(newId, '無題のマップ', defaultData, targetFolderId).catch(function(){});
+        window._supa.saveMap(newId, defaultName, defaultData, targetFolderId).catch(function(){});
+    }
+    // タイトル日付モードON時は新規作成後すぐリネーム入力モードに入り、_ の直後にカーソル
+    if (getTitleDateMode()) {
+        setTimeout(function() { startInlineRename(newId, { cursorAtEnd: true }); }, 200);
     }
 }
 
@@ -22453,7 +22496,8 @@ function createPageInFolder(folderId) {
         }
     }
 
-    var meta = { id: newId, name: '無題のマップ', type: 'page', folderId: folderId, order: maxOrder, createdAt: now, updatedAt: now };
+    var defaultName = getDefaultNewMapName();
+    var meta = { id: newId, name: defaultName, type: 'page', folderId: folderId, order: maxOrder, createdAt: now, updatedAt: now };
     metaList.push(meta);
     saveMetaList(metaList);
     try { localStorage.setItem(getMapDataKey(newId), JSON.stringify(defaultData)); } catch(e) {}
@@ -22465,9 +22509,12 @@ function createPageInFolder(folderId) {
 
     switchToMap(newId);
     showToast('新しいマップを作成しました');
-    setTimeout(function() { startInlineRename(newId); }, 200);
+    // タイトル日付モードON時は _ の直後にカーソル、OFF時は従来通り全選択
+    setTimeout(function() {
+        startInlineRename(newId, getTitleDateMode() ? { cursorAtEnd: true } : undefined);
+    }, 200);
     if (window._supa) {
-        window._supa.saveMap(newId, '無題のマップ', defaultData, folderId).catch(function(){});
+        window._supa.saveMap(newId, defaultName, defaultData, folderId).catch(function(){});
     }
 }
 
@@ -22839,7 +22886,7 @@ function deleteMap(mapId) {
     showToast('🗑 マップを削除しました');
 }
 
-function startInlineRename(mapId) {
+function startInlineRename(mapId, options) {
     var item = document.querySelector('.map-item[data-map-id="' + mapId + '"]');
     if (!item) return;
     var nameEl = item.querySelector('.map-item-name');
@@ -22860,7 +22907,13 @@ function startInlineRename(mapId) {
     nameEl.style.display = 'none';
     nameEl.parentNode.insertBefore(input, nameEl.nextSibling);
     input.focus();
-    input.select();
+    // options.cursorAtEnd が true なら末尾にカーソル、それ以外は全選択（既存挙動）
+    if (options && options.cursorAtEnd) {
+        var endPos = input.value.length;
+        input.setSelectionRange(endPos, endPos);
+    } else {
+        input.select();
+    }
 
     var finished = false;
     function finish(save) {
