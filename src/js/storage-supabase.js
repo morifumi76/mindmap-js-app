@@ -1,6 +1,11 @@
 // ========================================
-// Supabase Entry Point (bundled by esbuild)
-// Exposes window._supa
+// クラウド版用 保存アダプター（Storage Adapter for Cloud）
+// ----------------------------------------
+// Supabase（保存・ログイン・共有）の実装を1ファイルに集約。
+// esbuild で IIFE バンドルされ、API を window._supa として公開する。
+//
+// 同じ契約（window._supa にぶら下がる関数群）でローカル版を作る場合は
+// src/js/storage-local.js として別途実装し、ビルド時に出し分ける。
 // ========================================
 
 import { createClient } from '@supabase/supabase-js';
