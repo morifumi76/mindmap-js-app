@@ -45,9 +45,9 @@ function read(p) {
     return fs.readFileSync(p, 'utf-8');
 }
 
-// Supabase bundle: esbuild で supabase-entry.js を IIFE にバンドル
+// クラウド版 保存アダプター（Supabase）を esbuild で IIFE バンドル
 const supabaseResult = buildSync({
-    entryPoints: [path.join(SRC, 'js', 'supabase-entry.js')],
+    entryPoints: [path.join(SRC, 'js', 'storage-supabase.js')],
     bundle: true,
     format: 'iife',
     write: false,
