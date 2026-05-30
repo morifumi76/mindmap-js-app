@@ -6,6 +6,10 @@ const { buildSync } = require('esbuild');
 const SRC  = path.join(__dirname, 'src');
 const DIST = path.join(__dirname, 'dist');
 
+// package.json の version をビルド時に取得（HTML 内の __APP_VERSION__ を実値に置換）
+const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf-8'));
+const APP_VERSION = pkg.version || '0.0.0';
+
 // ファイル結合順序
 const CSS_FILES = [
     'base.css',
@@ -73,6 +77,9 @@ html = html.replace(
     /    <!-- BUILD:js -->[\s\S]*?    <!-- \/BUILD:js -->/,
     supaBundleBlock + '\n    ' + jsBlock
 );
+
+// __APP_VERSION__ プレースホルダーを package.json の version に置換
+html = html.split('__APP_VERSION__').join(APP_VERSION);
 
 // dist/ に出力
 if (!fs.existsSync(DIST)) fs.mkdirSync(DIST, { recursive: true });
