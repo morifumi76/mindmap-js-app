@@ -547,3 +547,12 @@ body.readonly-mode .sidebar-float-toggle {
     color: #37352f;
     text-decoration: underline;
 }
+
+/* バージョン表示（リンクではなくプレーンテキスト） */
+.footer-version {
+    font-family: 'Meiryo UI', Meiryo, sans-serif;
+    font-size: 11px;
+    color: #9b9a97;
+    text-align: center;
+    user-select: none;
+}
