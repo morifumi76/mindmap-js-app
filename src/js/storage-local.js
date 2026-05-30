@@ -118,10 +118,30 @@
         });
     }
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', setupDragAndDrop);
-    } else {
+    // ---- バックアップボタン（id="backupBtn"）が存在すればクリックでエクスポート ----
+    // ローカル版HTMLには backupBtn を配置する。クラウド版にはこのIDのボタンがないので
+    // querySelector は null を返し、なにも起きない（クラウド版へ無害）
+    function setupBackupButton() {
+        var btn = document.getElementById('backupBtn');
+        if (!btn) return;
+        btn.addEventListener('click', function() {
+            try {
+                exportAllAsJSON();
+            } catch(err) {
+                window.alert('バックアップに失敗しました: ' + (err && err.message ? err.message : String(err)));
+            }
+        });
+    }
+
+    function initLocal() {
         setupDragAndDrop();
+        setupBackupButton();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initLocal);
+    } else {
+        initLocal();
     }
 
     // ---- ローカル版固有の機能を公開 ----

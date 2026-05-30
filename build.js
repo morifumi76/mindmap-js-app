@@ -10,6 +10,15 @@ const DIST = path.join(__dirname, 'dist');
 const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf-8'));
 const APP_VERSION = pkg.version || '0.0.0';
 
+// ローカル版の配布日表示用（ビルド時のローカル日付を YYYY-MM-DD で）
+function getBuildDateStr() {
+    const d = new Date();
+    return d.getFullYear() + '-' +
+        String(d.getMonth() + 1).padStart(2, '0') + '-' +
+        String(d.getDate()).padStart(2, '0');
+}
+const BUILD_DATE = getBuildDateStr();
+
 // ファイル結合順序
 const CSS_FILES = [
     'base.css',
@@ -58,32 +67,61 @@ const supabaseResult = buildSync({
 const supabaseBundle = supabaseResult.outputFiles[0].text;
 const supaBundleBlock = `<script>\n${supabaseBundle}\n</script>`;
 
-// CSS を結合して <style> タグで包む
+// ローカル版 保存アダプター（外部通信なし・esbuild不要）
+const localStorageJs = read(path.join(SRC, 'js', 'storage-local.js'));
+const localBundleBlock = `<script>\n${localStorageJs}\n</script>`;
+
+// CSS を結合して <style> タグで包む（両ビルド共通）
 const css = CSS_FILES.map(f => read(path.join(SRC, 'css', f))).join('\n');
 const cssBlock = `<style>\n${css}</style>`;
 
-// JS を結合して IIFE で包む
+// JS を結合して IIFE で包む（両ビルド共通。本体コードは _supa の有無で分岐）
 const js = JS_FILES.map(f => read(path.join(SRC, 'js', f))).join('\n');
 const jsBlock = `<script>\n    (function() {\n        'use strict';\n\n${js}\n    })();\n    </script>`;
 
-// テンプレート読み込み & プレースホルダー置換
-let html = read(path.join(SRC, 'index.html'));
-html = html.replace(
-    /    <!-- BUILD:css -->[\s\S]*?    <!-- \/BUILD:css -->/,
-    cssBlock
-);
-// Supabase bundle を先に、その後に既存 JS を配置
-html = html.replace(
-    /    <!-- BUILD:js -->[\s\S]*?    <!-- \/BUILD:js -->/,
-    supaBundleBlock + '\n    ' + jsBlock
-);
+// テンプレート読み込み
+const template = read(path.join(SRC, 'index.html'));
 
-// __APP_VERSION__ プレースホルダーを package.json の version に置換
-html = html.split('__APP_VERSION__').join(APP_VERSION);
+// 共通：プレースホルダー置換 → HTML 生成
+function buildHtml(adapterBlock, versionString) {
+    let html = template;
+    html = html.replace(
+        /    <!-- BUILD:css -->[\s\S]*?    <!-- \/BUILD:css -->/,
+        cssBlock
+    );
+    html = html.replace(
+        /    <!-- BUILD:js -->[\s\S]*?    <!-- \/BUILD:js -->/,
+        adapterBlock + '\n    ' + jsBlock
+    );
+    html = html.split('__APP_VERSION__').join(versionString);
+    return html;
+}
 
-// dist/ に出力
+// dist/ を準備
 if (!fs.existsSync(DIST)) fs.mkdirSync(DIST, { recursive: true });
-fs.writeFileSync(path.join(DIST, 'index.html'), html, 'utf-8');
+
+// --- クラウド版（dist/index.html） ---
+const cloudHtml = buildHtml(supaBundleBlock, APP_VERSION);
+fs.writeFileSync(path.join(DIST, 'index.html'), cloudHtml, 'utf-8');
+
+// --- ローカル版（dist/local.html） ---
+// バージョン表記: "1.0.0 (2026-05-30)"
+const localVersionString = `${APP_VERSION} (${BUILD_DATE})`;
+let localHtml = buildHtml(localBundleBlock, localVersionString);
+
+// ローカル版固有の HTML 差分：
+//   1) leftSidebarFooter は起動時から表示（クラウドは認証後に display:'' する）
+localHtml = localHtml.replace(
+    'id="leftSidebarFooter" style="display:none"',
+    'id="leftSidebarFooter"'
+);
+//   2) ログアウトボタンを「JSONバックアップ」ボタンに置き換える
+localHtml = localHtml.replace(
+    '<button class="logout-btn" id="logoutBtn">ログアウト</button>',
+    '<button class="logout-btn" id="backupBtn">JSONバックアップ</button>'
+);
+
+fs.writeFileSync(path.join(DIST, 'local.html'), localHtml, 'utf-8');
 
 // 静的アセット（OGP 画像など）を dist/assets/ にコピー
 const SRC_ASSETS  = path.join(SRC, 'assets');
@@ -101,5 +139,5 @@ if (!fs.existsSync(redirectsPath)) {
     fs.writeFileSync(redirectsPath, '/share/*  /index.html  200\n', 'utf-8');
 }
 
-const lines = html.split('\n').length;
-console.log(`Built: dist/index.html (${lines} lines)`);
+console.log(`Built: dist/index.html (${cloudHtml.split('\n').length} lines, version ${APP_VERSION})`);
+console.log(`Built: dist/local.html  (${localHtml.split('\n').length} lines, version ${localVersionString})`);
