@@ -15,6 +15,7 @@ import './render.js';
 import './relations/index.js';
 import './keyboard.js';
 import './canvas-interaction.js';
+import './link-modal.js';
 import './init.js';
 import './sidebar-right.js';
 import './sidebar-left/index.js';

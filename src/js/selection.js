@@ -12,7 +12,7 @@ import {
 import { findNode, getAllNodesInOrder, getNodeLevel } from './nodes.js';
 import { updateView } from './render.js';
 import { updateRelationVisualSelection } from './relations/index.js';
-import { updateLinkButtonState } from './init.js';
+import { updateLinkButtonState } from './link-modal.js';
 
 // ========================================
 // Selection & Navigation

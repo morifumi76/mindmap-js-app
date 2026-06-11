@@ -1,6 +1,6 @@
 // 関連線: 選択と削除
 import { saveState } from '../history.js';
-import { updateLinkButtonState } from '../init.js';
+import { updateLinkButtonState } from '../link-modal.js';
 import { render } from '../render.js';
 import {
     selectedNodeIds,
