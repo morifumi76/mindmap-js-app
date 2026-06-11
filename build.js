@@ -86,11 +86,11 @@ const template = read(path.join(SRC, 'index.html'));
 function buildHtml(adapterBlock, versionString) {
     let html = template;
     html = html.replace(
-        /    <!-- BUILD:css -->[\s\S]*?    <!-- \/BUILD:css -->/,
+        / {4}<!-- BUILD:css -->[\s\S]*? {4}<!-- \/BUILD:css -->/,
         cssBlock
     );
     html = html.replace(
-        /    <!-- BUILD:js -->[\s\S]*?    <!-- \/BUILD:js -->/,
+        / {4}<!-- BUILD:js -->[\s\S]*? {4}<!-- \/BUILD:js -->/,
         adapterBlock + '\n    ' + jsBlock
     );
     html = html.split('__APP_VERSION__').join(versionString);

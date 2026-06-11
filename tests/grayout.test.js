@@ -1,4 +1,5 @@
 const { chromium } = require('playwright');
+const { BASE_URL, CMD } = require('./helpers');
 
 (async () => {
     const browser = await chromium.launch({ headless: true });
@@ -17,9 +18,9 @@ const { chromium } = require('playwright');
     }
 
     // Navigate and clear storage
-    await page.goto('http://localhost:8080');
+    await page.goto(BASE_URL);
     await page.evaluate(() => localStorage.clear());
-    await page.goto('http://localhost:8080');
+    await page.goto(BASE_URL);
     await page.waitForSelector('.node');
 
     // Load test tree: root -> ParentA (-> ChildA1, ChildA2, ChildA3), ParentB (-> ChildB1)
@@ -69,7 +70,12 @@ const { chromium } = require('playwright');
         return { position: s.position, bottom: parseInt(s.bottom), right: parseInt(s.right), display: s.display, gap: s.gap, zIndex: parseInt(s.zIndex) };
     });
     check('Container is position fixed', containerStyle.position === 'fixed');
-    check('Container at bottom 16px', containerStyle.bottom === 16);
+    // 現行UI: コンテナは画面下端固定ではなく右側に配置される（bottom の固定値検証は廃止）
+    const containerInView = await page.$eval('#canvasFloatBtns', el => {
+        const r = el.getBoundingClientRect();
+        return r.top >= 0 && r.bottom <= window.innerHeight && r.width > 0;
+    });
+    check('Container is visible within viewport', containerInView);
     check('Container at right 16px', containerStyle.right === 16);
     check('Container is flex', containerStyle.display === 'flex');
     check('Container z-index >= 601', containerStyle.zIndex >= 601);
@@ -81,10 +87,11 @@ const { chromium } = require('playwright');
 
     const grayBtn = await page.$('#grayoutFloatBtn');
     check('Grey-out button exists', grayBtn !== null);
-    const grayBtnText = await page.$eval('#grayoutFloatBtn', el => el.textContent.trim());
-    check('Grey-out button text is "グレーアウト"', grayBtnText === 'グレーアウト');
+    // 現行UI: アイコンボタン（テキストなし）。ラベルとショートカットは title で提供
+    const grayBtnTitle = await page.$eval('#grayoutFloatBtn', el => el.title);
+    check('Grey-out button title contains グレーアウト', grayBtnTitle.includes('グレーアウト'));
     const grayBtnBg = await page.$eval('#grayoutFloatBtn', el => getComputedStyle(el).backgroundColor);
-    check('Grey-out button bg is #37352f', grayBtnBg === 'rgb(55, 53, 47)');
+    check('Grey-out button bg is transparent', grayBtnBg === 'rgba(0, 0, 0, 0)');
 
     // ========================================
     // 3. Highlight Button
@@ -93,10 +100,11 @@ const { chromium } = require('playwright');
 
     const hlBtn = await page.$('#highlightFloatBtn');
     check('Highlight button exists', hlBtn !== null);
-    const hlBtnText = await page.$eval('#highlightFloatBtn', el => el.textContent.trim());
-    check('Highlight button text is "ハイライト"', hlBtnText === 'ハイライト');
+    // 現行UI: アイコンボタン（テキストなし）。ラベルとショートカットは title で提供
+    const hlBtnTitle = await page.$eval('#highlightFloatBtn', el => el.title);
+    check('Highlight button title contains ハイライト', hlBtnTitle.includes('ハイライト'));
     const hlBtnBg = await page.$eval('#highlightFloatBtn', el => getComputedStyle(el).backgroundColor);
-    check('Highlight button bg is #37352f', hlBtnBg === 'rgb(55, 53, 47)');
+    check('Highlight button bg is transparent', hlBtnBg === 'rgba(0, 0, 0, 0)');
 
     // ========================================
     // 4. Both buttons shift when sidebar opens
@@ -192,9 +200,9 @@ const { chromium } = require('playwright');
     await page.evaluate(() => { var ids = window.getSelectedNodeIds(); ids.clear(); ids.add('pb'); });
 
     await page.keyboard.down('Alt');
-    await page.keyboard.down('Control');
+    await page.keyboard.down(CMD);
     await page.keyboard.press('y');
-    await page.keyboard.up('Control');
+    await page.keyboard.up(CMD);
     await page.keyboard.up('Alt');
     await page.waitForTimeout(300);
 
@@ -203,9 +211,9 @@ const { chromium } = require('playwright');
     // Toggle off
     await page.evaluate(() => { var ids = window.getSelectedNodeIds(); ids.clear(); ids.add('pb'); });
     await page.keyboard.down('Alt');
-    await page.keyboard.down('Control');
+    await page.keyboard.down(CMD);
     await page.keyboard.press('y');
-    await page.keyboard.up('Control');
+    await page.keyboard.up(CMD);
     await page.keyboard.up('Alt');
     await page.waitForTimeout(300);
     check('ParentB unhighlighted via shortcut', !await page.evaluate(() => window.isNodeHighlighted('pb')));
@@ -220,9 +228,9 @@ const { chromium } = require('playwright');
     await page.evaluate(() => { var ids = window.getSelectedNodeIds(); ids.clear(); ids.add('pa'); });
 
     await page.keyboard.down('Alt');
-    await page.keyboard.down('Control');
+    await page.keyboard.down(CMD);
     await page.keyboard.press('g');
-    await page.keyboard.up('Control');
+    await page.keyboard.up(CMD);
     await page.keyboard.up('Alt');
     await page.waitForTimeout(300);
 
@@ -231,9 +239,9 @@ const { chromium } = require('playwright');
     // Toggle off
     await page.evaluate(() => { var ids = window.getSelectedNodeIds(); ids.clear(); ids.add('pa'); });
     await page.keyboard.down('Alt');
-    await page.keyboard.down('Control');
+    await page.keyboard.down(CMD);
     await page.keyboard.press('g');
-    await page.keyboard.up('Control');
+    await page.keyboard.up(CMD);
     await page.keyboard.up('Alt');
     await page.waitForTimeout(300);
     check('ParentA ungrayed via shortcut', !await page.evaluate(() => window.isNodeGrayedOut('pa')));
@@ -431,9 +439,9 @@ const { chromium } = require('playwright');
     // Simply verify no JS errors occur when pressing Ctrl+Y
     let redoError = false;
     try {
-        await page.keyboard.down('Control');
+        await page.keyboard.down(CMD);
         await page.keyboard.press('y');
-        await page.keyboard.up('Control');
+        await page.keyboard.up(CMD);
         await page.waitForTimeout(200);
     } catch(e) { redoError = true; }
     check('Ctrl+Y (redo) does not throw', !redoError);

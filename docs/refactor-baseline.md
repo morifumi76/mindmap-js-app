@@ -34,7 +34,35 @@ sha256(dist/index.html) = caa1ade2f73d5631bc1bf5646447184c8a7c6b8014867cc8cca062
 確認済みの事実: `local.html`（ローカル版・認証なし）ではノードが即描画される。
 → フェーズ2でテストの対象 URL を `local.html` に変更すれば復活させられる見込み。
 
+## フェーズ2完了後の状態（2026-06-12 追記）
+
+テストは `tests/` に再編成し、対象をローカル版 `local.html` に変更。
+古い検証（UI再デザイン前のスタイル・廃止された「未分類」フォルダ仕様）は現行仕様に追従させた。
+
+| テスト | 結果 |
+|---|---|
+| tests/collapse.test.js | ✅ 52/52 |
+| tests/grayout.test.js | ✅ 60/60 |
+| tests/sidebar.test.js | ✅ 63/63 |
+| tests/left-sidebar.test.js | ✅ 78/78 |
+
+- 実行方法: `npm test`（ビルド→サーバー起動→全テスト→後始末まで一括）
+- ESLint: `npm run lint`（エラー0件。レガシー由来の warning 65件はフェーズ3/4で解消予定）
+- CI: GitHub Actions（.github/workflows/ci.yml）が PR ごとに lint + テストを実行
+
+## テスト整備中に発見したバグ（アプリ本体・未修正）
+
+リファクタリング中は挙動変更をしない方針のため、記録のみ。フェーズ完了後に別途修正する。
+
+1. **ノードをクリックしてもサイドバーのナビゲーションモードが解除されない**
+   - 再現: 左サイドバーのマップ項目をクリック → キャンバスのノードをクリック → Enter や矢印キーを押す
+   - 期待: キャンバス操作（ノード編集・ノード間移動）になる
+   - 実際: サイドバー操作のまま（Enter でページのリネームが始まる等）
+   - 原因: ノード上の mousedown は stopPropagation され、`sidebarNavigationMode` を解除する
+     document レベルの mousedown リスナー（src/js/sidebar-left.js 付近）に届かない。
+     解除されるのは「キャンバスの何もない場所」をクリックした時のみ。
+
 ## 環境メモ
 
 - テスト実行には Playwright の Chromium が必要: `npx playwright install chromium`
-- サーバーは `npm run serve`（python3 の http.server で dist/ を 8080 番で配信）
+- 手動確認用サーバーは `npm run serve`（tests/server.js が dist/ を 8080 番で配信）

@@ -1,0 +1,32 @@
+# PR と main への push でビルド・lint・テストを実行する
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  build-lint-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 依存関係インストール（ブラウザ本体は次のステップで chromium のみ入れる）
+        run: npm ci
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Playwright Chromium インストール
+        run: npx playwright install --with-deps chromium
+
+      - name: テスト（ビルド込み）
+        run: npm test
