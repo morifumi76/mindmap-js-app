@@ -63,46 +63,49 @@ import { adjustCanvasForSidebars, closeRightSidebar, openRightSidebar } from './
 // ========================================
 
 // ---- Sidebar Multi-Selection State ----
+// 左サイドバーの可変状態（分割後の各サブモジュールから共有するためオブジェクトに集約）
+var sbState = {
+    lastSelectedId: null, // 最後に選択した項目ID
+    anchorId: null, // Shift選択のアンカー
+    clipboard: null, // { mode: 'copy'|'cut', ids: [] }
+    history: [], // メタ操作の undo 履歴
+    historyPos: -1, // 履歴ポインタ
+    isOpen: false, // パネル開閉状態
+    peekTimeout: null, // ホバーピーク用タイマー
+    initialized: false, // 初期化済みフラグ
+};
 var sidebarSelectedIds = new Set();
-var sidebarLastSelectedId = null;
-var sidebarAnchorId = null;
 
 // Flag: true while keyboard focus is logically "inside" the sidebar list
 window.sidebarNavigationMode = false;
 
 // Clipboard for sidebar copy/paste/cut
-var sidebarClipboard = null; // { mode: 'copy'|'cut', ids: [] }
 
 
 // Undo/Redo history (metaList snapshots)
-var sidebarHistory = [];
-var sidebarHistoryPos = -1;
 var SIDEBAR_HISTORY_MAX = 30;
 
 var LEFT_SIDEBAR_OPEN_MIN = 200;
 var LEFT_SIDEBAR_DEFAULT = 240;
 var LEFT_SIDEBAR_KEY = 'mindmap_left_sidebar_width';
-var leftSidebarIsOpen = false;
-var leftSidebarPeekTimeout = null;
-var leftSidebarInitialized = false;
 
 // ========================================
 // Sidebar Clipboard & Undo/Redo
 // ========================================
 
 function sidebarPushHistory() {
-    if (sidebarHistoryPos < sidebarHistory.length - 1) {
-        sidebarHistory = sidebarHistory.slice(0, sidebarHistoryPos + 1);
+    if (sbState.historyPos < sbState.history.length - 1) {
+        sbState.history = sbState.history.slice(0, sbState.historyPos + 1);
     }
-    sidebarHistory.push(JSON.stringify(getMetaList()));
-    if (sidebarHistory.length > SIDEBAR_HISTORY_MAX) sidebarHistory.shift();
-    sidebarHistoryPos = sidebarHistory.length - 1;
+    sbState.history.push(JSON.stringify(getMetaList()));
+    if (sbState.history.length > SIDEBAR_HISTORY_MAX) sbState.history.shift();
+    sbState.historyPos = sbState.history.length - 1;
 }
 
 function sidebarUndo() {
-    if (sidebarHistoryPos <= 0) { showToast('これ以上戻せません'); return; }
-    sidebarHistoryPos--;
-    var snapshot = JSON.parse(sidebarHistory[sidebarHistoryPos]);
+    if (sbState.historyPos <= 0) { showToast('これ以上戻せません'); return; }
+    sbState.historyPos--;
+    var snapshot = JSON.parse(sbState.history[sbState.historyPos]);
     saveMetaList(snapshot);
     var meta = findMetaById(currentMapId);
     if (!meta) {
@@ -115,9 +118,9 @@ function sidebarUndo() {
 }
 
 function sidebarRedo() {
-    if (sidebarHistoryPos >= sidebarHistory.length - 1) { showToast('やり直す操作がありません'); return; }
-    sidebarHistoryPos++;
-    var snapshot = JSON.parse(sidebarHistory[sidebarHistoryPos]);
+    if (sbState.historyPos >= sbState.history.length - 1) { showToast('やり直す操作がありません'); return; }
+    sbState.historyPos++;
+    var snapshot = JSON.parse(sbState.history[sbState.historyPos]);
     saveMetaList(snapshot);
     var meta = findMetaById(currentMapId);
     if (!meta) {
@@ -133,7 +136,7 @@ function sidebarCopyItems() {
     if (sidebarSelectedIds.size === 0) { showToast('アイテムを選択してください'); return; }
     var ids = [];
     sidebarSelectedIds.forEach(function(id) { ids.push(id); });
-    sidebarClipboard = { mode: 'copy', ids: ids };
+    sbState.clipboard = { mode: 'copy', ids: ids };
     showToast('📋 ' + ids.length + '件をコピーしました');
 }
 
@@ -145,14 +148,14 @@ function sidebarCutItems() {
         if (m && m.type === 'page') ids.push(id);
     });
     if (ids.length === 0) { showToast('ページのみ切り取り可能です'); return; }
-    sidebarClipboard = { mode: 'cut', ids: ids };
+    sbState.clipboard = { mode: 'cut', ids: ids };
     showToast('✂️ ' + ids.length + '件を切り取りました');
 }
 
 function sidebarGetPasteDestFolder() {
     var metaList = getMetaList();
-    if (sidebarLastSelectedId) {
-        var m = findMetaById(sidebarLastSelectedId);
+    if (sbState.lastSelectedId) {
+        var m = findMetaById(sbState.lastSelectedId);
         if (m && m.type === 'folder') return m.id;
         if (m && m.type === 'page') return m.folderId || getDefaultFolderId(metaList);
     }
@@ -186,19 +189,19 @@ function duplicateMapToFolder(srcId, destFolderId) {
 }
 
 function sidebarPasteItems(moveMode) {
-    if (!sidebarClipboard || sidebarClipboard.ids.length === 0) {
+    if (!sbState.clipboard || sbState.clipboard.ids.length === 0) {
         showToast('コピーしたアイテムがありません'); return;
     }
     var destFolderId = sidebarGetPasteDestFolder();
-    var isMove = moveMode || sidebarClipboard.mode === 'cut';
+    var isMove = moveMode || sbState.clipboard.mode === 'cut';
 
     sidebarPushHistory();
 
     if (!isMove) {
         // 複製
         var count = 0;
-        for (var i = 0; i < sidebarClipboard.ids.length; i++) {
-            var newId = duplicateMapToFolder(sidebarClipboard.ids[i], destFolderId);
+        for (var i = 0; i < sbState.clipboard.ids.length; i++) {
+            var newId = duplicateMapToFolder(sbState.clipboard.ids[i], destFolderId);
             if (newId) count++;
         }
         renderMapList();
@@ -207,8 +210,8 @@ function sidebarPasteItems(moveMode) {
         // 移動
         var metaList = getMetaList();
         count = 0;
-        for (i = 0; i < sidebarClipboard.ids.length; i++) {
-            var sid = sidebarClipboard.ids[i];
+        for (i = 0; i < sbState.clipboard.ids.length; i++) {
+            var sid = sbState.clipboard.ids[i];
             for (var j = 0; j < metaList.length; j++) {
                 if (String(metaList[j].id) === String(sid) && metaList[j].type === 'page') {
                     if (String(metaList[j].folderId) === String(destFolderId)) break;
@@ -228,15 +231,15 @@ function sidebarPasteItems(moveMode) {
             }
         }
         saveMetaList(metaList);
-        sidebarClipboard = null;
+        sbState.clipboard = null;
         renderMapList();
         showToast('📁 ' + count + '件を移動しました');
     }
 }
 
 export function initLeftSidebar() {
-    if (leftSidebarInitialized) return;
-    leftSidebarInitialized = true;
+    if (sbState.initialized) return;
+    sbState.initialized = true;
     // 初期状態を履歴に記録（Undoの起点）
     setTimeout(function() { sidebarPushHistory(); }, 0);
     var sidebar = document.getElementById('leftSidebar');
@@ -262,7 +265,7 @@ export function initLeftSidebar() {
     if (toggleBtn) {
         toggleBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            if (leftSidebarIsOpen) {
+            if (sbState.isOpen) {
                 closeLeftSidebar();
                 try { localStorage.setItem(LEFT_SIDEBAR_KEY, '0'); } catch(ex) {}
             } else {
@@ -286,19 +289,19 @@ export function initLeftSidebar() {
     // Hover zone: when sidebar is collapsed, hovering near left edge peeks it in
     if (hoverZone) {
         hoverZone.addEventListener('mouseenter', function() {
-            if (leftSidebarIsOpen) return;
-            leftSidebarPeekTimeout = setTimeout(function() {
+            if (sbState.isOpen) return;
+            sbState.peekTimeout = setTimeout(function() {
                 sidebar.classList.add('peek');
             }, 200);
         });
         hoverZone.addEventListener('mouseleave', function() {
-            clearTimeout(leftSidebarPeekTimeout);
+            clearTimeout(sbState.peekTimeout);
         });
     }
 
     // Remove peek when mouse leaves the sidebar area
     sidebar.addEventListener('mouseleave', function() {
-        if (!leftSidebarIsOpen) {
+        if (!sbState.isOpen) {
             sidebar.classList.remove('peek');
         }
     });
@@ -462,7 +465,7 @@ export function initLeftSidebar() {
 
         // ── リネーム（Mac: Enter / Win: F2）──────────────────────────────────
         if (isRename) {
-            if (sidebarLastSelectedId) startInlineRename(sidebarLastSelectedId);
+            if (sbState.lastSelectedId) startInlineRename(sbState.lastSelectedId);
             return;
         }
 
@@ -491,8 +494,8 @@ export function initLeftSidebar() {
         }
 
         // ── 左右キー（フォルダ開閉 / 親へ移動）──────────────────────────────
-        if (isHorizontal && sidebarLastSelectedId) {
-            var curMeta = findMetaById(sidebarLastSelectedId);
+        if (isHorizontal && sbState.lastSelectedId) {
+            var curMeta = findMetaById(sbState.lastSelectedId);
             if (curMeta && curMeta.type === 'folder') {
                 var cs = getCollapseState();
                 var curCollapsed = cs[curMeta.id] === true;
@@ -506,14 +509,14 @@ export function initLeftSidebar() {
                     var allItems = Array.from(document.querySelectorAll('#mapList .map-item'));
                     var curPos = -1;
                     for (var ci = 0; ci < allItems.length; ci++) {
-                        if (String(allItems[ci].dataset.mapId) === String(sidebarLastSelectedId)) { curPos = ci; break; }
+                        if (String(allItems[ci].dataset.mapId) === String(sbState.lastSelectedId)) { curPos = ci; break; }
                     }
                     if (curPos !== -1 && curPos + 1 < allItems.length) {
                         var fcId = String(allItems[curPos + 1].dataset.mapId);
                         clearSidebarSelection();
                         sidebarSelectedIds.add(fcId);
-                        sidebarLastSelectedId = fcId;
-                        sidebarAnchorId = fcId;
+                        sbState.lastSelectedId = fcId;
+                        sbState.anchorId = fcId;
                         updateSidebarSelectionDisplay();
                         allItems[curPos + 1].scrollIntoView({ block: 'nearest' });
                         var fcMeta = findMetaById(fcId);
@@ -530,8 +533,8 @@ export function initLeftSidebar() {
                     if (pId) {
                         clearSidebarSelection();
                         sidebarSelectedIds.add(String(pId));
-                        sidebarLastSelectedId = String(pId);
-                        sidebarAnchorId = String(pId);
+                        sbState.lastSelectedId = String(pId);
+                        sbState.anchorId = String(pId);
                         updateSidebarSelectionDisplay();
                         var pEl = document.querySelector('#mapList .map-item[data-map-id="' + pId + '"]');
                         if (pEl) pEl.scrollIntoView({ block: 'nearest' });
@@ -543,8 +546,8 @@ export function initLeftSidebar() {
                 if (ppId) {
                     clearSidebarSelection();
                     sidebarSelectedIds.add(String(ppId));
-                    sidebarLastSelectedId = String(ppId);
-                    sidebarAnchorId = String(ppId);
+                    sbState.lastSelectedId = String(ppId);
+                    sbState.anchorId = String(ppId);
                     updateSidebarSelectionDisplay();
                     var ppEl = document.querySelector('#mapList .map-item[data-map-id="' + ppId + '"]');
                     if (ppEl) ppEl.scrollIntoView({ block: 'nearest' });
@@ -557,11 +560,11 @@ export function initLeftSidebar() {
         var items = Array.from(document.querySelectorAll('#mapList .map-item'));
         if (items.length === 0) return;
 
-        // 現在位置を sidebarLastSelectedId から特定
+        // 現在位置を sbState.lastSelectedId から特定
         var currentIndex = -1;
-        if (sidebarLastSelectedId) {
+        if (sbState.lastSelectedId) {
             for (var i = 0; i < items.length; i++) {
-                if (String(items[i].dataset.mapId) === String(sidebarLastSelectedId)) {
+                if (String(items[i].dataset.mapId) === String(sbState.lastSelectedId)) {
                     currentIndex = i;
                     break;
                 }
@@ -589,8 +592,8 @@ export function initLeftSidebar() {
         // 通常の上下移動
         clearSidebarSelection();
         sidebarSelectedIds.add(nextId);
-        sidebarLastSelectedId = nextId;
-        sidebarAnchorId = nextId;
+        sbState.lastSelectedId = nextId;
+        sbState.anchorId = nextId;
         updateSidebarSelectionDisplay();
 
         var nextMeta = findMetaById(nextId);
@@ -652,7 +655,7 @@ function openLeftSidebar(width) {
     var w = width || LEFT_SIDEBAR_DEFAULT;
     sidebar.style.width = w + 'px';
     sidebar.classList.remove('collapsed', 'peek');
-    leftSidebarIsOpen = true;
+    sbState.isOpen = true;
     if (floatToggle) floatToggle.classList.remove('show');
     if (toggleBtn) toggleBtn.textContent = '«';
     adjustCanvasForSidebars();
@@ -664,7 +667,7 @@ function closeLeftSidebar() {
     var toggleBtn = document.getElementById('leftSidebarToggle');
     sidebar.classList.add('collapsed');
     sidebar.classList.remove('peek');
-    leftSidebarIsOpen = false;
+    sbState.isOpen = false;
     if (floatToggle) floatToggle.classList.add('show');
     if (toggleBtn) toggleBtn.textContent = '»';
     adjustCanvasForSidebars();
@@ -873,8 +876,8 @@ function createFolderElement(folder, hasPages, isCollapsed, isDndEnabled, depth,
                     sidebarSelectedIds.delete(String(folderId));
                 } else {
                     sidebarSelectedIds.add(String(folderId));
-                    sidebarLastSelectedId = String(folderId);
-                    if (!sidebarAnchorId) sidebarAnchorId = String(folderId);
+                    sbState.lastSelectedId = String(folderId);
+                    if (!sbState.anchorId) sbState.anchorId = String(folderId);
                 }
                 updateSidebarSelectionDisplay();
                 return;
@@ -887,8 +890,8 @@ function createFolderElement(folder, hasPages, isCollapsed, isDndEnabled, depth,
             // 通常クリック: 選択をリセットしてこのフォルダだけ選択 + 展開/折りたたみ
             clearSidebarSelection();
             sidebarSelectedIds.add(String(folderId));
-            sidebarLastSelectedId = String(folderId);
-            sidebarAnchorId = String(folderId);
+            sbState.lastSelectedId = String(folderId);
+            sbState.anchorId = String(folderId);
             var cs = getCollapseState();
             cs[folderId] = !cs[folderId];
             setCollapseState(cs);
@@ -1035,8 +1038,8 @@ function createPageElement(page, isActive, isDndEnabled, depth, inFavSection) {
                     sidebarSelectedIds.delete(String(pageId));
                 } else {
                     sidebarSelectedIds.add(String(pageId));
-                    sidebarLastSelectedId = String(pageId);
-                    if (!sidebarAnchorId) sidebarAnchorId = String(pageId);
+                    sbState.lastSelectedId = String(pageId);
+                    if (!sbState.anchorId) sbState.anchorId = String(pageId);
                 }
                 updateSidebarSelectionDisplay();
                 return;
@@ -1049,8 +1052,8 @@ function createPageElement(page, isActive, isDndEnabled, depth, inFavSection) {
             // 通常クリック: 選択リセット + このページだけ選択 + マップ切替
             clearSidebarSelection();
             sidebarSelectedIds.add(String(pageId));
-            sidebarLastSelectedId = String(pageId);
-            sidebarAnchorId = String(pageId);
+            sbState.lastSelectedId = String(pageId);
+            sbState.anchorId = String(pageId);
             updateSidebarSelectionDisplay();
             window.sidebarNavigationMode = true;
             switchToMap(pageId);
@@ -1178,8 +1181,8 @@ function clearMapDragIndicators() {
 // ---- Sidebar Selection Helpers ----
 function clearSidebarSelection() {
     sidebarSelectedIds.clear();
-    sidebarLastSelectedId = null;
-    sidebarAnchorId = null;
+    sbState.lastSelectedId = null;
+    sbState.anchorId = null;
     document.querySelectorAll('#mapList .map-item.sidebar-selected').forEach(function(el) {
         el.classList.remove('sidebar-selected');
     });
@@ -1192,20 +1195,20 @@ function updateSidebarSelectionDisplay() {
 }
 
 function sidebarRangeSelect(targetId) {
-    if (!sidebarAnchorId) {
+    if (!sbState.anchorId) {
         sidebarSelectedIds.add(targetId);
-        sidebarLastSelectedId = targetId;
-        sidebarAnchorId = targetId;
+        sbState.lastSelectedId = targetId;
+        sbState.anchorId = targetId;
         updateSidebarSelectionDisplay();
         return;
     }
     var items = Array.from(document.querySelectorAll('#mapList .map-item'));
     var ids = items.map(function(el) { return el.dataset.mapId; });
-    var ai = ids.indexOf(sidebarAnchorId);
+    var ai = ids.indexOf(sbState.anchorId);
     var ti = ids.indexOf(targetId);
     if (ai === -1 || ti === -1) {
         sidebarSelectedIds.add(targetId);
-        sidebarLastSelectedId = targetId;
+        sbState.lastSelectedId = targetId;
         updateSidebarSelectionDisplay();
         return;
     }
@@ -1214,7 +1217,7 @@ function sidebarRangeSelect(targetId) {
     for (var i = mn; i <= mx; i++) {
         if (ids[i]) sidebarSelectedIds.add(ids[i]);
     }
-    sidebarLastSelectedId = targetId;
+    sbState.lastSelectedId = targetId;
     updateSidebarSelectionDisplay();
 }
 
