@@ -164,7 +164,7 @@ export function renderSidebarTree() {
     }
 
     var html = '<pre class="sidebar-preview">';
-    for (var i = 0; i < displayLines.length; i++) {
+    for (i = 0; i < displayLines.length; i++) {
         var line = displayLines[i];
         var isSelected = selectedNodeIds.has(line.nodeId);
         var cls = 'sidebar-preview-line' + (isSelected ? ' active' : '');
@@ -205,7 +205,7 @@ function generatePreviewLines(node, level, parentContinues, format, useBorder, l
     var icons = levelIcons[format];
     var icon = icons ? (icons[iconLevel] + ' ') : '';
 
-    var lineText = '';
+    var lineText;
     if (level === 0) {
         lineText = icon + node.text;
     } else {
@@ -241,7 +241,7 @@ function generatePreviewLines(node, level, parentContinues, format, useBorder, l
         }
     }
 
-    for (var i = 0; i < visibleChildrenForSidebar.length; i++) {
+    for (i = 0; i < visibleChildrenForSidebar.length; i++) {
         var isLastChild = (i === visibleChildrenForSidebar.length - 1);
         var newContinues = parentContinues.slice();
         newContinues.push(!isLastChild);
@@ -252,7 +252,7 @@ function generatePreviewLines(node, level, parentContinues, format, useBorder, l
         var amILast = (parentContinues[level - 1] === false);
         if (!amILast) {
             var sep = '';
-            for (var i = 0; i < level - 1; i++) {
+            for (i = 0; i < level - 1; i++) {
                 sep += parentContinues[i] ? '│  ' : '   ';
             }
             sep += '│';

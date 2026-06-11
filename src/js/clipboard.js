@@ -69,7 +69,7 @@ export function copySelectedNodes() {
         var topLevel = filterTopLevelNodes(Array.from(selectedNodeIds));
         var nodes = [];
         for (var i = 0; i < topLevel.length; i++) {
-            var r = findNode(topLevel[i]);
+            r = findNode(topLevel[i]);
             if (r) {
                 var c = deepClone(r.node);
                 captureNodeColorsToClone(c);
@@ -107,8 +107,8 @@ export function cutSelectedNodes() {
     clipboardIsCut = true;
 
     var lastParent = null;
-    for (var i = 0; i < topLevel.length; i++) {
-        var r = findNode(topLevel[i]);
+    for (i = 0; i < topLevel.length; i++) {
+        r = findNode(topLevel[i]);
         if (r && r.parent) {
             lastParent = r.parent;
             r.parent.children.splice(r.index, 1);
@@ -156,7 +156,7 @@ export function pasteNode() {
         render();
         showToast(clipboard.length + '個のノードをペーストしました');
     } else {
-        var cloned = deepClone(clipboard);
+        cloned = deepClone(clipboard);
         reassignIds(cloned);
         r.node.children.push(cloned);
         applyPendingColorsToCurrentMap(pendingColors);
@@ -282,7 +282,7 @@ function generateCopyText(node, level, parentContinues, format, useBorder) {
     // Skip grayed-out nodes and their descendants from copy
     if (level > 0 && isNodeGrayedOut(node.id)) return '';
 
-    var result = '';
+    var result;
     var iconLevel = Math.min(level + 1, 4);
     var icons = levelIcons[format];
     var icon = icons ? (icons[iconLevel] + ' ') : '';
@@ -320,7 +320,7 @@ function generateCopyText(node, level, parentContinues, format, useBorder) {
                 visibleChildren.push(node.children[ci]);
             }
         }
-        for (var i = 0; i < visibleChildren.length; i++) {
+        for (i = 0; i < visibleChildren.length; i++) {
             var isLastChild = (i === visibleChildren.length - 1);
             var newContinues = parentContinues.slice();
             newContinues.push(!isLastChild);
@@ -332,7 +332,7 @@ function generateCopyText(node, level, parentContinues, format, useBorder) {
             var amILast = (parentContinues[level - 1] === false);
             if (!amILast) {
                 var sep = '';
-                for (var i = 0; i < level - 1; i++) {
+                for (i = 0; i < level - 1; i++) {
                     sep += parentContinues[i] ? '│  ' : '   ';
                 }
                 sep += '│';

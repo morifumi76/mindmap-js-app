@@ -1,7 +1,7 @@
 import { showToast } from './utils.js';
 import { saveToLocalStorage } from './storage.js';
 import { appInitialized, init } from './init.js';
-import { renderMapList } from './sidebar-left.js';
+import { renderMapList } from './sidebar-left/render.js';
 
 // ========================================
 // App Startup: Auth / Share routing / Migration
@@ -29,15 +29,13 @@ import { renderMapList } from './sidebar-left.js';
         error:   '保存失敗（再試行します）',
         offline: 'オフライン'
     };
-    var currentSaveState = 'saved';
 
     function setSaveStatus(state) {
-        if (!SAVE_STATE_CLASS.hasOwnProperty(state)) return;
+        if (!Object.prototype.hasOwnProperty.call(SAVE_STATE_CLASS, state)) return;
         // オフライン時は他の状態より優先（オフラインなら何度同期しても無駄なので明示）
         if (!navigator.onLine && state !== 'pending' && state !== 'offline') {
             state = 'offline';
         }
-        currentSaveState = state;
         var el = document.getElementById('saveIndicator');
         if (!el) return;
         // すべての状態クラスをクリアして1つだけ付ける

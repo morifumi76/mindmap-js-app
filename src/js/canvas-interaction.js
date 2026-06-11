@@ -4,7 +4,7 @@ import { finishEditing } from './editing.js';
 import { endNodeDrag } from './drag.js';
 import { endLasso, startLasso, updateLasso } from './lasso.js';
 import { updateView } from './render.js';
-import { cancelConnectionMode, isConnectionModeActive } from './relations.js';
+import { cancelConnectionMode, isConnectionModeActive } from './relations/index.js';
 
 // ========================================
 // Canvas Interaction: Pan, Zoom, Lasso
@@ -136,7 +136,7 @@ export function initCanvasInteraction() {
             updateView();
         } else {
             // Mouse scroll wheel: zoom
-            var zoomDelta = e.deltaY > 0 ? -0.1 : 0.1;
+            zoomDelta = e.deltaY > 0 ? -0.1 : 0.1;
             applyZoom(mouseX, mouseY, zoomDelta);
         }
     }, { passive: false });

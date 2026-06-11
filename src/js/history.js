@@ -32,10 +32,6 @@ export function saveState() {
     }
 }
 
-function resetMindMap() {
-    // Function removed - no longer needed
-}
-
 export function undo() {
     if (undoIndex > 0) {
         setUndoIndex(undoIndex - 1);

@@ -11,8 +11,8 @@ import {
 } from './state.js';
 import { findNode, getAllNodesInOrder, getNodeLevel } from './nodes.js';
 import { updateView } from './render.js';
-import { updateRelationVisualSelection } from './relations.js';
-import { updateLinkButtonState } from './init.js';
+import { updateRelationVisualSelection } from './relations/index.js';
+import { updateLinkButtonState } from './link-modal.js';
 
 // ========================================
 // Selection & Navigation
@@ -86,7 +86,7 @@ export function rangeSelectNode(nodeId) {
     if (si === -1 || ei === -1) { selectNode(nodeId); return; }
     var mn = Math.min(si, ei), mx = Math.max(si, ei);
     selectedNodeIds.clear();
-    for (var i = mn; i <= mx; i++) {
+    for (i = mn; i <= mx; i++) {
         selectedNodeIds.add(allNodes[i].id);
     }
     setLastSelectedNodeId(nodeId);
@@ -205,7 +205,7 @@ function applyRangeAtLevel(nodesAtLevel, anchorId, endId) {
     if (ai === -1 || ei === -1) return;
     var mn = Math.min(ai, ei), mx = Math.max(ai, ei);
     selectedNodeIds.clear();
-    for (var i = mn; i <= mx; i++) {
+    for (i = mn; i <= mx; i++) {
         selectedNodeIds.add(nodesAtLevel[i].id);
     }
     updateSelectionDisplay();

@@ -112,7 +112,7 @@ function createDragGhost(nodeEl, clientX, clientY, count) {
         ghost.appendChild(plusBadge);
     } else {
         // ＋バッジ（単体時：ノード右上）
-        var plusBadge = document.createElement('span');
+        plusBadge = document.createElement('span');
         plusBadge.className = 'drag-plus-badge';
         plusBadge.style.cssText = 'position:absolute;top:-8px;right:-8px;background:#fff;color:#37352f;border-radius:50%;width:16px;height:16px;display:none;align-items:center;justify-content:center;font-size:10px;font-weight:bold;box-shadow:0 1px 3px rgba(0,0,0,0.3);z-index:2;';
         plusBadge.textContent = '+';
@@ -245,19 +245,19 @@ function duplicateNodes(nodeIds, targetId, position) {
 
     // ドロップ位置にクローンを挿入
     if (position === 'child') {
-        for (var i = 0; i < newNodes.length; i++) {
+        for (i = 0; i < newNodes.length; i++) {
             var tr = findNode(targetId);
             if (tr) tr.node.children.push(newNodes[i]);
         }
     } else if (position === 'before') {
-        for (var i = 0; i < newNodes.length; i++) {
-            var tr = findNode(targetId);
+        for (i = 0; i < newNodes.length; i++) {
+            tr = findNode(targetId);
             if (tr && tr.parent) tr.parent.children.splice(tr.index, 0, newNodes[i]);
         }
     } else if (position === 'after') {
         newNodes.reverse();
-        for (var i = 0; i < newNodes.length; i++) {
-            var tr = findNode(targetId);
+        for (i = 0; i < newNodes.length; i++) {
+            tr = findNode(targetId);
             if (tr && tr.parent) tr.parent.children.splice(tr.index + 1, 0, newNodes[i]);
         }
     }
@@ -265,7 +265,7 @@ function duplicateNodes(nodeIds, targetId, position) {
     // 折りたたみ状態を複製元から引き継ぐ
     var colState = getNodeCollapseState();
     var newColState = deepClone(colState);
-    for (var oldId in allIdMap) {
+    for (oldId in allIdMap) {
         if (colState[oldId]) {
             newColState[allIdMap[oldId]] = true;
         }
@@ -277,7 +277,7 @@ function duplicateNodes(nodeIds, targetId, position) {
 
     // 複製先ノードを選択状態にする
     selectedNodeIds.clear();
-    for (var i = 0; i < newNodes.length; i++) selectedNodeIds.add(newNodes[i].id);
+    for (i = 0; i < newNodes.length; i++) selectedNodeIds.add(newNodes[i].id);
     setLastSelectedNodeId(newNodes[0] ? newNodes[0].id : null);
 
     showToast('ノードを複製しました');
@@ -295,30 +295,30 @@ function moveNodes(nodeIds, targetId, position) {
         if (nr && nr.parent) nodesToMove.push({ id: filtered[i], data: nr.node, parent: nr.parent, index: nr.index });
     }
     nodesToMove.sort(function(a, b) { return a.parent === b.parent ? b.index - a.index : 0; });
-    for (var i = 0; i < nodesToMove.length; i++) {
+    for (i = 0; i < nodesToMove.length; i++) {
         var cur = findNode(nodesToMove[i].id);
         if (cur && cur.parent) cur.parent.children.splice(cur.index, 1);
     }
     nodesToMove.reverse();
     if (position === 'child') {
-        for (var i = 0; i < nodesToMove.length; i++) {
+        for (i = 0; i < nodesToMove.length; i++) {
             var tr = findNode(targetId);
             if (tr) tr.node.children.push(nodesToMove[i].data);
         }
     } else if (position === 'before') {
-        for (var i = 0; i < nodesToMove.length; i++) {
-            var tr = findNode(targetId);
+        for (i = 0; i < nodesToMove.length; i++) {
+            tr = findNode(targetId);
             if (tr && tr.parent) tr.parent.children.splice(tr.index, 0, nodesToMove[i].data);
         }
     } else if (position === 'after') {
         nodesToMove.reverse();
-        for (var i = 0; i < nodesToMove.length; i++) {
-            var tr = findNode(targetId);
+        for (i = 0; i < nodesToMove.length; i++) {
+            tr = findNode(targetId);
             if (tr && tr.parent) tr.parent.children.splice(tr.index + 1, 0, nodesToMove[i].data);
         }
     }
     saveState();
     selectedNodeIds.clear();
-    for (var i = 0; i < nodesToMove.length; i++) selectedNodeIds.add(nodesToMove[i].id);
+    for (i = 0; i < nodesToMove.length; i++) selectedNodeIds.add(nodesToMove[i].id);
     setLastSelectedNodeId(nodesToMove[0] ? nodesToMove[0].id : null);
 }

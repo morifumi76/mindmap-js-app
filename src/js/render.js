@@ -20,7 +20,7 @@ import { getAllNodesInOrder } from './nodes.js';
 import { rangeSelectNode, selectNode, toggleSelectNode, updateSelectionDisplay } from './selection.js';
 import { finishEditing, startEditing } from './editing.js';
 import { startNodeDrag } from './drag.js';
-import { completeConnection, isConnectionModeActive, renderRelations } from './relations.js';
+import { completeConnection, isConnectionModeActive, renderRelations } from './relations/index.js';
 import { updateZoomDisplay } from './canvas-interaction.js';
 import { renderSidebarTree } from './sidebar-right.js';
 
@@ -119,8 +119,8 @@ function layoutNodes(node, positions, x, y, level, nodeDims) {
     positions[node.id] = { x: x, y: y, width: nodeWidth, height: nodeHeight, level: level };
     var childX = x + nodeWidth + hGap;
     var childY = y - totalH / 2;
-    for (var i = 0; i < visibleChildren.length; i++) {
-        var ch = childHeights[i];
+    for (i = 0; i < visibleChildren.length; i++) {
+        ch = childHeights[i];
         var centerY = childY + ch / 2;
         layoutNodes(visibleChildren[i], positions, childX, centerY, level + 1, nodeDims);
         childY += ch + vGap;
@@ -218,7 +218,7 @@ function renderNodes(node, container, positions) {
                 }
                 if (si !== -1 && ei !== -1) {
                     var mn = Math.min(si, ei), mx = Math.max(si, ei);
-                    for (var i = mn; i <= mx; i++) selectedNodeIds.add(allNodes[i].id);
+                    for (i = mn; i <= mx; i++) selectedNodeIds.add(allNodes[i].id);
                     setLastSelectedNodeId(nodeData.id);
                     updateSelectionDisplay();
                 }

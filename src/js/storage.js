@@ -142,7 +142,7 @@ export function cleanupDefaultFolders() {
 
     // 配下ページを集めて folderId を null に救出
     var rescuedPages = [];
-    for (var i = 0; i < metaList.length; i++) {
+    for (i = 0; i < metaList.length; i++) {
         var p = metaList[i];
         if (p.type === 'page' && defaultIds.indexOf(p.folderId) !== -1) {
             p.folderId = null;
@@ -151,7 +151,7 @@ export function cleanupDefaultFolders() {
     }
     // 未分類フォルダ自身を metaList から除去
     var filtered = [];
-    for (var i = 0; i < metaList.length; i++) {
+    for (i = 0; i < metaList.length; i++) {
         if (defaultIds.indexOf(metaList[i].id) === -1) filtered.push(metaList[i]);
     }
     saveMetaList(filtered);
@@ -160,7 +160,7 @@ export function cleanupDefaultFolders() {
     if (window._supa) {
         // ① 救出ページの folder_id を null に更新（先にやらないと外部キー制約で folder の削除が失敗する可能性がある）
         var pageUpdatePromises = [];
-        for (var i = 0; i < rescuedPages.length; i++) {
+        for (i = 0; i < rescuedPages.length; i++) {
             var pg = rescuedPages[i];
             try {
                 var raw = localStorage.getItem(getMapDataKey(pg.id));
@@ -201,7 +201,7 @@ export function migrateIfNeeded() {
             // Identify old parents (parentId === null with children) and children
             var parentIds = {};
             var childrenOf = {};
-            for (var i = 0; i < existing.length; i++) {
+            for (i = 0; i < existing.length; i++) {
                 var m = existing[i];
                 if (m.parentId === undefined || m.parentId === null) {
                     parentIds[m.id] = m;
@@ -321,7 +321,7 @@ export function migrateIfNeeded() {
     if (localStorage.getItem('mindmap-migrated-v4') && existing.length > 0) {
         // 未分類は廃止済み。type 欠落のみ補修する（folderId が無いページはトップレベル扱い）
         var needsRepair = false;
-        for (var i = 0; i < existing.length; i++) {
+        for (i = 0; i < existing.length; i++) {
             if (!existing[i].type) {
                 existing[i].type = 'page';
                 needsRepair = true;
@@ -345,7 +345,7 @@ export function migrateIfNeeded() {
         }
     } catch(e) {}
 
-    var now = nowISO();
+    now = nowISO();
     var initialMeta = [];
 
     // 新規ユーザー初期化：未分類フォルダは作らず、最初のページをトップレベル（folderId = null）に置く
@@ -360,7 +360,7 @@ export function migrateIfNeeded() {
         try { localStorage.removeItem(OLD_STORAGE_KEY); } catch(e) {}
     } else {
         // 既存データなし：空ページをトップレベルに作成
-        var mapId = getNextMapId();
+        mapId = getNextMapId();
         var defaultData = { root: { id: 'root', text: '中心テーマ', children: [] } };
         initialMeta.push({ id: mapId, name: '無題のマップ', type: 'page', folderId: null, order: 0, createdAt: now, updatedAt: now });
         saveMetaList(initialMeta);
