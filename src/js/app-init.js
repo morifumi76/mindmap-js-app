@@ -1,7 +1,7 @@
 import { showToast } from './utils.js';
 import { saveToLocalStorage } from './storage.js';
 import { appInitialized, init } from './init.js';
-import { renderMapList } from './sidebar-left.js';
+import { renderMapList } from './sidebar-left/render.js';
 
 // ========================================
 // App Startup: Auth / Share routing / Migration

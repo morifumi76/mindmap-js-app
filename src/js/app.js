@@ -17,5 +17,5 @@ import './keyboard.js';
 import './canvas-interaction.js';
 import './init.js';
 import './sidebar-right.js';
-import './sidebar-left.js';
+import './sidebar-left/index.js';
 import './app-init.js';

@@ -53,7 +53,8 @@ import { initRelationsEvents } from './relations.js';
 import { handleKeyDown } from './keyboard.js';
 import { initCanvasInteraction, initZoomControl, syncToggleButtons } from './canvas-interaction.js';
 import { adjustCanvasForSidebars, initSidebar, renderSidebarTree } from './sidebar-right.js';
-import { initLeftSidebar, renderMapList } from './sidebar-left.js';
+import { initLeftSidebar } from './sidebar-left/events.js';
+import { renderMapList } from './sidebar-left/render.js';
 
 // ========================================
 // Initialization
