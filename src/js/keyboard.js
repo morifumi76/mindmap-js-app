@@ -1,3 +1,57 @@
+import {
+    editingNodeId,
+    getFastMode,
+    getNodeCyanState,
+    getNodeGrayoutState,
+    getNodeGreenState,
+    getNodeHighlightState,
+    getNodeRedTextState,
+    isNodeCyan,
+    isNodeGrayedOut,
+    isNodeGreen,
+    isNodeHighlighted,
+    isNodeRedText,
+    selectedNodeIds,
+    selectedRelationId,
+    setEditingNodeId,
+    setNodeCyanState,
+    setNodeGrayoutState,
+    setNodeGreenState,
+    setNodeHighlightState,
+    setNodeRedTextState,
+    toggleNodeCollapse
+} from './state.js';
+import { isImeRelatedKey, showToast } from './utils.js';
+import { redo, saveState, undo } from './history.js';
+import {
+    addChildNode,
+    addSiblingNode,
+    deleteNode,
+    deleteSelectedNodes,
+    demoteNode,
+    findNode,
+    moveNodeDown,
+    moveNodeUp,
+    promoteNode
+} from './nodes.js';
+import {
+    clearSelection,
+    getSelectedNodeId,
+    getSelectedNodes,
+    goToParent,
+    navigateDown,
+    navigateLeft,
+    navigateRight,
+    navigateUp,
+    shiftNavigateDown,
+    shiftNavigateUp
+} from './selection.js';
+import { finishEditing, startEditing } from './editing.js';
+import { copySelectedNodes, cutSelectedNodes, pasteNode, selectAll } from './clipboard.js';
+import { render } from './render.js';
+import { cancelConnectionMode, deleteSelectedRelation, isConnectionModeActive } from './relations.js';
+import { isLinkModalOpen, openLinkModal } from './init.js';
+
 // ========================================
 // Keyboard Handler
 // ========================================
@@ -134,7 +188,7 @@ function applyRedTextToSelection() {
     showToast(allOn ? '赤文字を解除しました' : '赤文字にしました');
 }
 
-function handleKeyDown(e) {
+export function handleKeyDown(e) {
     // リンク設定モーダル表示中は、モーダル内の handler（input/button）のみで処理する
     if (typeof isLinkModalOpen === 'function' && isLinkModalOpen()) return;
 
@@ -263,7 +317,7 @@ function handleKeyDown(e) {
                         _textEl.contentEditable = 'false';
                         _nodeEl.classList.remove('editing');
                     }
-                    editingNodeId = null;
+                    setEditingNodeId(null);
                     deleteNode(_editId);
                 } else {
                     finishEditing();

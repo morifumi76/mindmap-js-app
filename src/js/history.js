@@ -1,9 +1,25 @@
+import {
+    MAX_HISTORY,
+    getNodeGrayoutState,
+    getNodeHighlightState,
+    mindMapData,
+    setMindMapData,
+    setNodeGrayoutState,
+    setNodeHighlightState,
+    setUndoHistory,
+    setUndoIndex,
+    undoHistory,
+    undoIndex
+} from './state.js';
+import { deepClone, showToast } from './utils.js';
+import { render } from './render.js';
+
 // ========================================
 // History Management (Undo/Redo)
 // ========================================
 
-function saveState() {
-    undoHistory = undoHistory.slice(0, undoIndex + 1);
+export function saveState() {
+    setUndoHistory(undoHistory.slice(0, undoIndex + 1));
     undoHistory.push({
         data: deepClone(mindMapData),
         grayout: deepClone(getNodeGrayoutState()),
@@ -12,7 +28,7 @@ function saveState() {
     if (undoHistory.length > MAX_HISTORY) {
         undoHistory.shift();
     } else {
-        undoIndex++;
+        setUndoIndex(undoIndex + 1);
     }
 }
 
@@ -20,11 +36,11 @@ function resetMindMap() {
     // Function removed - no longer needed
 }
 
-function undo() {
+export function undo() {
     if (undoIndex > 0) {
-        undoIndex--;
+        setUndoIndex(undoIndex - 1);
         var snapshot = undoHistory[undoIndex];
-        mindMapData = deepClone(snapshot.data);
+        setMindMapData(deepClone(snapshot.data));
         setNodeGrayoutState(deepClone(snapshot.grayout || {}));
         setNodeHighlightState(deepClone(snapshot.highlight || {}));
         render();
@@ -32,11 +48,11 @@ function undo() {
     }
 }
 
-function redo() {
+export function redo() {
     if (undoIndex < undoHistory.length - 1) {
-        undoIndex++;
+        setUndoIndex(undoIndex + 1);
         var snapshot = undoHistory[undoIndex];
-        mindMapData = deepClone(snapshot.data);
+        setMindMapData(deepClone(snapshot.data));
         setNodeGrayoutState(deepClone(snapshot.grayout || {}));
         setNodeHighlightState(deepClone(snapshot.highlight || {}));
         render();

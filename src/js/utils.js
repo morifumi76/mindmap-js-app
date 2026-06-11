@@ -1,16 +1,20 @@
+
 // ========================================
 // Utility Functions
 // ========================================
 
-function generateId() {
+export // state.js から移動（このファイルでしか使われないモジュール内部状態）
+let nodeIdCounter = 0;
+
+export function generateId() {
     return 'node_' + (++nodeIdCounter) + '_' + Date.now();
 }
 
-function deepClone(obj) {
+export function deepClone(obj) {
     return JSON.parse(JSON.stringify(obj));
 }
 
-function showToast(message, duration) {
+export function showToast(message, duration) {
     duration = duration || 2000;
     const toast = document.getElementById('toast');
     toast.textContent = message;
@@ -48,7 +52,7 @@ document.addEventListener('compositionend', function() {
     _lastCompositionEndAt = Date.now();
 }, true);
 
-function isImeRelatedKey(e) {
+export function isImeRelatedKey(e) {
     if (!e) return false;
     if (e.isComposing) return true;
     if (e.keyCode === 229) return true; // 互換性のため

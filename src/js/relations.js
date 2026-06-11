@@ -1,3 +1,28 @@
+import {
+    connectionMode,
+    lastRelationClickInfo,
+    lastRenderedPositions,
+    mindMapData,
+    relationCtrlDragState,
+    relationEndpointDragState,
+    selectedNodeIds,
+    selectedRelationId,
+    setLastSelectedNodeId,
+    setSelectedRelationId,
+    setSelectionAnchorId,
+    viewState
+} from './state.js';
+import { isImeRelatedKey, showToast } from './utils.js';
+import { saveState } from './history.js';
+import { getSelectedNodeId } from './selection.js';
+import { finishEditing } from './editing.js';
+import { render } from './render.js';
+import { updateLinkButtonState } from './init.js';
+
+// state.js から移動（このファイルでしか使われないモジュール内部状態）
+let pendingRelationLabelEditTimer = null;
+let pendingRelationLabelEditRelId = null;
+
 // ========================================
 // Relations (ノード間関連線・フリー接続)
 // ========================================
@@ -56,17 +81,17 @@ function removeRelationById(relationId) {
             break;
         }
     }
-    if (selectedRelationId === relationId) selectedRelationId = null;
+    if (selectedRelationId === relationId) setSelectedRelationId(null);
 }
 
 // ノードが削除されたときに、そのノードを端点とする関連線も削除する
-function removeRelationsForNode(nodeId) {
+export function removeRelationsForNode(nodeId) {
     ensureRelationsArray();
     var arr = mindMapData.relations;
     var i = 0;
     while (i < arr.length) {
         if (arr[i].fromNodeId === nodeId || arr[i].toNodeId === nodeId) {
-            if (selectedRelationId === arr[i].id) selectedRelationId = null;
+            if (selectedRelationId === arr[i].id) setSelectedRelationId(null);
             arr.splice(i, 1);
         } else {
             i++;
@@ -177,7 +202,7 @@ function buildRelationPathD(geom) {
 
 // 関連線をSVGに描画する（render() の終盤から呼ばれる）
 // 線本体は背景レイヤー（svg = linesSvg）、端点ドットはノードより前面のレイヤー（endpointsSvg）に分けて描画
-function renderRelations(svg, positions) {
+export function renderRelations(svg, positions) {
     ensureRelationsArray();
     var endpointsSvg = document.getElementById('endpointsSvg');
     var rels = mindMapData.relations;
@@ -416,7 +441,7 @@ function startConnectionMode(fromNodeId) {
     render();
 }
 
-function cancelConnectionMode() {
+export function cancelConnectionMode() {
     if (!connectionMode.active) return;
     connectionMode.active = false;
     connectionMode.fromNodeId = null;
@@ -426,12 +451,12 @@ function cancelConnectionMode() {
     render();
 }
 
-function isConnectionModeActive() {
+export function isConnectionModeActive() {
     return !!(connectionMode && connectionMode.active);
 }
 
 // 接続先ノードへ接続を確定する
-function completeConnection(toNodeId) {
+export function completeConnection(toNodeId) {
     var fromId = connectionMode.fromNodeId;
     if (!fromId || !toNodeId) {
         cancelConnectionMode();
@@ -452,11 +477,11 @@ function completeConnection(toNodeId) {
 // ========================================
 function selectRelation(relationId) {
     if (selectedRelationId === relationId) return; // 既に選択中なら何もしない（DOMを変更しない）
-    selectedRelationId = relationId;
+    setSelectedRelationId(relationId);
     // ノード選択は解除する（相互排他）
     selectedNodeIds.clear();
-    lastSelectedNodeId = null;
-    selectionAnchorId = null;
+    setLastSelectedNodeId(null);
+    setSelectionAnchorId(null);
     document.querySelectorAll('.node.selected').forEach(function(el) {
         el.classList.remove('selected');
     });
@@ -467,14 +492,14 @@ function selectRelation(relationId) {
 
 function clearSelectedRelation() {
     if (selectedRelationId) {
-        selectedRelationId = null;
+        setSelectedRelationId(null);
         updateRelationVisualSelection();
     }
 }
 
 // 関連線の選択状態（.selected クラス）だけをDOMに反映する。
 // render() でSVGパスを破棄せず、要素のIDが変わらないため、ブラウザのクリック判定が継続して動く。
-function updateRelationVisualSelection() {
+export function updateRelationVisualSelection() {
     var svg = document.getElementById('linesSvg');
     if (!svg) return;
     // 関連線本体の .selected クラスを更新（linesSvg 内）
@@ -505,7 +530,7 @@ function deleteSelectedRelationWithConfirm() {
     deleteSelectedRelation();
 }
 
-function deleteSelectedRelation() {
+export function deleteSelectedRelation() {
     if (!selectedRelationId) return;
     var id = selectedRelationId;
     removeRelationById(id);
@@ -521,7 +546,7 @@ function deleteSelectedRelation() {
 // ========================================
 var relationsEventsInitialized = false;
 
-function initRelationsEvents() {
+export function initRelationsEvents() {
     if (relationsEventsInitialized) return;
     relationsEventsInitialized = true;
 

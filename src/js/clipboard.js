@@ -1,3 +1,30 @@
+import {
+    getNodeCyanState,
+    getNodeGrayoutState,
+    getNodeHighlightState,
+    getNodeRedTextState,
+    isNodeCollapsed,
+    isNodeGrayedOut,
+    levelIcons,
+    mindMapData,
+    selectedNodeIds,
+    setLastSelectedNodeId,
+    setNodeCyanState,
+    setNodeGrayoutState,
+    setNodeHighlightState,
+    setNodeRedTextState
+} from './state.js';
+import { deepClone, generateId, showToast } from './utils.js';
+import { saveState } from './history.js';
+import { findNode, getAllNodesInOrder } from './nodes.js';
+import { clearSelection, getSelectedNodeId, selectNode, updateSelectionDisplay } from './selection.js';
+import { finishEditing } from './editing.js';
+import { render } from './render.js';
+
+// state.js から移動（このファイルでしか使われないモジュール内部状態）
+let clipboard = null;
+let clipboardIsCut = false;
+
 // ========================================
 // Copy, Cut & Paste
 // ========================================
@@ -26,7 +53,7 @@ function captureNodeColorsToClone(clonedNode) {
     walk(clonedNode);
 }
 
-function copySelectedNodes() {
+export function copySelectedNodes() {
     if (selectedNodeIds.size === 0) return;
     if (selectedNodeIds.size === 1) {
         var id = getSelectedNodeId();
@@ -57,7 +84,7 @@ function copySelectedNodes() {
     }
 }
 
-function cutSelectedNodes() {
+export function cutSelectedNodes() {
     if (selectedNodeIds.size === 0) return;
     var ids = [];
     selectedNodeIds.forEach(function(id) { if (id !== 'root') ids.push(id); });
@@ -100,7 +127,7 @@ function cutSelectedNodes() {
     showToast(topLevel.length + '個のノードを切り取りました');
 }
 
-function pasteNode() {
+export function pasteNode() {
     var cid = getSelectedNodeId();
     if (!clipboard || !cid) return;
     var r = findNode(cid);
@@ -168,7 +195,7 @@ function applyPendingColorsToCurrentMap(list) {
     if (changedR) setNodeRedTextState(rtState);
 }
 
-function selectAll() {
+export function selectAll() {
     var allNodes = getAllNodesInOrder();
     if (selectedNodeIds.size === allNodes.length) {
         clearSelection();
@@ -178,12 +205,12 @@ function selectAll() {
         for (var i = 0; i < allNodes.length; i++) {
             selectedNodeIds.add(allNodes[i].id);
         }
-        lastSelectedNodeId = allNodes[0] ? allNodes[0].id : null;
+        setLastSelectedNodeId(allNodes[0] ? allNodes[0].id : null);
         updateSelectionDisplay();
     }
 }
 
-function filterTopLevelNodes(nodeIds) {
+export function filterTopLevelNodes(nodeIds) {
     var result = [];
     for (var i = 0; i < nodeIds.length; i++) {
         var nid = nodeIds[i];
@@ -200,7 +227,7 @@ function filterTopLevelNodes(nodeIds) {
     return result;
 }
 
-function isDescendant(ancestorId, nodeId) {
+export function isDescendant(ancestorId, nodeId) {
     var r = findNode(ancestorId);
     if (!r) return false;
     function check(node) {
@@ -217,14 +244,14 @@ function isDescendant(ancestorId, nodeId) {
 // Copy to Clipboard (Floating Button)
 // ========================================
 
-function getCurrentCopyText() {
+export function getCurrentCopyText() {
     var format = document.getElementById('copyFormat').value;
     var border = document.getElementById('copyBorder').value;
     var useBorder = (border === 'border');
     return generateCopyText(mindMapData.root, 0, [], format, useBorder);
 }
 
-function copyToClipboard() {
+export function copyToClipboard() {
     var text = getCurrentCopyText();
 
     if (navigator.clipboard && navigator.clipboard.writeText) {

@@ -18,13 +18,13 @@ module.exports = [
     {
         files: ['src/js/**/*.js'],
         languageOptions: {
-            ecmaVersion: 2017,
-            sourceType: 'script',
+            ecmaVersion: 2020,
+            sourceType: 'module',
             globals: Object.assign({}, globals.browser),
         },
         rules: Object.assign({}, js.configs.recommended.rules, {
-            'no-undef': 'off',       // 連結ビルドの暗黙グローバル参照のため（フェーズ3で有効化）
-            'no-unused-vars': 'off', // 同上：別ファイルから使われる関数が誤検出される
+            'no-undef': 'error',     // ESモジュール化により有効化（フェーズ3）
+            'no-unused-vars': ['warn', { caughtErrors: 'none', args: 'none' }], // 未使用関数の削除はフェーズ4
             'no-empty': ['error', { allowEmptyCatch: true }], // catch(e) {} はこのコードベースの慣習
             // ↓ レガシーコードに既存の指摘。挙動には影響しないため warn 扱いとし、
             //    フェーズ3（モジュール化）・フェーズ4（分割）で順次解消する
