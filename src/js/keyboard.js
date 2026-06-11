@@ -310,7 +310,7 @@ export function handleKeyDown(e) {
                 var _nodeEl = document.querySelector('[data-id="' + _editId + '"]');
                 var _textEl = _nodeEl ? _nodeEl.querySelector('.node-text') : null;
                 // ゼロ幅スペース（Shift+Enter改行時にキャレット用に挿入される）を除いて空判定する
-                var _currentText = _textEl ? _textEl.textContent.replace(/​/g, '').trim() : '';
+                var _currentText = _textEl ? _textEl.textContent.replace(/\u200b/g, '').trim() : '';
                 if (_currentText === '' && _editId !== 'root') {
                     // 編集モードを抜けてからノード削除（finishEditing は呼ばずに直接後始末）
                     if (_textEl) {

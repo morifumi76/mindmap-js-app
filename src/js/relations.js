@@ -340,7 +340,7 @@ function commitRelationLabelEdit(labelEl, relationId) {
         if (labelEl && labelEl.parentNode) labelEl.parentNode.removeChild(labelEl);
         return;
     }
-    var newText = (labelEl.textContent || '').replace(/​/g, ''); // ゼロ幅スペース除去
+    var newText = (labelEl.textContent || '').replace(/\u200b/g, ''); // ゼロ幅スペース除去
     // 末尾の改行は素直にtrim、内部の改行は維持
     newText = newText.replace(/\n+$/, '').replace(/^\n+/, '');
     var oldText = rel.label || '';
@@ -490,13 +490,6 @@ function selectRelation(relationId) {
     updateRelationVisualSelection();
 }
 
-function clearSelectedRelation() {
-    if (selectedRelationId) {
-        setSelectedRelationId(null);
-        updateRelationVisualSelection();
-    }
-}
-
 // 関連線の選択状態（.selected クラス）だけをDOMに反映する。
 // render() でSVGパスを破棄せず、要素のIDが変わらないため、ブラウザのクリック判定が継続して動く。
 export function updateRelationVisualSelection() {
@@ -552,8 +545,6 @@ export function initRelationsEvents() {
 
     var svg = document.getElementById('linesSvg');
     var endpointsSvg = document.getElementById('endpointsSvg');
-    var canvas = document.getElementById('canvas');
-    var canvasContainer = document.getElementById('canvasContainer');
 
     // 関連線本体・端点ドット — どれを掴んでも即ドラッグで曲げられる
     // mousedownで選択＋ドラッグ準備、mousemoveで一定距離動いたら制御点更新、mouseupで保存

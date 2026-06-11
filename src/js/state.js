@@ -224,18 +224,6 @@ function getNodeHyperlink(nodeId) {
     if (!r || !r.node) return null;
     return r.node.hyperlink || null;
 }
-function setNodeHyperlink(nodeId, link) {
-    var r = findNode(nodeId);
-    if (!r || !r.node) return;
-    if (link && link.url) {
-        r.node.hyperlink = {
-            url: link.url,
-            displayText: link.displayText || r.node.text
-        };
-    } else {
-        delete r.node.hyperlink;
-    }
-}
 export function isNodeLinked(nodeId) {
     return !!getNodeHyperlink(nodeId);
 }

@@ -136,7 +136,7 @@ export function initCanvasInteraction() {
             updateView();
         } else {
             // Mouse scroll wheel: zoom
-            var zoomDelta = e.deltaY > 0 ? -0.1 : 0.1;
+            zoomDelta = e.deltaY > 0 ? -0.1 : 0.1;
             applyZoom(mouseX, mouseY, zoomDelta);
         }
     }, { passive: false });

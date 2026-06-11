@@ -206,8 +206,8 @@ function sidebarPasteItems(moveMode) {
     } else {
         // 移動
         var metaList = getMetaList();
-        var count = 0;
-        for (var i = 0; i < sidebarClipboard.ids.length; i++) {
+        count = 0;
+        for (i = 0; i < sidebarClipboard.ids.length; i++) {
             var sid = sidebarClipboard.ids[i];
             for (var j = 0; j < metaList.length; j++) {
                 if (String(metaList[j].id) === String(sid) && metaList[j].type === 'page') {
@@ -696,7 +696,7 @@ export function renderMapList() {
         pagesByFolder[fid].push(pages[i]);
     }
 
-    for (var i = 0; i < folders.length; i++) {
+    for (i = 0; i < folders.length; i++) {
         var pf = folders[i].parentFolderId || null;
         if (!subFoldersByParent[pf]) subFoldersByParent[pf] = [];
         subFoldersByParent[pf].push(folders[i]);
@@ -713,7 +713,7 @@ export function renderMapList() {
 
     // Sort all groups
     for (var k in pagesByFolder) sortItems(pagesByFolder[k]);
-    for (var k in subFoldersByParent) {
+    for (k in subFoldersByParent) {
         var grp = subFoldersByParent[k];
         var defPart = grp.filter(function(f) { return f.isDefault; });
         var regPart = grp.filter(function(f) { return !f.isDefault; });
@@ -731,7 +731,7 @@ export function renderMapList() {
             if (String(pages[i].id) === String(currentMapId)) return true;
         }
         var subs = subFoldersByParent[folderId] || [];
-        for (var i = 0; i < subs.length; i++) {
+        for (i = 0; i < subs.length; i++) {
             if (folderContainsActive(subs[i].id)) return true;
         }
         return false;
@@ -1242,7 +1242,7 @@ function handleMultiPageDrop(dragIds, targetId, position) {
 
     // 移動先フォルダの現在の最大 order を求める（手動順モードで末尾に配置するため）
     var maxOrder = -1;
-    for (var i = 0; i < metaList.length; i++) {
+    for (i = 0; i < metaList.length; i++) {
         var mi = metaList[i];
         if (mi.type === 'page' && (mi.folderId || null) === (targetFolderId || null) && dragIds.indexOf(String(mi.id)) === -1) {
             if ((mi.order || 0) > maxOrder) maxOrder = (mi.order || 0);
@@ -1251,7 +1251,7 @@ function handleMultiPageDrop(dragIds, targetId, position) {
 
     // 選択ページをターゲットフォルダへ移動し、移動したページを記録
     var movedPages = [];
-    for (var i = 0; i < metaList.length; i++) {
+    for (i = 0; i < metaList.length; i++) {
         if (dragIds.indexOf(String(metaList[i].id)) !== -1 && metaList[i].type === 'page') {
             metaList[i].folderId = targetFolderId;
             maxOrder++;
@@ -1271,7 +1271,7 @@ function handleMultiPageDrop(dragIds, targetId, position) {
 
     // Supabase へ移動を反映（これが無いとリロード時に元の場所へ戻ってしまう）
     if (window._supa) {
-        for (var i = 0; i < movedPages.length; i++) {
+        for (i = 0; i < movedPages.length; i++) {
             var mp = movedPages[i];
             var mpData = loadMapData(mp.id);
             if (mpData) {
@@ -1312,13 +1312,13 @@ function handleFavDrop(dragId, targetId, position) {
     if (!dragMeta) return;
 
     var targetIdx = -1;
-    for (var i = 0; i < starredItems.length; i++) {
+    for (i = 0; i < starredItems.length; i++) {
         if (starredItems[i].id === targetId) { targetIdx = i; break; }
     }
     if (targetIdx === -1) return;
     if (position === 'below') targetIdx++;
     starredItems.splice(targetIdx, 0, dragMeta);
-    for (var i = 0; i < starredItems.length; i++) {
+    for (i = 0; i < starredItems.length; i++) {
         starredItems[i].starOrder = i;
     }
     saveMetaList(metaList);
@@ -1384,13 +1384,13 @@ function handleMapDrop(dragId, targetId, position, dragType) {
             });
             siblings.sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
             var targetIdx = -1;
-            for (var i = 0; i < siblings.length; i++) {
+            for (i = 0; i < siblings.length; i++) {
                 if (siblings[i].id === targetId) { targetIdx = i; break; }
             }
             if (targetIdx === -1) return;
             if (position === 'below') targetIdx++;
             siblings.splice(targetIdx, 0, dragMeta);
-            for (var i = 0; i < siblings.length; i++) {
+            for (i = 0; i < siblings.length; i++) {
                 siblings[i].order = i;
             }
             // Supabase に並び順・親フォルダを保存（階層が変わる場合も含む）
@@ -1405,7 +1405,7 @@ function handleMapDrop(dragId, targetId, position, dragType) {
             var pagesInFolder = metaList.filter(function(m) { return m.type === 'page' && m.folderId === targetId; });
             dragMeta.order = pagesInFolder.length > 0 ? Math.max.apply(null, pagesInFolder.map(function(m) { return m.order || 0; })) + 1 : 0;
             // Expand the target folder
-            var cs = getCollapseState();
+            cs = getCollapseState();
             cs[targetId] = false;
             setCollapseState(cs);
         } else if (targetMeta.type === 'page') {
@@ -1413,19 +1413,19 @@ function handleMapDrop(dragId, targetId, position, dragType) {
             var targetFolderId = targetMeta.folderId;
             dragMeta.folderId = targetFolderId;
 
-            var siblings = metaList.filter(function(m) {
+            siblings = metaList.filter(function(m) {
                 return m.type === 'page' && m.folderId === targetFolderId && m.id !== dragId;
             });
             siblings.sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
 
-            var targetIdx = -1;
-            for (var i = 0; i < siblings.length; i++) {
+            targetIdx = -1;
+            for (i = 0; i < siblings.length; i++) {
                 if (siblings[i].id === targetId) { targetIdx = i; break; }
             }
             if (targetIdx === -1) targetIdx = siblings.length - 1;
             if (position === 'below') targetIdx++;
             siblings.splice(targetIdx, 0, dragMeta);
-            for (var i = 0; i < siblings.length; i++) {
+            for (i = 0; i < siblings.length; i++) {
                 siblings[i].order = i;
             }
         }
@@ -1699,7 +1699,7 @@ function deleteFolder(folderId) {
 
     // Remove pages in those folders
     var pagesToDelete = [];
-    for (var i = 0; i < metaList.length; i++) {
+    for (i = 0; i < metaList.length; i++) {
         if (metaList[i].type === 'page' && folderIdSet[metaList[i].folderId]) {
             pagesToDelete.push(metaList[i].id);
         }
@@ -1720,7 +1720,7 @@ function deleteFolder(folderId) {
     if (!confirm(confirmMsg)) return;
 
     // Delete page data from localStorage
-    for (var i = 0; i < pagesToDelete.length; i++) {
+    for (i = 0; i < pagesToDelete.length; i++) {
         try { localStorage.removeItem(getMapDataKey(pagesToDelete[i])); } catch(e) {}
         if (window._supa) window._supa.deleteMap(pagesToDelete[i]).catch(function(){});
     }
@@ -1738,7 +1738,7 @@ function deleteFolder(folderId) {
     saveMetaList(newMeta);
 
     if (window._supa) {
-        for (var i = 0; i < allFolderIds.length; i++) {
+        for (i = 0; i < allFolderIds.length; i++) {
             window._supa.deleteFolder(allFolderIds[i]).catch(function(){});
         }
     }
@@ -1818,9 +1818,9 @@ function deleteFolderMultiple(folderIds) {
 
     // 削除内容の件数を確認ダイアログに明示
     var totalFolderSet = {};
-    for (var fi = 0; fi < folderIds.length; fi++) {
+    for (fi = 0; fi < folderIds.length; fi++) {
         var allDesc = collectDesc(folderIds[fi]);
-        for (var i = 0; i < allDesc.length; i++) totalFolderSet[allDesc[i]] = true;
+        for (i = 0; i < allDesc.length; i++) totalFolderSet[allDesc[i]] = true;
     }
     var totalFolderCount = Object.keys(totalFolderSet).length;
     var pageCount        = deletedPageIds.length;
@@ -1832,7 +1832,7 @@ function deleteFolderMultiple(folderIds) {
     if (!confirm(confirmMsg)) return;
 
     // ページデータを削除
-    for (var i = 0; i < deletedPageIds.length; i++) {
+    for (i = 0; i < deletedPageIds.length; i++) {
         try { localStorage.removeItem(getMapDataKey(deletedPageIds[i])); } catch(e) {}
         if (window._supa) window._supa.deleteMap(deletedPageIds[i]).catch(function(){});
     }
