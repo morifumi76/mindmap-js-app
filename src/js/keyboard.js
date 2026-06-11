@@ -49,7 +49,7 @@ import {
 import { finishEditing, startEditing } from './editing.js';
 import { copySelectedNodes, cutSelectedNodes, pasteNode, selectAll } from './clipboard.js';
 import { render } from './render.js';
-import { cancelConnectionMode, deleteSelectedRelation, isConnectionModeActive } from './relations.js';
+import { cancelConnectionMode, deleteSelectedRelation, isConnectionModeActive } from './relations/index.js';
 import { isLinkModalOpen, openLinkModal } from './init.js';
 
 // ========================================

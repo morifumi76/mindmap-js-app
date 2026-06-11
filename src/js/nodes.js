@@ -5,7 +5,7 @@ import { selectNode } from './selection.js';
 import { startEditing } from './editing.js';
 import { filterTopLevelNodes } from './clipboard.js';
 import { render } from './render.js';
-import { removeRelationsForNode } from './relations.js';
+import { removeRelationsForNode } from './relations/index.js';
 
 // ========================================
 // Node Operations

@@ -49,7 +49,7 @@ import { getSelectedNodeId, getSelectedNodes, selectNode } from './selection.js'
 import { startEditing } from './editing.js';
 import { copyToClipboard } from './clipboard.js';
 import { render, resetView } from './render.js';
-import { initRelationsEvents } from './relations.js';
+import { initRelationsEvents } from './relations/index.js';
 import { handleKeyDown } from './keyboard.js';
 import { initCanvasInteraction, initZoomControl, syncToggleButtons } from './canvas-interaction.js';
 import { adjustCanvasForSidebars, initSidebar, renderSidebarTree } from './sidebar-right.js';

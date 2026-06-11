@@ -12,7 +12,7 @@ import './clipboard.js';
 import './drag.js';
 import './lasso.js';
 import './render.js';
-import './relations.js';
+import './relations/index.js';
 import './keyboard.js';
 import './canvas-interaction.js';
 import './init.js';

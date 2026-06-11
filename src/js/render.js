@@ -20,7 +20,7 @@ import { getAllNodesInOrder } from './nodes.js';
 import { rangeSelectNode, selectNode, toggleSelectNode, updateSelectionDisplay } from './selection.js';
 import { finishEditing, startEditing } from './editing.js';
 import { startNodeDrag } from './drag.js';
-import { completeConnection, isConnectionModeActive, renderRelations } from './relations.js';
+import { completeConnection, isConnectionModeActive, renderRelations } from './relations/index.js';
 import { updateZoomDisplay } from './canvas-interaction.js';
 import { renderSidebarTree } from './sidebar-right.js';
 

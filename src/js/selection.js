@@ -11,7 +11,7 @@ import {
 } from './state.js';
 import { findNode, getAllNodesInOrder, getNodeLevel } from './nodes.js';
 import { updateView } from './render.js';
-import { updateRelationVisualSelection } from './relations.js';
+import { updateRelationVisualSelection } from './relations/index.js';
 import { updateLinkButtonState } from './init.js';
 
 // ========================================

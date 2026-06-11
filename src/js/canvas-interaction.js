@@ -4,7 +4,7 @@ import { finishEditing } from './editing.js';
 import { endNodeDrag } from './drag.js';
 import { endLasso, startLasso, updateLasso } from './lasso.js';
 import { updateView } from './render.js';
-import { cancelConnectionMode, isConnectionModeActive } from './relations.js';
+import { cancelConnectionMode, isConnectionModeActive } from './relations/index.js';
 
 // ========================================
 // Canvas Interaction: Pan, Zoom, Lasso
