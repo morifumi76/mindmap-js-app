@@ -5,10 +5,12 @@
     "build": "node build.js",
     "serve": "python3 -m http.server 8080 -d dist",
     "test": "node test_collapse.js && node test_grayout.js && node test_sidebar.js && node test_left_sidebar.js",
-    "dev": "node build.js && node -e \"const fs=require('fs');let t;fs.watch('src',{recursive:true},()=>{clearTimeout(t);t=setTimeout(()=>{try{require('child_process').execSync('node build.js',{stdio:'inherit'})}catch(e){}},150)});console.log('Watching src/ ... (Ctrl+C to stop)')\""
+    "dev": "node scripts/dev.js"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.99.2",
+    "@supabase/supabase-js": "^2.99.2"
+  },
+  "devDependencies": {
     "esbuild": "^0.27.4",
     "playwright": "^1.58.2"
   }
