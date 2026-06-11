@@ -1,10 +1,11 @@
 const { chromium } = require('playwright');
+const { BASE_URL } = require('./helpers');
 
 (async () => {
     const browser = await chromium.launch();
     const context = await browser.newContext();
     const page = await context.newPage();
-    await page.goto('http://localhost:8080/index.html');
+    await page.goto(BASE_URL);
     await page.evaluate(() => { localStorage.clear(); });
     await page.reload();
     await page.waitForSelector('.node', { state: 'attached', timeout: 10000 });
@@ -60,30 +61,22 @@ const { chromium } = require('playwright');
     const expandBtn = await page.$('#expandAllBtn');
     assert(!!expandBtn, 'Expand All button exists');
 
+    // 現行UI: 「すべて開く」はテキストボタンではなく » アイコンボタン（28x28、title でラベル提供）
     const expandBtnText = await page.$eval('#expandAllBtn', el => el.textContent.trim());
-    assert(expandBtnText === 'すべて開く', 'Expand All button text is すべて開く');
+    assert(expandBtnText === '»', 'Expand All button shows » icon: ' + expandBtnText);
+
+    const expandBtnTitle = await page.$eval('#expandAllBtn', el => el.title);
+    assert(expandBtnTitle === 'すべて開く', 'Expand All button title is すべて開く: ' + expandBtnTitle);
 
     const expandBtnWidth = await page.$eval('#expandAllBtn', el => el.offsetWidth);
-    assert(expandBtnWidth === 100, 'Expand All button width = 100px: ' + expandBtnWidth);
+    assert(expandBtnWidth === 28, 'Expand All button width = 28px: ' + expandBtnWidth);
 
     const expandBtnHeight = await page.$eval('#expandAllBtn', el => el.offsetHeight);
-    assert(expandBtnHeight === 32, 'Expand All button height = 32px: ' + expandBtnHeight);
+    assert(expandBtnHeight === 28, 'Expand All button height = 28px: ' + expandBtnHeight);
 
-    const expandBtnBg = await page.$eval('#expandAllBtn', el => getComputedStyle(el).backgroundColor);
-    assert(expandBtnBg.includes('55, 53, 47') || expandBtnBg === 'rgb(55, 53, 47)', 'Expand btn bg #37352f: ' + expandBtnBg);
-
-    const expandBtnColor = await page.$eval('#expandAllBtn', el => getComputedStyle(el).color);
-    assert(expandBtnColor.includes('255, 255, 255') || expandBtnColor === 'rgb(255, 255, 255)', 'Expand btn text color #ffffff: ' + expandBtnColor);
-
-    const expandBtnBorder = await page.$eval('#expandAllBtn', el => getComputedStyle(el).borderRadius);
-    assert(expandBtnBorder === '6px', 'Expand btn border-radius 6px: ' + expandBtnBorder);
-
-    const expandBtnFontSize = await page.$eval('#expandAllBtn', el => getComputedStyle(el).fontSize);
-    assert(expandBtnFontSize === '13px', 'Expand btn font-size 13px: ' + expandBtnFontSize);
-
-    // Only two buttons in button area
-    const buttonCount = await page.$$eval('.sidebar-button-area > button', els => els.length);
-    assert(buttonCount === 2, 'Only 2 buttons in button area: ' + buttonCount);
+    // 開閉コントロール（expand-collapse-control）に開く/閉じるの2要素がある
+    const controlChildren = await page.$eval('.expand-collapse-control', el => el.children.length);
+    assert(controlChildren === 2, 'Expand/collapse control has 2 children: ' + controlChildren);
 
     // ========================================
     // Test 3: Initial state - all nodes visible

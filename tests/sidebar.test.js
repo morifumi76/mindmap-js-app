@@ -1,10 +1,11 @@
 const { chromium } = require('playwright');
+const { BASE_URL } = require('./helpers');
 
 (async () => {
     const browser = await chromium.launch();
     const context = await browser.newContext();
     const page = await context.newPage();
-    await page.goto('http://localhost:8080/index.html');
+    await page.goto(BASE_URL);
     await page.evaluate(() => { localStorage.clear(); });
     await page.reload();
     await page.waitForSelector('.node', { state: 'attached', timeout: 10000 });
@@ -103,9 +104,9 @@ const { chromium } = require('playwright');
     const borderLabelText = await page.$eval('#toggleBorder', el => el.closest('.sidebar-toggle-row').querySelector('.sidebar-toggle-label').textContent);
     assert(borderLabelText === '罫線', 'Border label is 罫線: ' + borderLabelText);
 
-    // Toggle row layout: justify-content: space-between
+    // Toggle row layout: 現行UIは右寄せ（flex-end）
     const rowJustify = await page.$eval('.sidebar-toggle-row', el => getComputedStyle(el).justifyContent);
-    assert(rowJustify === 'space-between', 'Toggle row layout is space-between: ' + rowJustify);
+    assert(rowJustify === 'flex-end', 'Toggle row layout is flex-end: ' + rowJustify);
 
     // ON color = #37352f (not green)
     const onBg = await page.evaluate(() => {
@@ -126,8 +127,9 @@ const { chromium } = require('playwright');
     console.log('\n=== Fixed-width buttons ===');
     const copyBtnWidth = await page.$eval('#copyBtn', el => el.offsetWidth);
     assert(copyBtnWidth === 100, 'Copy button width = 100px: ' + copyBtnWidth);
+    // 現行UI: 「すべて開く」は 28x28 のアイコンボタン
     const expandAllBtnWidth = await page.$eval('#expandAllBtn', el => el.offsetWidth);
-    assert(expandAllBtnWidth === 100, 'Expand All button width = 100px: ' + expandAllBtnWidth);
+    assert(expandAllBtnWidth === 28, 'Expand All button width = 28px: ' + expandAllBtnWidth);
 
     // Copy button style: bg #37352f, color white
     const copyBtnBg = await page.$eval('#copyBtn', el => getComputedStyle(el).backgroundColor);
@@ -135,19 +137,15 @@ const { chromium } = require('playwright');
     const copyBtnColor = await page.$eval('#copyBtn', el => getComputedStyle(el).color);
     assert(copyBtnColor.includes('255, 255, 255') || copyBtnColor === 'rgb(255, 255, 255)', 'Copy btn text is white: ' + copyBtnColor);
 
-    // Expand All button style: same as Copy - bg #37352f, color white
-    const expandBtnBg = await page.$eval('#expandAllBtn', el => getComputedStyle(el).backgroundColor);
-    assert(expandBtnBg.includes('55, 53, 47') || expandBtnBg === 'rgb(55, 53, 47)', 'Expand btn bg is #37352f: ' + expandBtnBg);
-    const expandBtnColor = await page.$eval('#expandAllBtn', el => getComputedStyle(el).color);
-    assert(expandBtnColor.includes('255, 255, 255') || expandBtnColor === 'rgb(255, 255, 255)', 'Expand btn text is white: ' + expandBtnColor);
-
-    // Expand All button text
+    // Expand All button: 現行UIは » アイコン + title でラベル提供（スタイルは透明背景のアイコンボタン）
     const expandBtnText = await page.$eval('#expandAllBtn', el => el.textContent.trim());
-    assert(expandBtnText === 'すべて開く', 'Expand All button text is すべて開く: ' + expandBtnText);
+    assert(expandBtnText === '»', 'Expand All button shows » icon: ' + expandBtnText);
+    const expandBtnTitle = await page.$eval('#expandAllBtn', el => el.title);
+    assert(expandBtnTitle === 'すべて開く', 'Expand All button title is すべて開く: ' + expandBtnTitle);
 
-    // Button area centered
+    // Button area: 現行UIは右寄せ（flex-end）
     const buttonAreaJustify = await page.$eval('.sidebar-button-area', el => getComputedStyle(el).justifyContent);
-    assert(buttonAreaJustify === 'center', 'Button area is centered: ' + buttonAreaJustify);
+    assert(buttonAreaJustify === 'flex-end', 'Button area is right-aligned: ' + buttonAreaJustify);
 
     // ========================================
     // Feature: Bottom panel layout

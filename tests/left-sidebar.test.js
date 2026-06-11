@@ -1,4 +1,5 @@
 const { chromium } = require('playwright');
+const { BASE_URL } = require('./helpers');
 
 let pass = 0, fail = 0;
 function assert(cond, msg) {
@@ -15,7 +16,7 @@ function assert(cond, msg) {
     // ========================================
     console.log('\n=== Test 1: Initial State & Fresh Start ===');
     let page = await ctx.newPage();
-    await page.goto('http://localhost:8080/index.html');
+    await page.goto(BASE_URL);
     await page.waitForTimeout(1500);
 
     // Left sidebar should be open by default
@@ -55,20 +56,16 @@ function assert(cond, msg) {
     let migratedV4 = await page.evaluate(() => localStorage.getItem('mindmap-migrated-v4'));
     assert(migratedV4 === '1', 'mindmap-migrated-v4 flag is set');
 
-    // Meta should have folder and page entries
+    // 現行仕様: フレッシュ起動ではフォルダは作られず、トップレベルにページ1件のみ
+    // （旧仕様の「未分類」デフォルトフォルダは廃止済み）
     let meta = await page.evaluate(() => {
         try { return JSON.parse(localStorage.getItem('mindmap-meta')); } catch(e) { return null; }
     });
-    assert(meta && meta.length >= 2, 'Meta list has at least 2 entries (folder + page)');
+    assert(meta && meta.length >= 1, 'Meta list has at least 1 entry (initial page)');
 
-    // Should have at least one folder
+    // フレッシュ起動時はフォルダなし
     let folders = meta.filter(m => m.type === 'folder');
-    assert(folders.length >= 1, 'At least 1 folder exists');
-
-    // Should have 未分類 (default) folder
-    let defaultFolder = meta.find(m => m.type === 'folder' && m.isDefault === true);
-    assert(defaultFolder !== undefined, '未分類 default folder exists');
-    assert(defaultFolder.name === '未分類', 'Default folder name is 未分類');
+    assert(folders.length === 0, 'No folders on fresh start (default folder was removed from spec)');
 
     // Should have at least one page
     let pages = meta.filter(m => m.type === 'page');
@@ -90,6 +87,10 @@ function assert(cond, msg) {
     // Test 3: Folder-Page Tree UI
     // ========================================
     console.log('\n=== Test 3: Folder-Page Tree UI ===');
+
+    // 現行仕様ではフレッシュ起動時にフォルダが無いため、ツリーUI検証用にフォルダを1つ作成する
+    await page.evaluate(() => window.createFolder());
+    await page.waitForTimeout(400);
 
     // Should have folder items with class 'folder-item'
     let folderItems = await page.locator('.map-item.folder-item').count();
@@ -123,13 +124,13 @@ function assert(cond, msg) {
     let folderToggles = await page.locator('.map-item.folder-item .map-item-toggle').count();
     assert(folderToggles >= 1, 'Folder items have expand/collapse toggle');
 
-    // Page items should be indented
+    // 現行仕様: トップレベルのページはフォルダと同じ 12px（フォルダ内に入ると 28px に下がる）
     let pageIndent = await page.evaluate(() => {
         var pageItem = document.querySelector('.map-item.page-item');
         if (!pageItem) return null;
         return window.getComputedStyle(pageItem).paddingLeft;
     });
-    assert(pageIndent === '28px', 'Page items indented with 28px padding');
+    assert(pageIndent === '12px', 'Top-level page items use 12px padding');
 
     // Folder items should be left-aligned (no extra indent)
     let folderIndent = await page.evaluate(() => {
@@ -414,7 +415,7 @@ function assert(cond, msg) {
     await page.click('#newMapBtn');
     await page.waitForTimeout(500);
 
-    await page.goto('http://localhost:8080/index.html?id=' + savedCurrentId);
+    await page.goto(BASE_URL + '?id=' + savedCurrentId);
     await page.waitForTimeout(1500);
 
     let loadedId = await page.evaluate(() => window.getCurrentMapId());
@@ -440,7 +441,8 @@ function assert(cond, msg) {
     assert(!sortChecked, 'Sort toggle is OFF by default');
 
     // Sort label should say "アルファベット順"
-    let sortLabel = await page.locator('.left-sidebar-sort-label').textContent();
+    // （現行UIはソートラベルが複数ある：アルファベット順／タイトルに日付。先頭がソート用）
+    let sortLabel = await page.locator('.left-sidebar-sort-label').first().textContent();
     assert(sortLabel.includes('アルファベット順'), 'Sort label says アルファベット順');
 
     // Turn on sort
@@ -488,16 +490,7 @@ function assert(cond, msg) {
     });
     assert(afterFolderCount === beforeFolderCount + 1, 'New folder created');
 
-    // New folder should appear in sidebar
-    let newFolderEl = await page.evaluate(() => {
-        var items = document.querySelectorAll('.map-item.folder-item:not(.default-folder)');
-        for (var i = 0; i < items.length; i++) {
-            var name = items[i].querySelector('.map-item-name');
-            if (name && name.textContent === '新しいフォルダ') return true;
-        }
-        return false;
-    });
-    // May already be in rename mode, so check meta instead
+    // リネームモードに入っている場合があるため、サイドバーDOMではなく meta で確認する
     let newFolderMeta = await page.evaluate(() => {
         var meta = JSON.parse(localStorage.getItem('mindmap-meta'));
         return meta.find(m => m.type === 'folder' && m.name === '新しいフォルダ');
@@ -602,32 +595,22 @@ function assert(cond, msg) {
     assert(pagesAfterExpand >= 1, 'Pages visible after expand');
 
     // ========================================
-    // Test 18: 未分類 Folder – Immutable
+    // Test 18: 未分類 Folder – 廃止済み（現行仕様では存在しないこと）
     // ========================================
-    console.log('\n=== Test 18: 未分類 Folder – Immutable ===');
+    console.log('\n=== Test 18: 未分類 Folder – Removed from spec ===');
 
-    // 未分類 folder should exist
+    // 現行仕様: デフォルトフォルダ（未分類）は廃止され、meta に存在しない
     let defaultFolderExists = await page.evaluate(() => {
         var meta = JSON.parse(localStorage.getItem('mindmap-meta'));
         return meta.some(m => m.type === 'folder' && m.isDefault === true);
     });
-    assert(defaultFolderExists, '未分類 folder exists in meta');
+    assert(!defaultFolderExists, 'No default (未分類) folder in meta (removed from spec)');
 
-    // 未分類 should be at the bottom (last folder)
-    let folderOrder = await page.evaluate(() => {
-        var folders = document.querySelectorAll('.map-item.folder-item');
-        if (folders.length === 0) return null;
-        var last = folders[folders.length - 1];
-        return last.classList.contains('default-folder');
+    // DOM にも default-folder 要素が無い
+    let defaultFolderInDom = await page.evaluate(() => {
+        return document.querySelector('.map-item.default-folder') !== null;
     });
-    assert(folderOrder === true, '未分類 folder is at the bottom of the list');
-
-    // 未分類 should not be draggable
-    let defaultDraggable = await page.evaluate(() => {
-        var defFolder = document.querySelector('.map-item.default-folder');
-        return defFolder ? defFolder.draggable : null;
-    });
-    assert(!defaultDraggable, '未分類 folder is not draggable');
+    assert(!defaultFolderInDom, 'No default-folder element in sidebar DOM');
 
     // ========================================
     // Test 19: Folder Context Menu
@@ -660,7 +643,7 @@ function assert(cond, msg) {
     }
 
     // ========================================
-    // Test 20: Delete Folder (children move to 未分類)
+    // Test 20: Delete Folder（現行仕様: 中のページもまとめて削除される）
     // ========================================
     console.log('\n=== Test 20: Delete Folder ===');
 
@@ -681,20 +664,15 @@ function assert(cond, msg) {
     }, targetFolderId);
     assert(folderGone, 'Folder removed from meta');
 
-    // Children should have moved to 未分類
+    // 現行仕様: フォルダ削除時は中のページも削除される（未分類への移動は廃止）
     if (pagesInFolder.length > 0) {
-        let movedToDefault = await page.evaluate((pageIds) => {
+        let childrenDeleted = await page.evaluate((pageIds) => {
             var meta = JSON.parse(localStorage.getItem('mindmap-meta'));
-            var defFolder = meta.find(m => m.type === 'folder' && m.isDefault);
-            if (!defFolder) return false;
-            return pageIds.every(pid => {
-                var p = meta.find(m => m.id === pid);
-                return p && p.folderId === defFolder.id;
-            });
+            return pageIds.every(pid => !meta.some(m => m.id === pid));
         }, pagesInFolder);
-        assert(movedToDefault, 'Children moved to 未分類 after folder deletion');
+        assert(childrenDeleted, 'Children deleted together with folder (current spec)');
     } else {
-        assert(true, 'No children to move (skipped)');
+        assert(true, 'No children to delete (skipped)');
     }
 
     // ========================================
@@ -728,7 +706,10 @@ function assert(cond, msg) {
     // ========================================
     console.log('\n=== Test 22: Node Operations Still Work ===');
 
-    await page.click('#canvas');
+    // キャンバスの空き領域を実クリックしてサイドバーのナビゲーションモードを解除する。
+    // 注意: ノード上のクリックでは mousedown が stopPropagation され document に届かず
+    // モードが解除されない（既知バグとして docs/refactor-baseline.md に記録済み）。
+    await page.mouse.click(700, 80);
     await page.waitForTimeout(300);
     await page.keyboard.press('Escape');
     await page.waitForTimeout(200);
@@ -740,6 +721,11 @@ function assert(cond, msg) {
     await page.waitForTimeout(300);
     await page.keyboard.press('Escape');
     await page.waitForTimeout(200);
+
+    // 前のテストで残ったリネーム入力等のフォーカスを外す
+    // （フォーカスが残っているとキー入力がキャンバスに届かない）
+    await page.evaluate(() => { var a = document.activeElement; if (a && a.blur) a.blur(); });
+    await page.waitForTimeout(150);
 
     await page.keyboard.press('Tab');
     await page.waitForTimeout(300);
