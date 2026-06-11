@@ -1,13 +1,18 @@
+import { showToast } from './utils.js';
+import { isSharedReadonly } from './storage.js';
+import { findNode } from './nodes.js';
+import { render } from './render.js';
+
 // ========================================
 // Global State
 // ========================================
 
-const levelIcons = {
+export const levelIcons = {
     hiyoko: { 1: '🐔', 2: '🐤', 3: '🐣', 4: '🥚' }
     // family mode removed
 };
 
-let mindMapData = {
+export let mindMapData = {
     root: {
         id: 'root',
         text: '中心テーマ',
@@ -15,14 +20,14 @@ let mindMapData = {
     }
 };
 
-let currentMapId = null; // Currently active map ID
+export let currentMapId = null; // Currently active map ID
 
-let selectedNodeIds = new Set();
-let lastSelectedNodeId = null;
-let selectionAnchorId = null; // Anchor node for Shift+Arrow range selection
-let editingNodeId = null;
+export let selectedNodeIds = new Set();
+export let lastSelectedNodeId = null;
+export let selectionAnchorId = null; // Anchor node for Shift+Arrow range selection
+export let editingNodeId = null;
 
-let viewState = {
+export let viewState = {
     zoom: 1,
     panX: 0,
     panY: 0,
@@ -31,21 +36,17 @@ let viewState = {
     startY: 0
 };
 
-let undoHistory = [];
-let undoIndex = -1;
-const MAX_HISTORY = 50;
+export let undoHistory = [];
+export let undoIndex = -1;
+export const MAX_HISTORY = 50;
 
-let clipboard = null;
-let clipboardIsCut = false;
-
-let nodeIdCounter = 0;
 
 // Node collapse state: { [nodeId]: true/false } - per map, saved in localStorage
 var NODE_COLLAPSE_KEY_PREFIX = 'mindmap-node-collapse-';
 
 // Node grey-out state: { [nodeId]: true/false } - per map, saved in localStorage
 var NODE_GRAYOUT_KEY_PREFIX = 'mindmap-node-grayout-';
-function getNodeGrayoutState() {
+export function getNodeGrayoutState() {
     if (!currentMapId) return {};
     // 共有モード: 埋め込まれた _grayout から取得（localStorage は触らない）
     if (typeof isSharedReadonly === 'function' && isSharedReadonly()) {
@@ -57,16 +58,16 @@ function getNodeGrayoutState() {
     } catch(e) {}
     return {};
 }
-function setNodeGrayoutState(state) {
+export function setNodeGrayoutState(state) {
     if (!currentMapId) return;
     if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
     try { localStorage.setItem(NODE_GRAYOUT_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
 }
-function isNodeGrayedOut(nodeId) {
+export function isNodeGrayedOut(nodeId) {
     var state = getNodeGrayoutState();
     return state[nodeId] === true;
 }
-function toggleNodeGrayout(nodeId) {
+export function toggleNodeGrayout(nodeId) {
     if (!nodeId) return;
     var grayState = getNodeGrayoutState();
     if (grayState[nodeId]) {
@@ -88,7 +89,7 @@ function toggleNodeGrayout(nodeId) {
     render();
 }
 // Check if a node is a descendant of any grayed-out node
-function isDescendantOfGrayedOut(nodeId) {
+export function isDescendantOfGrayedOut(nodeId) {
     // Walk up the tree from nodeId, check if any ancestor is grayed out
     var result = findNode(nodeId);
     if (!result) return false;
@@ -101,13 +102,13 @@ function isDescendantOfGrayedOut(nodeId) {
     return false;
 }
 // Check if a node or any of its ancestors is grayed out
-function isNodeOrAncestorGrayedOut(nodeId) {
+export function isNodeOrAncestorGrayedOut(nodeId) {
     return isNodeGrayedOut(nodeId) || isDescendantOfGrayedOut(nodeId);
 }
 
 // Node highlight state: { [nodeId]: true/false } - per map, saved in localStorage
 var NODE_HIGHLIGHT_KEY_PREFIX = 'mindmap-node-highlight-';
-function getNodeHighlightState() {
+export function getNodeHighlightState() {
     if (!currentMapId) return {};
     if (typeof isSharedReadonly === 'function' && isSharedReadonly()) {
         return (window._sharedData && window._sharedData._highlight) || {};
@@ -118,16 +119,16 @@ function getNodeHighlightState() {
     } catch(e) {}
     return {};
 }
-function setNodeHighlightState(state) {
+export function setNodeHighlightState(state) {
     if (!currentMapId) return;
     if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
     try { localStorage.setItem(NODE_HIGHLIGHT_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
 }
-function isNodeHighlighted(nodeId) {
+export function isNodeHighlighted(nodeId) {
     var state = getNodeHighlightState();
     return state[nodeId] === true;
 }
-function toggleNodeHighlight(nodeId) {
+export function toggleNodeHighlight(nodeId) {
     if (!nodeId) return;
     var hlState = getNodeHighlightState();
     if (hlState[nodeId]) {
@@ -150,7 +151,7 @@ function toggleNodeHighlight(nodeId) {
 }
 // Node cyan state: { [nodeId]: true } - per map, saved in localStorage
 var NODE_CYAN_KEY_PREFIX = 'mindmap-node-cyan-';
-function getNodeCyanState() {
+export function getNodeCyanState() {
     if (!currentMapId) return {};
     if (typeof isSharedReadonly === 'function' && isSharedReadonly()) {
         return (window._sharedData && window._sharedData._cyan) || {};
@@ -161,19 +162,19 @@ function getNodeCyanState() {
     } catch(e) {}
     return {};
 }
-function setNodeCyanState(state) {
+export function setNodeCyanState(state) {
     if (!currentMapId) return;
     if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
     try { localStorage.setItem(NODE_CYAN_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
 }
-function isNodeCyan(nodeId) {
+export function isNodeCyan(nodeId) {
     var state = getNodeCyanState();
     return state[nodeId] === true;
 }
 
 // Node green state: { [nodeId]: true } - per map, saved in localStorage
 var NODE_GREEN_KEY_PREFIX = 'mindmap-node-green-';
-function getNodeGreenState() {
+export function getNodeGreenState() {
     if (!currentMapId) return {};
     if (typeof isSharedReadonly === 'function' && isSharedReadonly()) {
         return (window._sharedData && window._sharedData._green) || {};
@@ -184,19 +185,19 @@ function getNodeGreenState() {
     } catch(e) {}
     return {};
 }
-function setNodeGreenState(state) {
+export function setNodeGreenState(state) {
     if (!currentMapId) return;
     if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
     try { localStorage.setItem(NODE_GREEN_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
 }
-function isNodeGreen(nodeId) {
+export function isNodeGreen(nodeId) {
     var state = getNodeGreenState();
     return state[nodeId] === true;
 }
 
 // Node red-text state: { [nodeId]: true } - per map, saved in localStorage
 var NODE_REDTEXT_KEY_PREFIX = 'mindmap-node-redtext-';
-function getNodeRedTextState() {
+export function getNodeRedTextState() {
     if (!currentMapId) return {};
     if (typeof isSharedReadonly === 'function' && isSharedReadonly()) {
         return (window._sharedData && window._sharedData._redtext) || {};
@@ -207,12 +208,12 @@ function getNodeRedTextState() {
     } catch(e) {}
     return {};
 }
-function setNodeRedTextState(state) {
+export function setNodeRedTextState(state) {
     if (!currentMapId) return;
     if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
     try { localStorage.setItem(NODE_REDTEXT_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
 }
-function isNodeRedText(nodeId) {
+export function isNodeRedText(nodeId) {
     var state = getNodeRedTextState();
     return state[nodeId] === true;
 }
@@ -235,11 +236,11 @@ function setNodeHyperlink(nodeId, link) {
         delete r.node.hyperlink;
     }
 }
-function isNodeLinked(nodeId) {
+export function isNodeLinked(nodeId) {
     return !!getNodeHyperlink(nodeId);
 }
 
-function getNodeCollapseState() {
+export function getNodeCollapseState() {
     if (!currentMapId) return {};
     try {
         var raw = localStorage.getItem(NODE_COLLAPSE_KEY_PREFIX + currentMapId);
@@ -247,16 +248,16 @@ function getNodeCollapseState() {
     } catch(e) {}
     return {};
 }
-function setNodeCollapseState(state) {
+export function setNodeCollapseState(state) {
     if (!currentMapId) return;
     if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
     try { localStorage.setItem(NODE_COLLAPSE_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
 }
-function isNodeCollapsed(nodeId) {
+export function isNodeCollapsed(nodeId) {
     var state = getNodeCollapseState();
     return state[nodeId] === true;
 }
-function toggleNodeCollapse(nodeId) {
+export function toggleNodeCollapse(nodeId) {
     if (nodeId === 'root') return; // root cannot be collapsed
     var node = findNode(nodeId);
     if (!node || !node.node.children || node.node.children.length === 0) return; // only nodes with children
@@ -265,13 +266,13 @@ function toggleNodeCollapse(nodeId) {
     setNodeCollapseState(state);
     render();
 }
-function expandAllNodes() {
+export function expandAllNodes() {
     setNodeCollapseState({});
     render();
     showToast('すべてのノードを展開しました');
 }
 
-function collapseAllNodes() {
+export function collapseAllNodes() {
     var state = {};
     function collectCollapsible(node) {
         if (node.id !== 'root' && node.children && node.children.length > 0) {
@@ -292,7 +293,7 @@ function collapseAllNodes() {
 }
 
 // Drag reparenting state
-let nodeDragState = {
+export let nodeDragState = {
     isDragging: false,
     didDrag: false,
     isDuplicating: false,
@@ -303,7 +304,7 @@ let nodeDragState = {
 };
 
 // Lasso selection state
-let lassoState = {
+export let lassoState = {
     active: false,
     didSelect: false,
     startX: 0,
@@ -313,21 +314,21 @@ let lassoState = {
 };
 
 // Context menu state
-let ctxMenuTargetMapId = null;
+export let ctxMenuTargetMapId = null;
 
 // ノード間関連線（フリー接続）の状態管理
 // connectionMode: 接続待機モード中かどうか・元ノード・現在のマウス位置（プレビュー用）
-let connectionMode = {
+export let connectionMode = {
     active: false,
     fromNodeId: null,
     mouseCanvasX: 0,
     mouseCanvasY: 0
 };
 // 現在選択中の関連線ID（最大1本）
-let selectedRelationId = null;
+export let selectedRelationId = null;
 // 関連線ドラッグ状態（点線本体・制御点どちらをつかんでも使う）
 // active=true でmousedown済み、moved=true で実際に閾値以上動いた（曲線として確定）
-let relationCtrlDragState = {
+export let relationCtrlDragState = {
     active: false,
     relationId: null,
     startClientX: 0,
@@ -336,7 +337,7 @@ let relationCtrlDragState = {
 };
 
 // 関連線の端点ドラッグ状態（端点ポチをつかんで上下左右4スナップで動かす）
-let relationEndpointDragState = {
+export let relationEndpointDragState = {
     active: false,
     relationId: null,
     side: null,             // 'from' | 'to'
@@ -346,13 +347,11 @@ let relationEndpointDragState = {
 };
 
 // 手動ダブルクリック判定（render()でDOMが入れ替わることがあるため、ブラウザのdblclickイベントに頼らない）
-let lastRelationClickInfo = { time: 0, relId: null };
+export let lastRelationClickInfo = { time: 0, relId: null };
 
 // シングルクリック→メモ入力欄の表示遅延タイマー（ダブルクリック検出と競合しないよう280ms後に起動）
-let pendingRelationLabelEditTimer = null;
-let pendingRelationLabelEditRelId = null;
 // 直近renderでのノード位置（関連線描画やドラッグで参照する）
-let lastRenderedPositions = null;
+export let lastRenderedPositions = null;
 
 // ========================================
 // 高速モード（Fast Mode）
@@ -360,18 +359,18 @@ let lastRenderedPositions = null;
 // localStorage で永続化し、デフォルトは OFF（既存挙動）。
 // ========================================
 var FAST_MODE_STORAGE_KEY = 'mindmap.fastMode';
-function getFastMode() {
+export function getFastMode() {
     try {
         return localStorage.getItem(FAST_MODE_STORAGE_KEY) === 'true';
     } catch (e) { return false; }
 }
-function setFastMode(enabled) {
+export function setFastMode(enabled) {
     try {
         localStorage.setItem(FAST_MODE_STORAGE_KEY, enabled ? 'true' : 'false');
     } catch (e) {}
     syncFastModeToggleUI();
 }
-function syncFastModeToggleUI() {
+export function syncFastModeToggleUI() {
     var on = getFastMode();
     var toggleEl = document.getElementById('fastModeToggle');
     if (toggleEl) {
@@ -380,3 +379,19 @@ function syncFastModeToggleUI() {
     }
 }
 
+
+// ========================================
+// モジュール間 setter
+// ESモジュールの import 束縛は読み取り専用のため、他モジュールからの
+// 再代入はこの setter を経由する（読み取りは import した束縛をそのまま使える）
+// ========================================
+export function setMindMapData(v) { mindMapData = v; }
+export function setCurrentMapId(v) { currentMapId = v; }
+export function setEditingNodeId(v) { editingNodeId = v; }
+export function setLastSelectedNodeId(v) { lastSelectedNodeId = v; }
+export function setSelectionAnchorId(v) { selectionAnchorId = v; }
+export function setSelectedRelationId(v) { selectedRelationId = v; }
+export function setCtxMenuTargetMapId(v) { ctxMenuTargetMapId = v; }
+export function setLastRenderedPositions(v) { lastRenderedPositions = v; }
+export function setUndoHistory(v) { undoHistory = v; }
+export function setUndoIndex(v) { undoIndex = v; }

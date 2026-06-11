@@ -1,8 +1,21 @@
+import {
+    getNodeCollapseState,
+    nodeDragState,
+    selectedNodeIds,
+    setLastSelectedNodeId,
+    setNodeCollapseState
+} from './state.js';
+import { deepClone, generateId, showToast } from './utils.js';
+import { saveState } from './history.js';
+import { findNode } from './nodes.js';
+import { filterTopLevelNodes, isDescendant } from './clipboard.js';
+import { render } from './render.js';
+
 // ========================================
 // Node Drag & Drop (Reparenting / Duplicate)
 // ========================================
 
-function startNodeDrag(nodeId, clientX, clientY, nodeEl) {
+export function startNodeDrag(nodeId, clientX, clientY, nodeEl) {
     if (nodeId === 'root') return;
     var startTime = Date.now();
     nodeDragState.didDrag = false;
@@ -157,7 +170,7 @@ function getDropTarget(clientX, clientY) {
     return null;
 }
 
-function endNodeDrag() {
+export function endNodeDrag() {
     if (!nodeDragState.isDragging) return;
     var ghost = document.querySelector('.drag-ghost');
     if (ghost) ghost.remove();
@@ -265,7 +278,7 @@ function duplicateNodes(nodeIds, targetId, position) {
     // 複製先ノードを選択状態にする
     selectedNodeIds.clear();
     for (var i = 0; i < newNodes.length; i++) selectedNodeIds.add(newNodes[i].id);
-    lastSelectedNodeId = newNodes[0] ? newNodes[0].id : null;
+    setLastSelectedNodeId(newNodes[0] ? newNodes[0].id : null);
 
     showToast('ノードを複製しました');
 }
@@ -307,5 +320,5 @@ function moveNodes(nodeIds, targetId, position) {
     saveState();
     selectedNodeIds.clear();
     for (var i = 0; i < nodesToMove.length; i++) selectedNodeIds.add(nodesToMove[i].id);
-    lastSelectedNodeId = nodesToMove[0] ? nodesToMove[0].id : null;
+    setLastSelectedNodeId(nodesToMove[0] ? nodesToMove[0].id : null);
 }

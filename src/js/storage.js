@@ -1,3 +1,5 @@
+import { currentMapId, mindMapData } from './state.js';
+
 // ========================================
 // Multi-Map Storage Layer
 // ========================================
@@ -8,15 +10,15 @@ var LAST_ACTIVE_KEY = 'mindmap-last-active-id';
 var OLD_STORAGE_KEY = 'mindmap_data_v2'; // legacy key for migration
 
 // 共有URL閲覧モードのときは true。localStorage を一切汚さないようガードに使う
-function isSharedReadonly() {
+export function isSharedReadonly() {
     return !!(window._isReadOnly && window._sharedMeta);
 }
 
-function getMapDataKey(mapId) {
+export function getMapDataKey(mapId) {
     return 'mindmap-data-' + mapId;
 }
 
-function getMetaList() {
+export function getMetaList() {
     // 共有モードはメモリ上のメタリストを返す（localStorage を読まない）
     if (isSharedReadonly()) {
         return JSON.parse(JSON.stringify(window._sharedMeta));
@@ -28,13 +30,13 @@ function getMetaList() {
     return [];
 }
 
-function saveMetaList(metaList) {
+export function saveMetaList(metaList) {
     // 共有モードでは localStorage を絶対に書き換えない
     if (isSharedReadonly()) return;
     try { localStorage.setItem(META_KEY, JSON.stringify(metaList)); } catch(e) {}
 }
 
-function getNextMapId() {
+export function getNextMapId() {
     if (isSharedReadonly()) return 0; // 新規ID不要
     var counter = parseInt(localStorage.getItem(ID_COUNTER_KEY), 10) || 0;
     counter++;
@@ -42,17 +44,17 @@ function getNextMapId() {
     return counter;
 }
 
-function setLastActiveId(mapId) {
+export function setLastActiveId(mapId) {
     if (isSharedReadonly()) return;
     try { localStorage.setItem(LAST_ACTIVE_KEY, String(mapId)); } catch(e) {}
 }
 
-function getLastActiveId() {
+export function getLastActiveId() {
     if (isSharedReadonly()) return window._sharedMapId || null;
     return parseInt(localStorage.getItem(LAST_ACTIVE_KEY), 10) || null;
 }
 
-function findMetaById(mapId) {
+export function findMetaById(mapId) {
     var list = getMetaList();
     for (var i = 0; i < list.length; i++) {
         if (String(list[i].id) === String(mapId)) return list[i];
@@ -60,7 +62,7 @@ function findMetaById(mapId) {
     return null;
 }
 
-function nowISO() {
+export function nowISO() {
     return new Date().toISOString();
 }
 
@@ -68,19 +70,19 @@ var SORT_MODE_KEY = 'mindmap-sort-mode';
 var COLLAPSE_STATE_KEY = 'mindmap-collapse-state';
 var TITLE_DATE_MODE_KEY = 'mindmap-title-date-mode';
 
-function getSortMode() {
+export function getSortMode() {
     return localStorage.getItem(SORT_MODE_KEY) || 'none';
 }
-function setSortMode(mode) {
+export function setSortMode(mode) {
     if (isSharedReadonly()) return;
     try { localStorage.setItem(SORT_MODE_KEY, mode); } catch(e) {}
 }
 
 // 「タイトルに日付」モード（ON時、新規作成タイトルが YYYYMMDD_ になる）。初期値は OFF。
-function getTitleDateMode() {
+export function getTitleDateMode() {
     return localStorage.getItem(TITLE_DATE_MODE_KEY) === 'on';
 }
-function setTitleDateMode(on) {
+export function setTitleDateMode(on) {
     if (isSharedReadonly()) return;
     try { localStorage.setItem(TITLE_DATE_MODE_KEY, on ? 'on' : 'off'); } catch(e) {}
 }
@@ -93,17 +95,17 @@ function getTodayDatePrefix() {
     return y + m + day;
 }
 // 新規マップのデフォルトタイトル（モードONなら YYYYMMDD_、OFFなら 無題のマップ）
-function getDefaultNewMapName() {
+export function getDefaultNewMapName() {
     return getTitleDateMode() ? (getTodayDatePrefix() + '_') : '無題のマップ';
 }
-function getCollapseState() {
+export function getCollapseState() {
     try {
         var raw = localStorage.getItem(COLLAPSE_STATE_KEY);
         if (raw) return JSON.parse(raw);
     } catch(e) {}
     return {};
 }
-function setCollapseState(state) {
+export function setCollapseState(state) {
     if (isSharedReadonly()) return;
     try { localStorage.setItem(COLLAPSE_STATE_KEY, JSON.stringify(state)); } catch(e) {}
 }
@@ -111,11 +113,11 @@ function setCollapseState(state) {
 // ---- Helper: ensure 未分類 folder exists ----
 // 未分類フォルダは廃止済み。互換のため関数は残し、単に metaList をそのまま返す。
 // 既存呼び出し箇所は順次撤去予定。
-function ensureDefaultFolder(metaList) {
+export function ensureDefaultFolder(metaList) {
     return metaList;
 }
 
-function getDefaultFolderId(metaList) {
+export function getDefaultFolderId(metaList) {
     if (!metaList) metaList = getMetaList();
     for (var i = 0; i < metaList.length; i++) {
         if (metaList[i].type === 'folder' && metaList[i].isDefault) return metaList[i].id;
@@ -128,7 +130,7 @@ function getDefaultFolderId(metaList) {
 // - ローカル metaList を即時更新
 // - Supabase 側へは「対象ページの folder_id を null に更新 → フォルダ削除」を非同期で実施
 // - 冪等：未分類フォルダが存在しなければ何もしない
-function cleanupDefaultFolders() {
+export function cleanupDefaultFolders() {
     if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
     var metaList = getMetaList();
     var defaultIds = [];
@@ -180,7 +182,7 @@ function cleanupDefaultFolders() {
 }
 
 // ---- Migration from old single-map storage ----
-function migrateIfNeeded() {
+export function migrateIfNeeded() {
     // 共有モードでは migration を走らせない（localStorage を一切触らない）
     if (isSharedReadonly()) return;
     // v4 migration: convert old parentId/order schema to folder/page schema
@@ -369,7 +371,7 @@ function migrateIfNeeded() {
 }
 
 // ---- お気に入りトグル ----
-function toggleFavorite(mapId) {
+export function toggleFavorite(mapId) {
     var metaList = getMetaList();
     for (var i = 0; i < metaList.length; i++) {
         if (String(metaList[i].id) === String(mapId)) {
@@ -394,7 +396,7 @@ function toggleFavorite(mapId) {
 }
 
 // ---- Save / Load for current map ----
-function saveToLocalStorage() {
+export function saveToLocalStorage() {
     if (!currentMapId) return;
     // 共有モードでは絶対に localStorage を書き換えない
     if (isSharedReadonly()) return;
@@ -416,7 +418,7 @@ function saveToLocalStorage() {
     }
 }
 
-function loadMapData(mapId) {
+export function loadMapData(mapId) {
     // 共有モードはメモリ上のデータだけ返す
     if (isSharedReadonly()) {
         if (String(mapId) === String(window._sharedMapId) && window._sharedData) {

@@ -29,26 +29,7 @@ const CSS_FILES = [
     'auth.css',
 ];
 
-const JS_FILES = [
-    'state.js',
-    'utils.js',
-    'storage.js',
-    'history.js',
-    'nodes.js',
-    'selection.js',
-    'editing.js',
-    'clipboard.js',
-    'drag.js',
-    'lasso.js',
-    'render.js',
-    'relations.js',
-    'keyboard.js',
-    'canvas-interaction.js',
-    'init.js',
-    'sidebar-right.js',
-    'sidebar-left.js',
-    'app-init.js',
-];
+
 
 function read(p) {
     return fs.readFileSync(p, 'utf-8');
@@ -75,9 +56,16 @@ const localBundleBlock = `<script>\n${localStorageJs}\n</script>`;
 const css = CSS_FILES.map(f => read(path.join(SRC, 'css', f))).join('\n');
 const cssBlock = `<style>\n${css}</style>`;
 
-// JS を結合して IIFE で包む（両ビルド共通。本体コードは _supa の有無で分岐）
-const js = JS_FILES.map(f => read(path.join(SRC, 'js', f))).join('\n');
-const jsBlock = `<script>\n    (function() {\n        'use strict';\n\n${js}\n    })();\n    </script>`;
+// アプリ本体を esbuild で IIFE バンドル（src/js/app.js がエントリポイント。両ビルド共通）
+const appResult = buildSync({
+    entryPoints: [path.join(SRC, 'js', 'app.js')],
+    bundle: true,
+    format: 'iife',
+    write: false,
+    minify: false,
+    target: ['es2017'],
+});
+const jsBlock = `<script>\n${appResult.outputFiles[0].text}\n</script>`;
 
 // テンプレート読み込み
 const template = read(path.join(SRC, 'index.html'));

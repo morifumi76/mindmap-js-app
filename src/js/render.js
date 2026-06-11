@@ -1,8 +1,34 @@
+import {
+    editingNodeId,
+    isNodeCollapsed,
+    isNodeCyan,
+    isNodeGrayedOut,
+    isNodeGreen,
+    isNodeHighlighted,
+    isNodeRedText,
+    lastSelectedNodeId,
+    mindMapData,
+    nodeDragState,
+    selectedNodeIds,
+    setLastRenderedPositions,
+    setLastSelectedNodeId,
+    toggleNodeCollapse,
+    viewState
+} from './state.js';
+import { saveToLocalStorage } from './storage.js';
+import { getAllNodesInOrder } from './nodes.js';
+import { rangeSelectNode, selectNode, toggleSelectNode, updateSelectionDisplay } from './selection.js';
+import { finishEditing, startEditing } from './editing.js';
+import { startNodeDrag } from './drag.js';
+import { completeConnection, isConnectionModeActive, renderRelations } from './relations.js';
+import { updateZoomDisplay } from './canvas-interaction.js';
+import { renderSidebarTree } from './sidebar-right.js';
+
 // ========================================
 // Rendering
 // ========================================
 
-function render() {
+export function render() {
     var container = document.getElementById('canvasInner');
     var svg = document.getElementById('linesSvg');
     var endpointsSvg = document.getElementById('endpointsSvg');
@@ -25,7 +51,7 @@ function render() {
         renderRelations(svg, positions);
     }
     // 直近の位置情報を関連線まわり（制御点ドラッグ等）から参照できるよう保存
-    lastRenderedPositions = positions;
+    setLastRenderedPositions(positions);
     updateSelectionDisplay();
     updateView();
     // Auto-save to localStorage after every render (post-mutation state)
@@ -193,7 +219,7 @@ function renderNodes(node, container, positions) {
                 if (si !== -1 && ei !== -1) {
                     var mn = Math.min(si, ei), mx = Math.max(si, ei);
                     for (var i = mn; i <= mx; i++) selectedNodeIds.add(allNodes[i].id);
-                    lastSelectedNodeId = nodeData.id;
+                    setLastSelectedNodeId(nodeData.id);
                     updateSelectionDisplay();
                 }
             } else if (e.shiftKey) {
@@ -281,13 +307,13 @@ function renderLines(node, svg, positions) {
 // View Controls
 // ========================================
 
-function updateView() {
+export function updateView() {
     var inner = document.getElementById('canvasInner');
     inner.style.transform = 'translate(' + viewState.panX + 'px, ' + viewState.panY + 'px) scale(' + viewState.zoom + ')';
     if (typeof updateZoomDisplay === 'function') updateZoomDisplay();
 }
 
-function resetView() {
+export function resetView() {
     var container = document.getElementById('canvasContainer');
     viewState.zoom = 1;
     viewState.panX = container.clientWidth / 2 - 75;

@@ -1,12 +1,17 @@
+import { editingNodeId, selectedNodeIds, setEditingNodeId } from './state.js';
+import { findNode, updateNodeText } from './nodes.js';
+import { selectNode } from './selection.js';
+import { render } from './render.js';
+
 // ========================================
 // Edit Mode
 // ========================================
 
-function startEditing(nodeId) {
+export function startEditing(nodeId) {
     if (window._isReadOnly) return;
     if (editingNodeId === nodeId) return;
     if (editingNodeId) finishEditing();
-    editingNodeId = nodeId;
+    setEditingNodeId(nodeId);
     // Select without clearing other selection state, just ensure this node is selected
     if (!selectedNodeIds.has(nodeId)) {
         selectNode(nodeId);
@@ -27,7 +32,7 @@ function startEditing(nodeId) {
     }
 }
 
-function finishEditing() {
+export function finishEditing() {
     if (!editingNodeId) return;
     var prevEditingId = editingNodeId;
     var nodeEl = document.querySelector('[data-id="' + editingNodeId + '"]');
@@ -50,7 +55,7 @@ function finishEditing() {
         textEl.contentEditable = 'false';
         nodeEl.classList.remove('editing');
     }
-    editingNodeId = null;
+    setEditingNodeId(null);
     // Re-render to recalculate layout when text changed
     if (textChanged) {
         render();

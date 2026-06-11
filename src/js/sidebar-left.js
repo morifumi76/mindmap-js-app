@@ -1,3 +1,63 @@
+import {
+    collapseAllNodes,
+    ctxMenuTargetMapId,
+    currentMapId,
+    expandAllNodes,
+    getNodeCollapseState,
+    getNodeGrayoutState,
+    getNodeHighlightState,
+    isDescendantOfGrayedOut,
+    isNodeCollapsed,
+    isNodeGrayedOut,
+    isNodeHighlighted,
+    isNodeOrAncestorGrayedOut,
+    mindMapData,
+    selectedNodeIds,
+    setCtxMenuTargetMapId,
+    setCurrentMapId,
+    setEditingNodeId,
+    setLastSelectedNodeId,
+    setMindMapData,
+    setNodeCollapseState,
+    setNodeGrayoutState,
+    setNodeHighlightState,
+    setSelectionAnchorId,
+    setUndoHistory,
+    setUndoIndex,
+    toggleNodeCollapse,
+    toggleNodeGrayout,
+    toggleNodeHighlight
+} from './state.js';
+import { deepClone, isImeRelatedKey, showToast } from './utils.js';
+import {
+    ensureDefaultFolder,
+    findMetaById,
+    getCollapseState,
+    getDefaultFolderId,
+    getDefaultNewMapName,
+    getMapDataKey,
+    getMetaList,
+    getNextMapId,
+    getSortMode,
+    getTitleDateMode,
+    loadMapData,
+    nowISO,
+    saveMetaList,
+    saveToLocalStorage,
+    setCollapseState,
+    setLastActiveId,
+    setSortMode,
+    toggleFavorite
+} from './storage.js';
+import { saveState } from './history.js';
+import { getVisibleNodesInOrder } from './nodes.js';
+import { selectNode } from './selection.js';
+import { finishEditing } from './editing.js';
+import { getCurrentCopyText } from './clipboard.js';
+import { render, resetView } from './render.js';
+import { updatePageTitle, updateUrlParam } from './init.js';
+import { adjustCanvasForSidebars, closeRightSidebar, openRightSidebar } from './sidebar-right.js';
+
 // ========================================
 // Left Sidebar: My Maps Management
 // ========================================
@@ -174,7 +234,7 @@ function sidebarPasteItems(moveMode) {
     }
 }
 
-function initLeftSidebar() {
+export function initLeftSidebar() {
     if (leftSidebarInitialized) return;
     leftSidebarInitialized = true;
     // 初期状態を履歴に記録（Undoの起点）
@@ -268,7 +328,7 @@ function initLeftSidebar() {
         var cm = document.getElementById('ctxMenu');
         cm.classList.remove('show');
         var targetId = ctxMenuTargetMapId;
-        ctxMenuTargetMapId = null;
+        setCtxMenuTargetMapId(null);
 
         if (action === 'rename') {
             startInlineRename(targetId);
@@ -298,7 +358,7 @@ function initLeftSidebar() {
         var cm = document.getElementById('ctxMenuFolder');
         cm.classList.remove('show');
         var targetId = ctxMenuTargetMapId;
-        ctxMenuTargetMapId = null;
+        setCtxMenuTargetMapId(null);
 
         if (action === 'folder-rename') {
             startInlineRename(targetId);
@@ -611,7 +671,7 @@ function closeLeftSidebar() {
 }
 
 // ---- Render Map List (recursive Folder → SubFolder/Page Tree) ----
-function renderMapList() {
+export function renderMapList() {
     var list = document.getElementById('mapList');
     if (!list) return;
     var metaList = getMetaList();
@@ -1387,7 +1447,7 @@ function handleMapDrop(dragId, targetId, position, dragType) {
 // ---- Context Menus ----
 function showContextMenu(mapId, anchorEl) {
     hideAllContextMenus();
-    ctxMenuTargetMapId = mapId;
+    setCtxMenuTargetMapId(mapId);
     var cm = document.getElementById('ctxMenu');
     // Show share item only if logged in (Supabase available)
     var shareItem = cm.querySelector('[data-action="share"]');
@@ -1405,7 +1465,7 @@ function showContextMenu(mapId, anchorEl) {
 
 function showFolderContextMenu(folderId, anchorEl) {
     hideAllContextMenus();
-    ctxMenuTargetMapId = folderId;
+    setCtxMenuTargetMapId(folderId);
     var meta = findMetaById(folderId);
     var cm = document.getElementById('ctxMenuFolder');
     // Hide rename, add-subfolder, and delete for 未分類
@@ -1440,7 +1500,7 @@ function showAreaContextMenu(clientX, clientY) {
 
 function hideAllContextMenus() {
     document.querySelectorAll('.ctx-menu.show').forEach(function(el) { el.classList.remove('show'); });
-    ctxMenuTargetMapId = null;
+    setCtxMenuTargetMapId(null);
 }
 
 // ---- CRUD: Pages ----
@@ -1833,17 +1893,17 @@ function switchToMap(mapId) {
     // Reset state
     finishEditing();
     selectedNodeIds.clear();
-    lastSelectedNodeId = null;
-    selectionAnchorId = null;
-    editingNodeId = null;
-    undoHistory = [];
-    undoIndex = -1;
+    setLastSelectedNodeId(null);
+    setSelectionAnchorId(null);
+    setEditingNodeId(null);
+    setUndoHistory([]);
+    setUndoIndex(-1);
     // クリップボードはページを跨いで保持する（ページ間コピペを可能にするため）。
     // クリップボードのデータは deep clone 済みで元マップから独立しており、
     // ペースト時に reassignIds() で全ノードIDを再採番するため衝突も発生しない。
 
-    currentMapId = mapId;
-    mindMapData = data;
+    setCurrentMapId(mapId);
+    setMindMapData(data);
     setLastActiveId(mapId);
     updateUrlParam(mapId);
     updatePageTitle();

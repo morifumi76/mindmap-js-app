@@ -1,0 +1,21 @@
+// アプリ本体のエントリポイント
+// esbuild がここから依存を辿って1つの IIFE にバンドルする（build.js 参照）
+// 各モジュールのトップレベル処理は元の連結順を保って実行される
+import './state.js';
+import './utils.js';
+import './storage.js';
+import './history.js';
+import './nodes.js';
+import './selection.js';
+import './editing.js';
+import './clipboard.js';
+import './drag.js';
+import './lasso.js';
+import './render.js';
+import './relations.js';
+import './keyboard.js';
+import './canvas-interaction.js';
+import './init.js';
+import './sidebar-right.js';
+import './sidebar-left.js';
+import './app-init.js';

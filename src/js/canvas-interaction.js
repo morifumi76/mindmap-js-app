@@ -1,8 +1,16 @@
+import { lassoState, nodeDragState, viewState } from './state.js';
+import { clearSelection } from './selection.js';
+import { finishEditing } from './editing.js';
+import { endNodeDrag } from './drag.js';
+import { endLasso, startLasso, updateLasso } from './lasso.js';
+import { updateView } from './render.js';
+import { cancelConnectionMode, isConnectionModeActive } from './relations.js';
+
 // ========================================
 // Canvas Interaction: Pan, Zoom, Lasso
 // ========================================
 
-function initCanvasInteraction() {
+export function initCanvasInteraction() {
     var canvas = document.getElementById('canvas');
 
     // --- Mousedown ---
@@ -199,7 +207,7 @@ function zoomToCenter(newZoom) {
     updateZoomDisplay();
 }
 
-function updateZoomDisplay() {
+export function updateZoomDisplay() {
     var display = document.getElementById('zoomDisplay');
     var outBtn = document.getElementById('zoomOutBtn');
     var inBtn = document.getElementById('zoomInBtn');
@@ -210,7 +218,7 @@ function updateZoomDisplay() {
 }
 
 var zoomControlInitialized = false;
-function initZoomControl() {
+export function initZoomControl() {
     if (zoomControlInitialized) { updateZoomDisplay(); return; }
     zoomControlInitialized = true;
     var outBtn = document.getElementById('zoomOutBtn');
@@ -236,7 +244,7 @@ function initZoomControl() {
 // Toggle Button Sync
 // ========================================
 
-function syncToggleButtons() {
+export function syncToggleButtons() {
     var formatEl = document.getElementById('copyFormat');
     var borderEl = document.getElementById('copyBorder');
     var hiyokoInput = document.getElementById('toggleHiyokoInput');

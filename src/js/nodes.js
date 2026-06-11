@@ -1,8 +1,17 @@
+import { isNodeCollapsed, mindMapData, selectedNodeIds } from './state.js';
+import { generateId, showToast } from './utils.js';
+import { saveState } from './history.js';
+import { selectNode } from './selection.js';
+import { startEditing } from './editing.js';
+import { filterTopLevelNodes } from './clipboard.js';
+import { render } from './render.js';
+import { removeRelationsForNode } from './relations.js';
+
 // ========================================
 // Node Operations
 // ========================================
 
-function findNode(id, node, parent, index) {
+export function findNode(id, node, parent, index) {
     if (node === undefined) node = mindMapData.root;
     if (parent === undefined) parent = null;
     if (index === undefined) index = 0;
@@ -14,7 +23,7 @@ function findNode(id, node, parent, index) {
     return null;
 }
 
-function getNodeLevel(id, node, level) {
+export function getNodeLevel(id, node, level) {
     if (node === undefined) node = mindMapData.root;
     if (level === undefined) level = 1;
     if (node.id === id) return level;
@@ -25,7 +34,7 @@ function getNodeLevel(id, node, level) {
     return null;
 }
 
-function getAllNodesInOrder(node, result) {
+export function getAllNodesInOrder(node, result) {
     if (node === undefined) node = mindMapData.root;
     if (result === undefined) result = [];
     result.push(node);
@@ -36,7 +45,7 @@ function getAllNodesInOrder(node, result) {
 }
 
 // Get only visible nodes (respecting collapse state)
-function getVisibleNodesInOrder(node, result) {
+export function getVisibleNodesInOrder(node, result) {
     if (node === undefined) node = mindMapData.root;
     if (result === undefined) result = [];
     result.push(node);
@@ -48,7 +57,7 @@ function getVisibleNodesInOrder(node, result) {
     return result;
 }
 
-function addChildNode(parentId, text, autoEdit) {
+export function addChildNode(parentId, text, autoEdit) {
     if (text === undefined) text = '新しいノード';
     if (autoEdit === undefined) autoEdit = true;
     var result = findNode(parentId);
@@ -64,7 +73,7 @@ function addChildNode(parentId, text, autoEdit) {
     return newNode;
 }
 
-function addSiblingNode(nodeId, text, autoEdit, insertBefore) {
+export function addSiblingNode(nodeId, text, autoEdit, insertBefore) {
     if (text === undefined) text = '新しいノード';
     if (autoEdit === undefined) autoEdit = true;
     if (insertBefore === undefined) insertBefore = false;
@@ -85,7 +94,7 @@ function addSiblingNode(nodeId, text, autoEdit, insertBefore) {
     return newNode;
 }
 
-function deleteNode(nodeId) {
+export function deleteNode(nodeId) {
     if (nodeId === 'root') {
         showToast('ルートノードは削除できません');
         return false;
@@ -115,7 +124,7 @@ function deleteNode(nodeId) {
     return true;
 }
 
-function deleteSelectedNodes() {
+export function deleteSelectedNodes() {
     if (selectedNodeIds.size === 0) return;
     var ids = [];
     selectedNodeIds.forEach(function(id) { if (id !== 'root') ids.push(id); });
@@ -156,7 +165,7 @@ function deleteSelectedNodes() {
     showToast(filtered.length + '個のノードを削除しました');
 }
 
-function updateNodeText(nodeId, newText) {
+export function updateNodeText(nodeId, newText) {
     var result = findNode(nodeId);
     if (result && result.node.text !== newText) {
         result.node.text = newText;
@@ -164,7 +173,7 @@ function updateNodeText(nodeId, newText) {
     }
 }
 
-function moveNodeUp(nodeId) {
+export function moveNodeUp(nodeId) {
     var result = findNode(nodeId);
     if (result && result.parent && result.index > 0) {
         var s = result.parent.children;
@@ -176,7 +185,7 @@ function moveNodeUp(nodeId) {
     }
 }
 
-function moveNodeDown(nodeId) {
+export function moveNodeDown(nodeId) {
     var result = findNode(nodeId);
     if (result && result.parent && result.index < result.parent.children.length - 1) {
         var s = result.parent.children;
@@ -188,7 +197,7 @@ function moveNodeDown(nodeId) {
     }
 }
 
-function promoteNode(nodeId) {
+export function promoteNode(nodeId) {
     var result = findNode(nodeId);
     if (!result || !result.parent || result.parent.id === 'root') return;
     var gpResult = findNode(result.parent.id);
@@ -201,7 +210,7 @@ function promoteNode(nodeId) {
     }
 }
 
-function demoteNode(nodeId) {
+export function demoteNode(nodeId) {
     var result = findNode(nodeId);
     if (!result || !result.parent || result.index === 0) return;
     var prevSibling = result.parent.children[result.index - 1];

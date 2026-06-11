@@ -1,16 +1,32 @@
+import {
+    lastSelectedNodeId,
+    mindMapData,
+    selectedNodeIds,
+    selectedRelationId,
+    selectionAnchorId,
+    setLastSelectedNodeId,
+    setSelectedRelationId,
+    setSelectionAnchorId,
+    viewState
+} from './state.js';
+import { findNode, getAllNodesInOrder, getNodeLevel } from './nodes.js';
+import { updateView } from './render.js';
+import { updateRelationVisualSelection } from './relations.js';
+import { updateLinkButtonState } from './init.js';
+
 // ========================================
 // Selection & Navigation
 // ========================================
 
-function selectNode(nodeId) {
+export function selectNode(nodeId) {
     clearSelection();
     if (nodeId) {
         selectedNodeIds.add(nodeId);
-        lastSelectedNodeId = nodeId;
-        selectionAnchorId = nodeId;
+        setLastSelectedNodeId(nodeId);
+        setSelectionAnchorId(nodeId);
         // ノード選択は関連線選択と相互排他（render()ではなく差分更新）
         if (typeof selectedRelationId !== 'undefined' && selectedRelationId) {
-            selectedRelationId = null;
+            setSelectedRelationId(null);
             if (typeof updateRelationVisualSelection === 'function') updateRelationVisualSelection();
         }
         updateSelectionDisplay();
@@ -18,10 +34,10 @@ function selectNode(nodeId) {
     }
 }
 
-function clearSelection() {
+export function clearSelection() {
     selectedNodeIds.clear();
-    lastSelectedNodeId = null;
-    selectionAnchorId = null;
+    setLastSelectedNodeId(null);
+    setSelectionAnchorId(null);
     document.querySelectorAll('.node.selected').forEach(function(el) {
         el.classList.remove('selected');
     });
@@ -30,12 +46,12 @@ function clearSelection() {
     });
     // 関連線の選択もまとめて解除（差分更新）
     if (typeof selectedRelationId !== 'undefined' && selectedRelationId) {
-        selectedRelationId = null;
+        setSelectedRelationId(null);
         if (typeof updateRelationVisualSelection === 'function') updateRelationVisualSelection();
     }
 }
 
-function updateSelectionDisplay() {
+export function updateSelectionDisplay() {
     document.querySelectorAll('.node').forEach(function(el) {
         el.classList.toggle('selected', selectedNodeIds.has(el.dataset.id));
     });
@@ -47,20 +63,20 @@ function updateSelectionDisplay() {
     if (typeof updateLinkButtonState === 'function') updateLinkButtonState();
 }
 
-function toggleSelectNode(nodeId) {
+export function toggleSelectNode(nodeId) {
     if (selectedNodeIds.has(nodeId)) {
         selectedNodeIds.delete(nodeId);
     } else {
         selectedNodeIds.add(nodeId);
     }
-    lastSelectedNodeId = nodeId;
+    setLastSelectedNodeId(nodeId);
     updateSelectionDisplay();
 }
 
-function rangeSelectNode(nodeId) {
+export function rangeSelectNode(nodeId) {
     if (!lastSelectedNodeId) { selectNode(nodeId); return; }
     // Preserve the anchor: if no anchor yet, use lastSelectedNodeId
-    if (!selectionAnchorId) selectionAnchorId = lastSelectedNodeId;
+    if (!selectionAnchorId) setSelectionAnchorId(lastSelectedNodeId);
     var allNodes = getAllNodesInOrder();
     var si = -1, ei = -1;
     for (var i = 0; i < allNodes.length; i++) {
@@ -73,17 +89,17 @@ function rangeSelectNode(nodeId) {
     for (var i = mn; i <= mx; i++) {
         selectedNodeIds.add(allNodes[i].id);
     }
-    lastSelectedNodeId = nodeId;
+    setLastSelectedNodeId(nodeId);
     // Keep selectionAnchorId unchanged so further Shift+clicks extend from original anchor
     updateSelectionDisplay();
 }
 
-function getSelectedNodeId() {
+export function getSelectedNodeId() {
     if (selectedNodeIds.size === 0) return null;
     return lastSelectedNodeId || selectedNodeIds.values().next().value;
 }
 
-function getSelectedNodes() {
+export function getSelectedNodes() {
     var nodes = [];
     selectedNodeIds.forEach(function(id) {
         var r = findNode(id);
@@ -111,7 +127,7 @@ function getNodesAtLevel(targetLevel, node, currentLevel) {
 }
 
 // Navigate UP: cross-parent, same depth level
-function navigateUp() {
+export function navigateUp() {
     var cid = getSelectedNodeId();
     if (!cid) { selectNode('root'); return; }
     var level = getNodeLevel(cid);
@@ -127,7 +143,7 @@ function navigateUp() {
 }
 
 // Navigate DOWN: cross-parent, same depth level
-function navigateDown() {
+export function navigateDown() {
     var cid = getSelectedNodeId();
     if (!cid) { selectNode('root'); return; }
     var level = getNodeLevel(cid);
@@ -143,10 +159,10 @@ function navigateDown() {
 }
 
 // Shift+Arrow range selection: extend/shrink from anchor along same depth
-function shiftNavigateUp() {
+export function shiftNavigateUp() {
     var cid = getSelectedNodeId();
     if (!cid) return;
-    if (!selectionAnchorId) selectionAnchorId = cid;
+    if (!selectionAnchorId) setSelectionAnchorId(cid);
     var level = getNodeLevel(cid);
     if (!level || level <= 1) return;
     var nodesAtLevel = getNodesAtLevel(level);
@@ -157,14 +173,14 @@ function shiftNavigateUp() {
     if (curIdx <= 0) return;
     var newEndId = nodesAtLevel[curIdx - 1].id;
     applyRangeAtLevel(nodesAtLevel, selectionAnchorId, newEndId);
-    lastSelectedNodeId = newEndId;
+    setLastSelectedNodeId(newEndId);
     scrollNodeIntoView(newEndId);
 }
 
-function shiftNavigateDown() {
+export function shiftNavigateDown() {
     var cid = getSelectedNodeId();
     if (!cid) return;
-    if (!selectionAnchorId) selectionAnchorId = cid;
+    if (!selectionAnchorId) setSelectionAnchorId(cid);
     var level = getNodeLevel(cid);
     if (!level || level <= 1) return;
     var nodesAtLevel = getNodesAtLevel(level);
@@ -175,7 +191,7 @@ function shiftNavigateDown() {
     if (curIdx < 0 || curIdx >= nodesAtLevel.length - 1) return;
     var newEndId = nodesAtLevel[curIdx + 1].id;
     applyRangeAtLevel(nodesAtLevel, selectionAnchorId, newEndId);
-    lastSelectedNodeId = newEndId;
+    setLastSelectedNodeId(newEndId);
     scrollNodeIntoView(newEndId);
 }
 
@@ -196,7 +212,7 @@ function applyRangeAtLevel(nodesAtLevel, anchorId, endId) {
 }
 
 // Navigate LEFT: go to parent
-function navigateLeft() {
+export function navigateLeft() {
     var cid = getSelectedNodeId();
     if (!cid) { selectNode('root'); return; }
     var r = findNode(cid);
@@ -204,7 +220,7 @@ function navigateLeft() {
 }
 
 // Navigate RIGHT: go to first child
-function navigateRight() {
+export function navigateRight() {
     var cid = getSelectedNodeId();
     if (!cid) { selectNode('root'); return; }
     var r = findNode(cid);
@@ -213,7 +229,7 @@ function navigateRight() {
     }
 }
 
-function goToParent() {
+export function goToParent() {
     var cid = getSelectedNodeId();
     if (!cid || cid === 'root') return;
     var r = findNode(cid);

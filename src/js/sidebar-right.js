@@ -1,3 +1,14 @@
+import {
+    isNodeCollapsed,
+    isNodeGrayedOut,
+    levelIcons,
+    mindMapData,
+    selectedNodeIds,
+    viewState
+} from './state.js';
+import { selectNode } from './selection.js';
+import { updateView } from './render.js';
+
 // ========================================
 // Right Sidebar: Resize, Tree Rendering, Focus
 // ========================================
@@ -8,7 +19,7 @@ var SIDEBAR_KEY = 'mindmap_sidebar_width';
 var sidebarIsOpen = false;
 var sidebarInitialized = false;
 
-function initSidebar() {
+export function initSidebar() {
     if (sidebarInitialized) return;
     sidebarInitialized = true;
     var sidebar = document.getElementById('sidebar');
@@ -70,7 +81,7 @@ function initSidebar() {
     });
 }
 
-function openRightSidebar() {
+export function openRightSidebar() {
     var sidebar = document.getElementById('sidebar');
     var savedW = parseInt(localStorage.getItem(SIDEBAR_KEY), 10);
     var w = (savedW && savedW >= SIDEBAR_OPEN_MIN) ? savedW : SIDEBAR_DEFAULT;
@@ -82,7 +93,7 @@ function openRightSidebar() {
     renderSidebarTree();
 }
 
-function closeRightSidebar() {
+export function closeRightSidebar() {
     var sidebar = document.getElementById('sidebar');
     sidebar.classList.add('collapsed');
     sidebarIsOpen = false;
@@ -116,7 +127,7 @@ function updateFloatBtnsPosition() {
     }
 }
 
-function adjustCanvasForSidebars() {
+export function adjustCanvasForSidebars() {
     var rightSidebar = document.getElementById('sidebar');
     var leftSidebar = document.getElementById('leftSidebar');
     var container = document.getElementById('canvasContainer');
@@ -132,7 +143,7 @@ function adjustCanvasForSidebars() {
     updateFloatBtnsPosition();
 }
 
-function renderSidebarTree() {
+export function renderSidebarTree() {
     var tree = document.getElementById('sidebarTree');
     if (!tree) return;
     var sidebar = document.getElementById('sidebar');

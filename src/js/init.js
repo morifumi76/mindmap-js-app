@@ -1,9 +1,66 @@
+import {
+    collapseAllNodes,
+    currentMapId,
+    expandAllNodes,
+    getFastMode,
+    getNodeCyanState,
+    getNodeGrayoutState,
+    getNodeGreenState,
+    getNodeHighlightState,
+    getNodeRedTextState,
+    isNodeCyan,
+    isNodeGrayedOut,
+    isNodeGreen,
+    isNodeHighlighted,
+    isNodeLinked,
+    isNodeRedText,
+    setCtxMenuTargetMapId,
+    setCurrentMapId,
+    setFastMode,
+    setMindMapData,
+    setNodeCyanState,
+    setNodeGrayoutState,
+    setNodeGreenState,
+    setNodeHighlightState,
+    setNodeRedTextState,
+    syncFastModeToggleUI
+} from './state.js';
+import { isImeRelatedKey, showToast } from './utils.js';
+import {
+    cleanupDefaultFolders,
+    findMetaById,
+    getLastActiveId,
+    getMapDataKey,
+    getMetaList,
+    getNextMapId,
+    getSortMode,
+    getTitleDateMode,
+    loadMapData,
+    migrateIfNeeded,
+    nowISO,
+    saveMetaList,
+    setLastActiveId,
+    setSortMode,
+    setTitleDateMode
+} from './storage.js';
+import { saveState } from './history.js';
+import { findNode } from './nodes.js';
+import { getSelectedNodeId, getSelectedNodes, selectNode } from './selection.js';
+import { startEditing } from './editing.js';
+import { copyToClipboard } from './clipboard.js';
+import { render, resetView } from './render.js';
+import { initRelationsEvents } from './relations.js';
+import { handleKeyDown } from './keyboard.js';
+import { initCanvasInteraction, initZoomControl, syncToggleButtons } from './canvas-interaction.js';
+import { adjustCanvasForSidebars, initSidebar, renderSidebarTree } from './sidebar-right.js';
+import { initLeftSidebar, renderMapList } from './sidebar-left.js';
+
 // ========================================
 // Initialization
 // ========================================
 
-var appInitialized = false;
-function init() {
+export var appInitialized = false;
+export function init() {
     // Run migration from old storage format
     migrateIfNeeded();
     // 旧仕様の "未分類" フォルダが残っていれば取り除き、配下ページはトップレベルに救出する
@@ -17,13 +74,13 @@ function init() {
     var pages = metaList.filter(function(m) { return m.type === 'page'; });
 
     if (requestedId && findMetaById(requestedId) && findMetaById(requestedId).type === 'page') {
-        currentMapId = requestedId;
+        setCurrentMapId(requestedId);
     } else if (lastId && findMetaById(lastId) && findMetaById(lastId).type === 'page') {
-        currentMapId = lastId;
+        setCurrentMapId(lastId);
     } else if (pages.length > 0) {
         // Sort by updatedAt desc, pick first
         pages.sort(function(a, b) { return (b.updatedAt || '').localeCompare(a.updatedAt || ''); });
-        currentMapId = pages[0].id;
+        setCurrentMapId(pages[0].id);
     } else {
         // ページが一つもないとき：トップレベル（folderId = null）に新規ページを作成する
         var newId = getNextMapId();
@@ -32,13 +89,13 @@ function init() {
         metaList.push({ id: newId, name: '無題のマップ', type: 'page', folderId: null, order: 0, createdAt: now, updatedAt: now });
         saveMetaList(metaList);
         try { localStorage.setItem(getMapDataKey(newId), JSON.stringify(defaultData)); } catch(e) {}
-        currentMapId = newId;
+        setCurrentMapId(newId);
     }
 
     // Load map data
     var saved = loadMapData(currentMapId);
     if (saved) {
-        mindMapData = saved;
+        setMindMapData(saved);
     }
     setLastActiveId(currentMapId);
     updateUrlParam(currentMapId);
@@ -350,18 +407,18 @@ function init() {
             }
         }
         if (!e.target.closest('.ctx-menu')) {
-            ctxMenuTargetMapId = null;
+            setCtxMenuTargetMapId(null);
         }
     });
 }
 
-function updateUrlParam(mapId) {
+export function updateUrlParam(mapId) {
     var url = new URL(window.location);
     url.searchParams.set('id', mapId);
     history.replaceState(null, '', url);
 }
 
-function updatePageTitle() {
+export function updatePageTitle() {
     var meta = findMetaById(currentMapId);
     document.title = meta ? meta.name + ' - マインドマップ' : 'マインドマップ';
 }
@@ -372,7 +429,7 @@ function updatePageTitle() {
 var linkModalInitialized = false;
 
 // 選択状態に応じてリンクボタンを活性/非活性・リンク設定済み表示を切り替え
-function updateLinkButtonState() {
+export function updateLinkButtonState() {
     var btn = document.getElementById('linkFloatBtn');
     if (!btn) return;
     var id = getSelectedNodeId();
@@ -422,7 +479,7 @@ function validateLinkModalInput() {
     return valid;
 }
 
-function openLinkModal() {
+export function openLinkModal() {
     var nodeId = getSelectedNodeId();
     if (!nodeId) {
         showToast('ノードを選択してください');
@@ -458,7 +515,7 @@ function closeLinkModal() {
     if (overlay) overlay.style.display = 'none';
 }
 
-function isLinkModalOpen() {
+export function isLinkModalOpen() {
     var overlay = document.getElementById('linkModalOverlay');
     return !!(overlay && overlay.style.display === 'flex');
 }

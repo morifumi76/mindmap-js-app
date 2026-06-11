@@ -1,8 +1,12 @@
+import { lassoState, selectedNodeIds, setLastSelectedNodeId } from './state.js';
+import { showToast } from './utils.js';
+import { clearSelection, updateSelectionDisplay } from './selection.js';
+
 // ========================================
 // Lasso (Rectangle) Selection
 // ========================================
 
-function startLasso(clientX, clientY) {
+export function startLasso(clientX, clientY) {
     lassoState.active = true;
     lassoState.didSelect = false;
     lassoState.startX = clientX;
@@ -17,7 +21,7 @@ function startLasso(clientX, clientY) {
     rect.style.height = '0px';
 }
 
-function updateLasso(clientX, clientY) {
+export function updateLasso(clientX, clientY) {
     if (!lassoState.active) return;
     lassoState.currentX = clientX;
     lassoState.currentY = clientY;
@@ -32,7 +36,7 @@ function updateLasso(clientX, clientY) {
     rect.style.height = h + 'px';
 }
 
-function endLasso() {
+export function endLasso() {
     if (!lassoState.active) return;
     lassoState.active = false;
     var rect = document.getElementById('lassoRect');
@@ -56,7 +60,7 @@ function endLasso() {
         }
     });
     if (selectedNodeIds.size > 0) {
-        lastSelectedNodeId = selectedNodeIds.values().next().value;
+        setLastSelectedNodeId(selectedNodeIds.values().next().value);
         updateSelectionDisplay();
         lassoState.didSelect = true;
         showToast(selectedNodeIds.size + '個のノードを選択しました');
