@@ -1,189 +1,76 @@
-# 🧠 シンプルマインドマップツール
+# 🧠 マインドマップアプリ（mindmap-js-app）
 
-ブラウザ上で動作するシンプルな簡易マインドマップツールです。
-保存機能は持たず、プレーンテキストとマインドマップの双方向変換で永続化を実現します。
+ブラウザで動作するマインドマップツール。フレームワークなしの Vanilla JS 製で、
+ビルドすると **単一 HTML ファイル** として出力されます。
 
-## ✅ 現在完成している機能 (MVP)
+## 2つのビルド
 
-### ノード操作
-- ✅ 中央にルートノードを配置したマインドマップ形式
-- ✅ ノードのテキスト編集（ダブルクリック または F2キー）
-- ✅ ノード追加時に自動で編集モードに移行
-- ✅ ノードの追加（同階層: Enter / 子ノード: Tab）
-- ✅ ノードの削除（Delete / Backspace）
-- ✅ ノードのコピー＆ペースト（Cmd+C / Cmd+V）
-- ✅ ノード間の接続線をベジェ曲線で表示
+| ビルド | 出力 | 保存先 | 用途 |
+|---|---|---|---|
+| クラウド版 | `dist/index.html` | Supabase（要ログイン） | Vercel で公開。共有URL（`/share/*`）対応 |
+| ローカル版 | `dist/local.html` | ブラウザの localStorage | 配布用。外部通信なし・JSONバックアップ付き |
 
-### スタイリング機能
-- ✅ 太字トグル（Cmd+B）
-- ✅ 文字色トグル：黒 → 赤 → 青（Cmd+Option+A）
-- ✅ 背景色トグル：白 → 黄色 → 水色（Cmd+Option+Y）
-- ✅ 親ノードとの接続線を太くする（Cmd+Option+S）
-- ✅ **グレーアウト表示**（Cmd+Option+G）：ノード背景・文字・線を薄いグレーに
-- ✅ 全ノード選択時に一括スタイル変更可能
+本体コードは両ビルド共通で、保存アダプター（`storage-supabase.js` / `storage-local.js`）だけが差し替わります。
 
-### 🆕 ツールバーのスタイル変更ボタン
-- ✅ **ノード背景色**：プリセット8色 + カラーピッカー
-- ✅ **ノード文字色**：プリセット8色 + カラーピッカー
-- ✅ **接続線の色**：プリセット8色 + カラーピッカー + 太さ選択
-- ✅ **グレーアウトボタン**：ワンクリックでグレーアウト切り替え
-- ✅ ショートカットキーと併用可能
+## 主な機能
 
-### ノード間リンク機能（赤色点線）
-- ✅ **Option（Alt）キーを押しながらドラッグ＆ドロップ**でノード間にリンク作成
-- ✅ リンクは赤色の点線で表示
-- ✅ **始点と終点の両方に●（丸ポチ）マーカー**でリンクを明確に視覚化
-- ✅ **リンクをクリックで選択** → **Deleteキーで削除**
+- マルチマップ＋フォルダ管理（左サイドバー、ドラッグ&ドロップ、複数選択、undo/redo）
+- ノード編集（Enter/Tab での追加、F2 編集、コピー/カット/ペースト、ドラッグ移動）
+- 関連線（ノード間を線で結ぶ・メモラベル付き）
+- グレーアウト / ハイライト / 各種カラー（Option+Cmd+G / Y / B / M / A）
+- 折りたたみ、テキスト形式でのコピー出力、ひよこモード 🐤
 
-### ショートカットキー
+## 開発
 
-| 操作 | キー |
-|------|------|
-| 同階層にノード追加 | Enter |
-| 子ノード追加 | Tab |
-| 親階層に戻る | Shift + Tab |
-| ノード削除 | Delete / Backspace |
-| ノード編集モード | F2 / ダブルクリック |
-| ノード間移動 | ↑ ↓ ← → |
-| 並び替え（上下） | Cmd + ↑ / Cmd + ↓ |
-| 並び替え（階層移動） | Cmd + ← / Cmd + → |
-| 元に戻す | Cmd + Z |
-| やり直し | Cmd + Y |
-| 全ノード選択 | Cmd + A |
-| コピー | Cmd + C |
-| ペースト | Cmd + V |
-| 太字トグル | Cmd + B |
-| 文字色トグル | Cmd + Option + A |
-| 背景色トグル | Cmd + Option + Y |
-| 線の太さトグル | Cmd + Option + S |
-| **グレーアウト** | Cmd + Option + G |
+```bash
+npm install
+npx playwright install chromium   # テスト実行に必要（初回のみ）
 
-※ Macでは Cmd、Windowsでは Ctrl キーを使用
-※ Macでは Option、Windowsでは Alt キーを使用
-※ **Option（Alt）+ ドラッグ**でノード間リンク（赤色点線）作成
-
-### エクスポート機能
-- ✅ プレーンテキスト出力（階層構造を罫線記号で表現）
-- ✅ 階層別絵文字アイコン（🐔→🐤→🐣→🥚）
-- ✅ 絵文字あり/なし選択オプション
-- ✅ インデント線あり/なし選択オプション
-
-出力例（全てあり）:
-```
-🐔 親ノード
-├─ 🐤 子ノードA
-│   ├─ 🐣 孫ノードA-1
-│   │   ├─ 🥚 ひ孫A-1-1
-│   │   └─ 🥚 ひ孫A-1-2
-│   └─ 🐣 孫ノードA-2
-└─ 🐤 子ノードB
-    ├─ 🐣 孫ノードB-1
-    └─ 🐣 孫ノードB-2
+npm run dev     # src/ を監視して自動ビルド
+npm run serve   # dist/ を http://localhost:8080 で配信
+npm run build   # dist/index.html と dist/local.html を生成
+npm test        # ビルド → サーバー起動 → 全テスト → 後始末 まで一括
+npm run lint    # ESLint（エラー・警告ゼロ運用）
 ```
 
-### インポート機能
-- ✅ プレーンテキストからマインドマップを復元
-- ✅ インデント（タブ or スペース4つ）による階層判定
-- ✅ 罫線記号（├─ └─ │）の自動除去
-- ✅ 絵文字・記号の自動除去
-
-### ビュー操作
-- ✅ ドラッグでパン移動
-- ✅ マウスホイールでズーム
-- ✅ ズームボタン（+/-）とリセットボタン
-
-### 履歴管理
-- ✅ Undo/Redo（最大50件の履歴）
-
-## 📁 ファイル構成
+## アーキテクチャ
 
 ```
-index.html    # シングルHTMLファイル（HTML/CSS/JS完結）
-README.md     # このファイル
+src/
+├── index.html        # テンプレート（BUILD マーカーに CSS/JS が注入される）
+├── css/              # 結合順は build.js の CSS_FILES 参照
+└── js/
+    ├── app.js        # エントリポイント（esbuild がここからバンドル）
+    ├── state.js      # アプリ全体の状態と setter
+    ├── storage.js    # localStorage の読み書き・スキーマ移行
+    ├── storage-supabase.js / storage-local.js   # 保存アダプター（ビルドで差し替え）
+    ├── nodes.js / selection.js / editing.js / clipboard.js / drag.js / lasso.js
+    ├── render.js / keyboard.js / canvas-interaction.js
+    ├── relations/    # 関連線（model / geometry / draw / labels / connection / ...）
+    ├── sidebar-left/ # 左サイドバー（render / crud / dnd / events / ...）
+    ├── sidebar-right.js / link-modal.js
+    ├── init.js       # 起動処理・URL ルーティング
+    └── app-init.js   # クラウド版の認証・同期・起動シーケンス
 ```
 
-## 🚀 使用方法
+- モジュールは ES Modules（import/export）。`build.js` が esbuild で IIFE にバンドルし、
+  CSS とともに `src/index.html` のマーカー位置へインライン展開して単一 HTML を生成します
+- 他モジュールから再代入される状態変数は `state.js` の setter 経由で書き換えます
+  （import 束縛は読み取り専用のため）
 
-### エントリURI
-- **メインページ**: `/index.html`
+## テスト
 
-### 基本操作
-1. `index.html` をブラウザで開く
-2. 中央の「中心テーマ」ノードをクリックして選択
-3. ショートカットキーでノードを追加・編集
-4. 「テキスト出力」でマインドマップを保存
-5. 「テキスト読込」で復元
+Playwright によるブラウザテスト（`tests/`、約250アサーション）。
+対象はローカル版 `dist/local.html`（クラウド版は認証画面のため対象外）。
+PR ごとに GitHub Actions（`.github/workflows/ci.yml`）で lint + テストが実行されます。
 
-### スタイリング操作
-1. ノードを選択（または Cmd+A で全選択）
-2. Cmd+B で太字、Cmd+Option+A で文字色変更など
-3. Cmd+Option+G でグレーアウト（完了タスクの表現などに）
-4. スタイルは Undo/Redo で元に戻せます
+## デプロイ
 
-### ノード間リンク（関連性の可視化）
-1. リンク元のノードで **Option（Alt）キーを押しながらドラッグ開始**
-2. リンク先のノードにドロップ
-3. 赤色の点線矢印でリンクが作成されます
-4. 同じ操作でリンクを削除できます
+Vercel（`vercel.json`）。push すると `npm run build` が実行され `dist/` が公開されます。
+`/share/*` は `index.html` に rewrite されます。
 
-## 📋 技術仕様
+## ドキュメント
 
-- **言語**: HTML5 / CSS3 / Vanilla JavaScript
-- **外部依存**: なし（シングルHTMLファイルで完結）
-- **フォント**: Meiryo UI
-- **ローカル保存**: なし（リフレッシュでクリア）
-- **永続化**: プレーンテキスト出力 → 外部保存 → 再読込
-
-## 📊 データ構造
-
-```javascript
-// マインドマップのデータ構造
-{
-  root: {
-    id: 'root',
-    text: '中心テーマ',
-    children: [...],
-    // スタイルプロパティ
-    bold: false,
-    textColor: '#333333',
-    bgColor: '#ffffff',
-    lineColor: '#999999',
-    thickLine: false,
-    grayout: false
-  }
-}
-
-// ノード間リンク
-nodeLinks = [
-  { fromId: 'node_1_xxx', toId: 'node_2_xxx' },
-  ...
-]
-```
-
-## ❌ 未実装の機能 (Phase 2/3)
-
-### Phase 2
-- [ ] 画像出力機能（PNG書き出し）
-
-### Phase 3
-- [ ] 階層別アイコンのカスタマイズUI
-
-## 🔧 次の開発ステップ
-
-1. **Phase 2: 画像出力**
-   - html2canvas等を利用したPNG出力
-
-2. **Phase 3: 高度な機能**
-   - 絵文字カスタマイズUI
-
-## 🌐 ブラウザ対応です
-
-- Chrome (推奨)
-- Firefox
-- Safari
-- Edge
-
----
-
-作成日: 2026-01-31
-更新日: 2026-01-31
+- `docs/REFACTORING_PLAN.md` — 2026-06 リファクタリングの計画と実施記録
+- `docs/refactor-baseline.md` — テスト基盤の経緯・既知バグの記録
+- `docs/notes/` — 機能ごとの仕様メモ（日付付き）
