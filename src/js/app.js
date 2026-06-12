@@ -19,4 +19,4 @@ import './link-modal.js';
 import './init.js';
 import './sidebar-right.js';
 import './sidebar-left/index.js';
-import './app-init.js';
+import './cloud/index.js';
