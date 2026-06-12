@@ -9,8 +9,11 @@
 const PORT = process.env.TEST_PORT || 8080;
 const BASE_URL = 'http://localhost:' + PORT + '/local.html';
 
+// クラウド版テスト用ビルド（BUILD_TEST=1 で生成。アダプターは tests/mocks/supa-mock.js）
+const CLOUD_URL = 'http://localhost:' + PORT + '/test.html';
+
 // アプリのショートカット修飾キーは Mac では Cmd、その他では Ctrl
 // （src/js/keyboard.js の isMac 判定に対応）
 const CMD = process.platform === 'darwin' ? 'Meta' : 'Control';
 
-module.exports = { PORT, BASE_URL, CMD };
+module.exports = { PORT, BASE_URL, CLOUD_URL, CMD };

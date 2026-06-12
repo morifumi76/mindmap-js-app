@@ -63,8 +63,9 @@ module.exports = [
         },
         rules: Object.assign({}, js.configs.recommended.rules, {
             'no-empty': ['error', { allowEmptyCatch: true }],
-            // 既存テストは catch(e) で受けて使わない書き方が多い（許容する）
-            'no-unused-vars': ['error', { caughtErrors: 'none' }],
+            // 既存テストは catch(e) で受けて使わない書き方が多い（許容する）。
+            // args: 'none' はモックアダプターの引数名（契約のドキュメント）を残すため
+            'no-unused-vars': ['error', { caughtErrors: 'none', args: 'none' }],
         }),
     },
 ];
