@@ -209,12 +209,15 @@ export function initLeftSidebar() {
         }
     });
     // mousedown outside sidebar → exit navigation mode
+    // キャプチャ段階で登録する：ノード上の mousedown は stopPropagation されて
+    // バブリングが document まで届かないため、バブル段階だと
+    // 「ノードをクリックしてもナビゲーションモードが解除されない」バグになる
     document.addEventListener('mousedown', function(e) {
         var sidebar = document.getElementById('leftSidebar');
         if (sidebar && !sidebar.contains(e.target)) {
             window.sidebarNavigationMode = false;
         }
-    });
+    }, true);
 
     document.addEventListener('keydown', function(e) {
         if (!window.sidebarNavigationMode) return;

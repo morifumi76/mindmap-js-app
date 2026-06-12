@@ -707,8 +707,7 @@ function assert(cond, msg) {
     console.log('\n=== Test 22: Node Operations Still Work ===');
 
     // キャンバスの空き領域を実クリックしてサイドバーのナビゲーションモードを解除する。
-    // 注意: ノード上のクリックでは mousedown が stopPropagation され document に届かず
-    // モードが解除されない（既知バグとして docs/refactor-baseline.md に記録済み）。
+    // （ノードクリックでも解除される。Test 27 が回帰テスト）
     await page.mouse.click(700, 80);
     await page.waitForTimeout(300);
     await page.keyboard.press('Escape');
@@ -926,6 +925,24 @@ function assert(cond, msg) {
         return true;
     });
     assert(pagesHaveData, 'All pages have valid mindmap data');
+
+    // ========================================
+    // Test 27: ノードクリックでサイドバーのナビゲーションモードが解除される
+    // （回帰テスト: 以前はノード上の mousedown が stopPropagation され解除されなかった）
+    // ========================================
+    console.log('\n=== Test 27: Node click exits sidebar navigation mode ===');
+
+    // サイドバーのマップ項目を実クリック → ナビゲーションモード ON
+    await page.locator('.map-item.page-item').first().click();
+    await page.waitForTimeout(300);
+    let navModeOn = await page.evaluate(() => window.sidebarNavigationMode);
+    assert(navModeOn === true, 'Clicking a sidebar item enters navigation mode');
+
+    // キャンバスのノードを実クリック → ナビゲーションモード OFF になること
+    await page.locator('.node').first().click();
+    await page.waitForTimeout(300);
+    let navModeOff = await page.evaluate(() => window.sidebarNavigationMode);
+    assert(navModeOff === false, 'Clicking a canvas node exits navigation mode');
 
     // ========================================
     // Summary
