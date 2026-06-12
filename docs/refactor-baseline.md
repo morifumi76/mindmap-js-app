@@ -67,9 +67,9 @@ sha256(dist/index.html) = caa1ade2f73d5631bc1bf5646447184c8a7c6b8014867cc8cca062
 - relations.js（825行）→ relations/ 配下の9モジュールへ分割
 - init.js からリンクモーダル一式を link-modal.js（220行）に分離
 - ESLint 警告71件をゼロに（var二重宣言60件・死蔵関数3個・未使用変数ほか）
-- **app-init.js（678行）は意図的に分割を見送り**: クラウド版の認証・Supabase同期・
-  起動シーケンスが密結合した glue であり、現状この領域に自動テストが無い。
-  テストなしでの構造変更は安全網の原則に反するため、クラウド版のテスト整備後に実施する
+- app-init.js（678行）はクラウド版テスト未整備のため一旦見送り
+  → ✅ **2026-06-15 完了**: クラウド版テスト整備（PR #32）後に cloud/ 配下の7モジュール
+  （save-status / sync / share-view / auth-ui / migration / share-dialog / boot）へ分割
 
 ## クラウド版テストの整備（2026-06-15 追記）
 

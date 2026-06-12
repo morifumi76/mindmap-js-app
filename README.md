@@ -50,7 +50,7 @@ src/
     ├── sidebar-left/ # 左サイドバー（render / crud / dnd / events / ...）
     ├── sidebar-right.js / link-modal.js
     ├── init.js       # 起動処理・URL ルーティング
-    └── app-init.js   # クラウド版の認証・同期・起動シーケンス
+    └── cloud/        # クラウド版の認証・同期・共有・起動（boot / auth-ui / sync / ...）
 ```
 
 - モジュールは ES Modules（import/export）。`build.js` が esbuild で IIFE にバンドルし、
