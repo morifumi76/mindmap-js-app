@@ -16,6 +16,7 @@ const TEST_FILES = [
     'grayout.test.js',
     'sidebar.test.js',
     'left-sidebar.test.js',
+    'cloud.test.js',
 ];
 
 function waitForServer(port, retries, done) {
@@ -29,7 +30,12 @@ function waitForServer(port, retries, done) {
 }
 
 console.log('=== ビルド ===');
-execSync('node build.js', { stdio: 'inherit', cwd: ROOT });
+// BUILD_TEST=1: クラウド版テスト用の dist/test.html も生成する
+execSync('node build.js', {
+    stdio: 'inherit',
+    cwd: ROOT,
+    env: Object.assign({}, process.env, { BUILD_TEST: '1' }),
+});
 
 const server = spawn('node', [path.join(__dirname, 'server.js')], {
     env: Object.assign({}, process.env, { PORT: String(PORT) }),

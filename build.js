@@ -111,6 +111,18 @@ localHtml = localHtml.replace(
 
 fs.writeFileSync(path.join(DIST, 'local.html'), localHtml, 'utf-8');
 
+// --- テスト版（dist/test.html）: BUILD_TEST=1 のときのみ生成 ---
+// クラウド版と同じ HTML 構成で、保存アダプターだけを Supabase モックに差し替える。
+// クラウド版の認証・同期・共有フローをネットワークなしでテストするためのもの。
+// 本番ビルド（Vercel）では生成されない。
+if (process.env.BUILD_TEST) {
+    const mockJs = read(path.join(__dirname, 'tests', 'mocks', 'supa-mock.js'));
+    const mockBundleBlock = `<script>\n${mockJs}\n</script>`;
+    const testHtml = buildHtml(mockBundleBlock, APP_VERSION + '-test');
+    fs.writeFileSync(path.join(DIST, 'test.html'), testHtml, 'utf-8');
+    console.log(`Built: dist/test.html  (テスト版・モックアダプター)`);
+}
+
 // 静的アセット（OGP 画像など）を dist/assets/ にコピー
 const SRC_ASSETS  = path.join(SRC, 'assets');
 const DIST_ASSETS = path.join(DIST, 'assets');
