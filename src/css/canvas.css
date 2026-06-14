@@ -85,6 +85,21 @@
     pointer-events: none;
 }
 
+/* つなぎ替えが無効なときの線（赤） */
+.relation-line.invalid {
+    stroke: #e53e3e;
+    stroke-width: 2;
+}
+
+/* つなぎ替え先ノードのハイライト（有効＝緑の枠、無効＝赤の枠） */
+.node.relation-drop-target {
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.7) !important;
+}
+
+.node.relation-drop-invalid {
+    box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.7) !important;
+}
+
 /* クリック判定用の透明な太いストローク（実線は1pxでも8〜10px幅で当たる） */
 .relation-line-hit {
     fill: none;

@@ -331,7 +331,11 @@ export let relationEndpointDragState = {
     side: null,             // 'from' | 'to'
     startClientX: 0,
     startClientY: 0,
-    moved: false
+    moved: false,
+    origNodeId: null,       // ドラッグ開始時にこの端点が付いていたノード（つなぎ替え失敗時に戻す）
+    origAnchor: null,       // ドラッグ開始時のアンカー（接続面）
+    hoverTargetId: null,    // 今プレビューでつなぎ替え先にしているノード（別ノードに乗っているとき）
+    hoverValid: false       // そのつなぎ替えが有効か（無効なら赤表示・ドロップで戻す）
 };
 
 // 手動ダブルクリック判定（render()でDOMが入れ替わることがあるため、ブラウザのdblclickイベントに頼らない）
