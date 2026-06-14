@@ -49,6 +49,22 @@ export function getNodeRectFromPositions(positions, nodeId) {
     };
 }
 
+// カーソル（キャンバス内座標）がどのノードの矩形内にあるかを調べ、そのノードIDを返す。
+// どのノードにも乗っていなければ null。つなぎ替え先の判定に使う。
+// positions[id] = {x, y, width, height}（render側と同じ。yは縦中心、xは左端）
+export function findNodeIdAtCanvasPoint(positions, x, y) {
+    if (!positions) return null;
+    for (var id in positions) {
+        if (!Object.prototype.hasOwnProperty.call(positions, id)) continue;
+        var rect = getNodeRectFromPositions(positions, id);
+        if (!rect) continue;
+        if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+            return id;
+        }
+    }
+    return null;
+}
+
 // ノード矩形の上下左右のアンカーポイントを返す
 export function getAnchorPoint(rect, anchor) {
     var cx = (rect.left + rect.right) / 2;

@@ -8,18 +8,46 @@ import {
     relationCtrlDragState,
     relationEndpointDragState
 } from '../state.js';
+import { showToast } from '../utils.js';
 import { handleConnectButtonClick, updateConnectionPreviewOnly } from './connection.js';
 import {
     clientToCanvasCoords,
     computeNearestAnchor,
+    findNodeIdAtCanvasPoint,
     getAnchorPoint,
     getEdgePointTowards,
     getNodeRectFromPositions
 } from './geometry.js';
 import { finishAnyRelationLabelEditing, pendingLabelEdit, startRelationLabelEditing } from './labels.js';
 import { showRelationContextMenu } from './menu.js';
-import { findRelation } from './model.js';
+import {
+    findRelation,
+    reconnectRelationEndpoint,
+    relationExistsBetween,
+    wouldCreateRelationCycle
+} from './model.js';
 import { selectRelation } from './selection.js';
+
+// つなぎ替えプレビュー中の見た目を反映する。
+// 別ノードに乗っているとき、つなぎ替え先ノードを枠でハイライトし、無効なら線とノードを赤くする。
+// render() でDOMは毎回作り直されるので、render()の直後に呼ぶ前提。
+function applyReconnectPreviewVisual(relId, targetId, valid) {
+    var line = document.querySelector('.relation-line[data-rel-id="' + relId + '"]');
+    if (line) line.classList.toggle('invalid', !valid);
+    var node = document.querySelector('.node[data-id="' + targetId + '"]');
+    if (node) node.classList.add(valid ? 'relation-drop-target' : 'relation-drop-invalid');
+}
+
+// 無効なつなぎ替えを試みたとき、対象の線を一瞬赤く点滅させる。
+function flashRelationInvalid(relId) {
+    var line = document.querySelector('.relation-line[data-rel-id="' + relId + '"]');
+    if (!line) return;
+    line.classList.add('invalid');
+    setTimeout(function() {
+        var el = document.querySelector('.relation-line[data-rel-id="' + relId + '"]');
+        if (el) el.classList.remove('invalid');
+    }, 600);
+}
 
 // ========================================
 // イベントハンドラの初期化
@@ -76,14 +104,22 @@ export function initRelationsEvents() {
         selectRelation(relId);
 
         if (isEndpoint) {
-            // 端点ドラッグ：4スナップで接続位置を切り替える
+            // 端点ドラッグ：別ノードに乗せれば「つなぎ替え」、同じノード上なら従来の「接続面の変更」
             var side = t.getAttribute('data-side'); // 'from' or 'to'
+            var relForDrag = findRelation(relId);
             relationEndpointDragState.active = true;
             relationEndpointDragState.relationId = relId;
             relationEndpointDragState.side = side || 'from';
             relationEndpointDragState.startClientX = e.clientX;
             relationEndpointDragState.startClientY = e.clientY;
             relationEndpointDragState.moved = false;
+            relationEndpointDragState.hoverTargetId = null;
+            relationEndpointDragState.hoverValid = false;
+            // つなぎ替えに失敗したときに戻せるよう、開始時のノードとアンカーを覚えておく
+            if (relForDrag) {
+                relationEndpointDragState.origNodeId = side === 'to' ? relForDrag.toNodeId : relForDrag.fromNodeId;
+                relationEndpointDragState.origAnchor = side === 'to' ? (relForDrag.toAnchor || null) : (relForDrag.fromAnchor || null);
+            }
         } else {
             // 線本体ドラッグ：曲線を曲げる（既存挙動）
             relationCtrlDragState.active = true;
@@ -129,7 +165,7 @@ export function initRelationsEvents() {
             return;
         }
 
-        // 端点ドラッグ：4スナップでアンカー位置を更新
+        // 端点ドラッグ：別ノードに乗せれば「つなぎ替え」プレビュー、同じノードなら「接続面の変更」
         if (relationEndpointDragState.active && relationEndpointDragState.relationId) {
             if (!relationEndpointDragState.moved) {
                 var dxe = e.clientX - relationEndpointDragState.startClientX;
@@ -139,21 +175,42 @@ export function initRelationsEvents() {
             }
             var relE = findRelation(relationEndpointDragState.relationId);
             if (!relE) return;
-            var nodeIdE = relationEndpointDragState.side === 'from' ? relE.fromNodeId : relE.toNodeId;
-            var rectE = lastRenderedPositions ? getNodeRectFromPositions(lastRenderedPositions, nodeIdE) : null;
-            if (!rectE) return;
+            var sideE = relationEndpointDragState.side;
+            var origNodeIdE = relationEndpointDragState.origNodeId;
             var coordsE = clientToCanvasCoords(e.clientX, e.clientY);
-            var newAnchor = computeNearestAnchor(rectE, coordsE.x, coordsE.y);
-            if (relationEndpointDragState.side === 'from') {
-                if (relE.fromAnchor !== newAnchor) {
-                    relE.fromAnchor = newAnchor;
-                    render();
-                }
+            // まず動かしている端点を開始ノードへ戻し、毎フレーム同じ状態から判定する
+            if (sideE === 'from') relE.fromNodeId = origNodeIdE;
+            else relE.toNodeId = origNodeIdE;
+
+            var targetId = findNodeIdAtCanvasPoint(lastRenderedPositions, coordsE.x, coordsE.y);
+
+            if (targetId && targetId !== origNodeIdE) {
+                // 別ノードの上 → つなぎ替えプレビュー
+                var otherId = sideE === 'from' ? relE.toNodeId : relE.fromNodeId;
+                var newFrom = sideE === 'from' ? targetId : otherId;
+                var newTo = sideE === 'from' ? otherId : targetId;
+                var relIdE2 = relationEndpointDragState.relationId;
+                var valid = (newFrom !== newTo) &&
+                    !relationExistsBetween(newFrom, newTo, relIdE2) &&
+                    !wouldCreateRelationCycle(newFrom, newTo, relIdE2);
+                // 端点を仮にターゲットへ付け替え（アンカーは自動向き）
+                if (sideE === 'from') { relE.fromNodeId = targetId; relE.fromAnchor = null; }
+                else { relE.toNodeId = targetId; relE.toAnchor = null; }
+                relationEndpointDragState.hoverTargetId = targetId;
+                relationEndpointDragState.hoverValid = valid;
+                render();
+                applyReconnectPreviewVisual(relIdE2, targetId, valid);
             } else {
-                if (relE.toAnchor !== newAnchor) {
-                    relE.toAnchor = newAnchor;
-                    render();
+                // 同じノード上／空白 → 従来の接続面（アンカー）変更
+                relationEndpointDragState.hoverTargetId = null;
+                relationEndpointDragState.hoverValid = false;
+                var rectE = lastRenderedPositions ? getNodeRectFromPositions(lastRenderedPositions, origNodeIdE) : null;
+                if (rectE) {
+                    var newAnchor = computeNearestAnchor(rectE, coordsE.x, coordsE.y);
+                    if (sideE === 'from') relE.fromAnchor = newAnchor;
+                    else relE.toAnchor = newAnchor;
                 }
+                render();
             }
             return;
         }
@@ -172,10 +229,38 @@ export function initRelationsEvents() {
         if (relationEndpointDragState.active) {
             var didMoveE = relationEndpointDragState.moved;
             var relIdE = relationEndpointDragState.relationId;
+            var sideE2 = relationEndpointDragState.side;
+            var origNodeIdE2 = relationEndpointDragState.origNodeId;
+            var origAnchorE2 = relationEndpointDragState.origAnchor;
+            var hoverTargetIdE = relationEndpointDragState.hoverTargetId;
             relationEndpointDragState.active = false;
             relationEndpointDragState.relationId = null;
             relationEndpointDragState.side = null;
             relationEndpointDragState.moved = false;
+            relationEndpointDragState.origNodeId = null;
+            relationEndpointDragState.origAnchor = null;
+            relationEndpointDragState.hoverTargetId = null;
+            relationEndpointDragState.hoverValid = false;
+
+            // 別ノードにドロップした → つなぎ替えを確定（無効なら元に戻す）
+            if (hoverTargetIdE) {
+                var relU = findRelation(relIdE);
+                if (relU) {
+                    // いったん開始ノードへ完全に戻してから、正式APIで検証＆確定する
+                    if (sideE2 === 'from') { relU.fromNodeId = origNodeIdE2; relU.fromAnchor = origAnchorE2; }
+                    else { relU.toNodeId = origNodeIdE2; relU.toAnchor = origAnchorE2; }
+                    var res = reconnectRelationEndpoint(relIdE, sideE2, hoverTargetIdE);
+                    render();
+                    if (res.ok) {
+                        saveState();
+                    } else {
+                        flashRelationInvalid(relIdE);
+                        showToast(res.reason, 2500);
+                    }
+                }
+                return;
+            }
+
             if (didMoveE) {
                 saveState();
             } else if (relIdE) {
@@ -225,4 +310,16 @@ export function initRelationsEvents() {
             handleConnectButtonClick();
         });
     }
+
+    // テスト・連携用につなぎ替え関連の関数を公開する
+    window.reconnectRelationEndpoint = function(relId, side, newNodeId) {
+        var res = reconnectRelationEndpoint(relId, side, newNodeId);
+        if (res.ok) {
+            saveState();
+            render();
+        }
+        return res;
+    };
+    window.relationExistsBetween = relationExistsBetween;
+    window.wouldCreateRelationCycle = wouldCreateRelationCycle;
 }
