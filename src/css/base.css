@@ -9,8 +9,19 @@
     --node-border: #4a90d9;
     --node-selected: #e3f2fd;
     --text-color: #333333;
-    --line-color: #999999;
+    --line-color: #808080;            /* 接続線（キャンバス背景と約3.6:1・非テキスト基準3:1以上）*/
     --shadow: 0 2px 8px rgba(0,0,0,0.1);
+
+    /* ノードのカラーパレット（WCAG 2.1 AA: 黒文字 #1A1A1A とのコントラスト 4.5:1 以上）
+       ノードの文字色はすべて #1A1A1A（--node-text）に統一し、背景色で基準を満たす */
+    --node-text: #1A1A1A;             /* 全ノード共通の文字色（黒）*/
+    --node-green-bg: #74C69D;         /* 緑ノード（黒文字と約8.5:1）*/
+    --node-green-bg-sel: #5FB78B;     /* 緑ノード・選択時（黒文字と約7.2:1）*/
+    --node-blue-bg: #74C0FC;          /* 青ノード（黒文字と約8.7:1）*/
+    --node-blue-bg-sel: #5BB0F0;      /* 青ノード・選択時（黒文字と約7.4:1）*/
+    --node-yellow-bg: #FFD43B;        /* 黄ノード（黒文字と約13.6:1）*/
+    --node-yellow-bg-sel: #F5C518;    /* 黄ノード・選択時（黒文字と約10.7:1）*/
+    --node-red-text: #C62828;         /* 赤文字エンファ（白背景と約5.6:1）*/
     --font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
 }
 

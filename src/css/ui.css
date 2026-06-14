@@ -79,19 +79,19 @@
    Highlight Node Styles
    ======================================== */
 .node.highlighted {
-    background: #F2C94C !important;
-    border-color: #F2C94C !important;
-    color: #37352f !important;
+    background: var(--node-yellow-bg) !important;
+    border-color: var(--node-yellow-bg) !important;
+    color: var(--node-text) !important;
     box-shadow: none !important;
 }
 
 .node.highlighted .node-text {
-    color: #37352f !important;
+    color: var(--node-text) !important;
 }
 
 .node.highlighted.selected {
-    background: #E8BF42 !important;
-    border-color: #D4AB38 !important;
+    background: var(--node-yellow-bg-sel) !important;
+    border-color: var(--node-yellow-bg-sel) !important;
     box-shadow: 0 0 0 3px rgba(242, 201, 76, 0.4) !important;
 }
 
@@ -99,19 +99,19 @@
    Green Highlight Node Styles
    ======================================== */
 .node.green-hl {
-    background: #6FCF97 !important;
-    border-color: #6FCF97 !important;
-    color: #1a5e3a !important;
+    background: var(--node-green-bg) !important;
+    border-color: var(--node-green-bg) !important;
+    color: var(--node-text) !important;
     box-shadow: none !important;
 }
 
 .node.green-hl .node-text {
-    color: #1a5e3a !important;
+    color: var(--node-text) !important;
 }
 
 .node.green-hl.selected {
-    background: #5EBF87 !important;
-    border-color: #4DAF77 !important;
+    background: var(--node-green-bg-sel) !important;
+    border-color: var(--node-green-bg-sel) !important;
     box-shadow: 0 0 0 3px rgba(111, 207, 151, 0.4) !important;
 }
 
@@ -119,19 +119,19 @@
    Cyan Highlight Node Styles
    ======================================== */
 .node.cyan-hl {
-    background: #56CCF2 !important;
-    border-color: #56CCF2 !important;
-    color: #1a4a5e !important;
+    background: var(--node-blue-bg) !important;
+    border-color: var(--node-blue-bg) !important;
+    color: var(--node-text) !important;
     box-shadow: none !important;
 }
 
 .node.cyan-hl .node-text {
-    color: #1a4a5e !important;
+    color: var(--node-text) !important;
 }
 
 .node.cyan-hl.selected {
-    background: #45BCE0 !important;
-    border-color: #38AACC !important;
+    background: var(--node-blue-bg-sel) !important;
+    border-color: var(--node-blue-bg-sel) !important;
     box-shadow: 0 0 0 3px rgba(86, 204, 242, 0.4) !important;
 }
 
@@ -139,14 +139,14 @@
    Red Text Node Styles
    ======================================== */
 .node.red-text .node-text {
-    color: #e53e3e !important;
+    color: var(--node-red-text) !important;
 }
 
 /* 赤文字Aボタン */
 .canvas-float-btns .float-redtext-btn {
     font-size: 14px;
     font-weight: 700;
-    color: #e53e3e;
+    color: var(--node-red-text);
     line-height: 1;
     font-family: Georgia, 'Times New Roman', serif;
     letter-spacing: -0.5px;
@@ -212,15 +212,15 @@
 }
 
 .canvas-float-btns .float-dot-yellow::after {
-    background: #F2C94C;
+    background: var(--node-yellow-bg);
 }
 
 .canvas-float-btns .float-dot-green::after {
-    background: #6FCF97;
+    background: var(--node-green-bg);
 }
 
 .canvas-float-btns .float-dot-cyan::after {
-    background: #56CCF2;
+    background: var(--node-blue-bg);
 }
 
 /* ドットボタン間の区切り線 */

@@ -147,19 +147,20 @@ const { BASE_URL, CMD } = require('./helpers');
     await page.waitForTimeout(200);
 
     // ========================================
-    // 6. Highlight styling (#F2C94C)
+    // 6. Highlight styling (#FFD43B)
     // ========================================
-    console.log('\n--- 6. Highlight styling (#F2C94C) ---');
+    console.log('\n--- 6. Highlight styling (#FFD43B) ---');
 
     await page.evaluate(() => window.toggleNodeHighlight('pa'));
     await page.waitForTimeout(300);
 
     const hlBg = await page.$eval('[data-id="pa"]', el => getComputedStyle(el).backgroundColor);
-    // #F2C94C = rgb(242, 201, 76)
-    check('Highlighted bg is rgb(242, 201, 76)', hlBg === 'rgb(242, 201, 76)');
+    // #FFD43B = rgb(255, 212, 59)（WCAG AA: 黒文字と約13.6:1）
+    check('Highlighted bg is rgb(255, 212, 59)', hlBg === 'rgb(255, 212, 59)');
 
     const hlTextColor = await page.$eval('[data-id="pa"] .node-text', el => getComputedStyle(el).color);
-    check('Highlighted text is #37352f', hlTextColor === 'rgb(55, 53, 47)');
+    // #1A1A1A = rgb(26, 26, 26)（全ノード共通の文字色）
+    check('Highlighted text is #1A1A1A', hlTextColor === 'rgb(26, 26, 26)');
 
     const hlClass = await page.$eval('[data-id="pa"]', el => el.classList.contains('highlighted'));
     check('ParentA has highlighted class', hlClass);
