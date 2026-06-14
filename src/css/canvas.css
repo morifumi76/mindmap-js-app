@@ -175,6 +175,7 @@ body.connection-mode .node {
     min-width: 120px;
     padding: 10px 16px;
     background: var(--node-bg);
+    color: var(--node-text);              /* 白ノードの文字色も #1A1A1A に統一 */
     border: 2px solid var(--node-border);
     border-radius: 8px;
     box-shadow: var(--shadow);
