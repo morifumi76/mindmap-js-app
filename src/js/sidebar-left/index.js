@@ -1,5 +1,7 @@
 // 左サイドバーの公開API（再エクスポート）と window への公開
 import { getCurrentCopyText } from '../clipboard.js';
+import { parseTabIndentedText } from '../tree-import.js';
+import { undo } from '../history.js';
 import { getVisibleNodesInOrder } from '../nodes.js';
 import { closeRightSidebar, openRightSidebar } from '../sidebar-right.js';
 import {
@@ -100,3 +102,5 @@ window.isNodeHighlighted = isNodeHighlighted;
 window.getNodeHighlightState = getNodeHighlightState;
 window.setNodeHighlightState = setNodeHighlightState;
 window.toggleNodeHighlight = toggleNodeHighlight;
+window.parseTabIndentedText = parseTabIndentedText;
+window.undo = undo;

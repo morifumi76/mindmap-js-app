@@ -177,6 +177,10 @@
     padding: 0;
     margin: 0;
     white-space: pre;
+    /* 罫線なしモードのタブ(\t)の表示幅。デフォルト8は広すぎるため2に詰める。
+       見た目の幅だけを変える指定で、出力テキスト内のタブ文字はそのまま保たれる */
+    tab-size: 2;
+    -moz-tab-size: 2;
     min-width: max-content;
 }
 
@@ -204,6 +208,225 @@
 /* Hidden – no longer used */
 .sidebar-mini-btn {
     display: none !important;
+}
+
+/* ========================================
+   ツリーのテキスト編集（インポート用）
+   ======================================== */
+
+/* 編集欄のラッパー。左端ガター・赤マーカー層・透明textareaを重ねる */
+.sidebar-editor-wrap {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    background: #ffffff;
+}
+
+/* 左端のガター（行番号のみ）。背景と仕切りは固定、中身(.ge-inner)だけスクロール追従 */
+.sidebar-editor-gutter {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 40px;
+    overflow: hidden;
+    pointer-events: none;
+    background: #fafafa;
+    border-right: 1px solid #ececec;
+    z-index: 2;
+    font-family: 'Menlo', 'Consolas', 'Courier New', monospace;
+    font-size: 12px;
+}
+
+.sidebar-editor-gutter .ge-inner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    will-change: transform;
+}
+
+.sidebar-editor-gutter .ge-row {
+    position: absolute;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end; /* 行番号は右揃え */
+    box-sizing: border-box;
+    padding: 0 6px 0 3px;
+}
+
+.sidebar-editor-gutter .ge-num {
+    color: #b8b8b8;
+}
+
+/* 飾り専用の裏層：本文と同じ配置でタブガイド・改行マークを描く（テキスト自体は透明） */
+.sidebar-editor-backdrop {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.sidebar-editor-backdrop .be-inner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    /* textareaと同じ余白・フォント・行高・タブ幅にして本文とピタリ重ねる */
+    padding: 8px 8px 8px 46px;
+    width: max-content;
+    min-width: 100%;
+    box-sizing: border-box;
+    font-family: 'Menlo', 'Consolas', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.3;
+    white-space: pre;
+    tab-size: 2;
+    -moz-tab-size: 2;
+    color: transparent; /* 文字は見せない（本文はtextarea側に表示） */
+    will-change: transform;
+}
+
+.sidebar-editor-backdrop .be-line {
+    display: block;
+    min-height: 1.3em;
+}
+
+/* タブ1個ぶん：薄い縦ガイド線（背景）＋矢印。幅は実際のタブが担うのでレイアウトは崩れない */
+.sidebar-editor-backdrop .be-tab {
+    position: relative;
+    background-image: linear-gradient(to right, rgba(55, 53, 47, 0.18) 0, rgba(55, 53, 47, 0.18) 1px, transparent 1px);
+}
+
+.sidebar-editor-backdrop .be-tab::before {
+    content: '\2192'; /* → */
+    position: absolute;
+    left: 2px;
+    top: 0;
+    color: rgba(55, 53, 47, 0.28);
+    pointer-events: none;
+}
+
+/* 行末の改行マーク（↵） */
+.sidebar-editor-backdrop .be-nl {
+    color: rgba(55, 53, 47, 0.22);
+}
+
+/* スペース混入の赤マーカーを置く層（テキスト領域＝ガターの右側）。スクロールに合わせて縦に動かす */
+.sidebar-editor-highlights {
+    position: absolute;
+    top: 0;
+    left: 40px;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* 行頭にスペースが混ざった行を示す赤い帯 */
+.sidebar-editor-warnline {
+    position: absolute;
+    left: 0;
+    right: 0;
+    background: rgba(229, 57, 53, 0.16);
+    border-left: 3px solid #e53935;
+}
+
+/* 編集用テキスト欄。背景は透明にして裏の飾り層を見せる。本文の文字は通常表示（IME対応のため） */
+.sidebar-tree-editor {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    overflow: auto;
+    resize: none;
+    border: none;
+    outline: none;
+    margin: 0;
+    padding: 8px 8px 8px 46px;
+    font-family: 'Menlo', 'Consolas', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.3;
+    color: #37352f;
+    caret-color: #37352f;
+    white-space: pre;
+    tab-size: 2;
+    -moz-tab-size: 2;
+    background: transparent;
+    z-index: 3;
+}
+
+/* 編集／取り込み／キャンセルのボタン行（罫線なしモードのみ表示、ツリーナビ領域の右下） */
+.sidebar-edit-area {
+    flex-shrink: 0;
+    padding: 8px 16px 10px 16px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.sidebar-btn-edit,
+.sidebar-btn-import,
+.sidebar-btn-cancel {
+    height: 30px;
+    padding: 0 14px;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+    background: #ffffff;
+    color: #37352f;
+    font-family: var(--font-family);
+    font-size: 13px;
+    cursor: pointer;
+    transition: opacity 0.1s, transform 0.1s, background 0.1s;
+}
+
+.sidebar-btn-import {
+    border-color: #37352f;
+    background: #37352f;
+    color: #ffffff;
+}
+
+.sidebar-btn-edit:hover,
+.sidebar-btn-cancel:hover {
+    background: #f2f2f0;
+}
+
+.sidebar-btn-import:hover {
+    opacity: 0.85;
+}
+
+.sidebar-btn-edit:active,
+.sidebar-btn-import:active,
+.sidebar-btn-cancel:active {
+    transform: scale(0.97);
+}
+
+/* 取り込みエラー表示 */
+.sidebar-edit-error {
+    flex-shrink: 0;
+    margin: 8px 16px 0 16px;
+    padding: 8px 10px;
+    border: 1px solid #f0c2c2;
+    border-radius: 6px;
+    background: #fdf0f0;
+    color: #b3261e;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.sidebar-edit-error strong {
+    display: block;
+    margin-bottom: 4px;
+}
+
+.sidebar-edit-error ul {
+    margin: 0;
+    padding-left: 18px;
 }
 
 /* Floating 🌲 toggle button (右下 FABスタイル・丸枠) */

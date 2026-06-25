@@ -242,6 +242,37 @@ const { BASE_URL } = require('./helpers');
     assert(copyText.includes('├─') || copyText.includes('└─'), 'Copy text has border lines');
 
     // ========================================
+    // Feature: 罫線なしモードは深さ×タブ文字でインデント（半角スペースや罫線記号を使わない）
+    // ========================================
+    console.log('\n=== No-border copy uses tab indent ===');
+    await page.evaluate(() => {
+        document.getElementById('copyFormat').value = 'simple';
+        document.getElementById('copyFormat').dispatchEvent(new Event('change'));
+        document.getElementById('copyBorder').value = 'none';
+        document.getElementById('copyBorder').dispatchEvent(new Event('change'));
+    });
+    await page.waitForTimeout(200);
+
+    const noBorderCopy = await page.evaluate(() => window.getCurrentCopyText());
+    const noBorderLines = noBorderCopy.split('\n').filter(l => l.length > 0);
+    // 罫線記号が一切含まれないこと
+    assert(!/[├└│─]/.test(noBorderCopy), 'No-border copy has no border symbols');
+    // 子ノード（インデントあり）の行頭が本物のタブ文字で、半角スペース由来でないこと
+    const indentedLines = noBorderLines.filter(l => l[0] === '\t');
+    assert(indentedLines.length > 0, 'No-border copy has tab-indented lines');
+    // インデント部分はタブのみ（半角スペース混入なし）、行末スペースもなし
+    let allTabsOnly = true;
+    let noTrailingSpace = true;
+    for (const l of noBorderLines) {
+        const indent = l.match(/^\t*/)[0];
+        const rest = l.slice(indent.length);
+        if (rest.startsWith(' ')) allTabsOnly = false; // インデント後すぐ半角スペース = NG
+        if (/\s$/.test(l)) noTrailingSpace = false;
+    }
+    assert(allTabsOnly, 'No-border indent is tabs only (no leading half-width spaces)');
+    assert(noTrailingSpace, 'No-border lines have no trailing spaces');
+
+    // ========================================
     // Feature: Click preview line -> focus node
     // ========================================
     console.log('\n=== Click preview line focuses node ===');
@@ -342,6 +373,26 @@ const { BASE_URL } = require('./helpers');
     console.log('\n=== No old UI ===');
     assert(!await page.$('#previewBtn'), 'No preview button');
     assert(!await page.$('.copy-panel'), 'No floating panel');
+
+    // ========================================
+    // Feature: ツールバーはツリーナビ幅を変えても潰れない（固定サイズ）
+    // ========================================
+    console.log('\n=== Toolbar keeps size when sidebar widens ===');
+    // サイドバーを閉じた状態のツールバー幅
+    await page.evaluate(() => window.closeRightSidebar());
+    await page.waitForTimeout(200);
+    const toolbarWidthClosed = await page.$eval('#canvasFloatBtns', el => Math.round(el.getBoundingClientRect().width));
+    // 保存幅を大きくしてからサイドバーを開く（openRightSidebar が内部で再配置を呼ぶ）
+    await page.evaluate(() => {
+        localStorage.setItem('mindmap_sidebar_width', String(Math.floor(window.innerWidth * 0.6)));
+        window.openRightSidebar();
+    });
+    await page.waitForTimeout(300);
+    const sidebarWide = await page.$eval('#sidebar', el => Math.round(el.getBoundingClientRect().width));
+    assert(sidebarWide > 300, 'Sidebar is actually widened: ' + sidebarWide + 'px');
+    const toolbarWidthWide = await page.$eval('#canvasFloatBtns', el => Math.round(el.getBoundingClientRect().width));
+    assert(toolbarWidthWide === toolbarWidthClosed,
+        'Toolbar width unchanged when sidebar is widened: ' + toolbarWidthClosed + ' -> ' + toolbarWidthWide);
 
     // ========================================
     // Summary

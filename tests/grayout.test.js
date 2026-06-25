@@ -76,7 +76,17 @@ const { BASE_URL, CMD } = require('./helpers');
         return r.top >= 0 && r.bottom <= window.innerHeight && r.width > 0;
     });
     check('Container is visible within viewport', containerInView);
-    check('Container at right 16px', containerStyle.right === 16);
+    // 現行UI: ツールバーは「見えているキャンバス領域（左右サイドバーを除いた範囲）」の中央に配置
+    const centerInfo = await page.$eval('#canvasFloatBtns', el => {
+        const r = el.getBoundingClientRect();
+        const left = document.getElementById('leftSidebar');
+        const right = document.getElementById('sidebar');
+        const lw = (left && !left.classList.contains('collapsed')) ? left.offsetWidth : 0;
+        const rw = (right && !right.classList.contains('collapsed')) ? right.offsetWidth : 0;
+        const expected = lw + (window.innerWidth - lw - rw) / 2;
+        return { center: r.left + r.width / 2, expected: expected };
+    });
+    check('Container is centered in the visible canvas area', Math.abs(centerInfo.center - centerInfo.expected) <= 2);
     check('Container is flex', containerStyle.display === 'flex');
     check('Container z-index >= 601', containerStyle.zIndex >= 601);
 
@@ -111,18 +121,21 @@ const { BASE_URL, CMD } = require('./helpers');
     // ========================================
     console.log('\n--- 4. Buttons shift with sidebar ---');
 
-    const rightBefore = await page.$eval('#canvasFloatBtns', el => parseInt(getComputedStyle(el).right));
-    check('Container right is 16px when sidebar closed', rightBefore === 16);
+    const center = () => page.$eval('#canvasFloatBtns', el => {
+        const r = el.getBoundingClientRect();
+        return r.left + r.width / 2;
+    });
+    const centerBefore = await center();
 
     await page.evaluate(() => window.openRightSidebar());
     await page.waitForTimeout(300);
-    const rightAfterOpen = await page.$eval('#canvasFloatBtns', el => parseInt(el.style.right));
-    check('Container shifts when sidebar opens (> 16)', rightAfterOpen > 16);
+    const centerAfterOpen = await center();
+    check('Container shifts left when sidebar opens', centerAfterOpen < centerBefore - 5);
 
     await page.evaluate(() => window.closeRightSidebar());
     await page.waitForTimeout(300);
-    const rightAfterClose = await page.$eval('#canvasFloatBtns', el => parseInt(el.style.right));
-    check('Container returns to 16px after close', rightAfterClose === 16);
+    const centerAfterClose = await center();
+    check('Container returns to center after close', Math.abs(centerAfterClose - centerBefore) <= 2);
 
     // ========================================
     // 5. Grey-out color is warm gray (#C0B9B0)

@@ -251,6 +251,12 @@ export function getCurrentCopyText() {
     return generateCopyText(mindMapData.root, 0, [], format, useBorder);
 }
 
+// 罫線設定に関係なく、常にタブ区切りテキストを返す（編集モードの初期値用）
+export function getTreeTabText() {
+    var format = document.getElementById('copyFormat').value;
+    return generateCopyText(mindMapData.root, 0, [], format, false);
+}
+
 export function copyToClipboard() {
     var text = getCurrentCopyText();
 
@@ -290,24 +296,18 @@ function generateCopyText(node, level, parentContinues, format, useBorder) {
     // ---- Root (level 0) ----
     if (level === 0) {
         result = icon + node.text + '\n';
+    } else if (!useBorder) {
+        // 罫線なしモード：深さ×タブ文字（\t）でインデント。半角スペースや罫線記号は使わない
+        result = '\t'.repeat(level) + icon + node.text + '\n';
     } else {
         // Build the prefix from ancestor continuation info
         var prefix = '';
         for (var i = 0; i < level - 1; i++) {
-            if (useBorder) {
-                prefix += parentContinues[i] ? '│  ' : '   ';
-            } else {
-                prefix += '  ';
-            }
+            prefix += parentContinues[i] ? '│  ' : '   ';
         }
         // Connector for this node
         var isLast = (parentContinues[level - 1] === false);
-        var connector;
-        if (useBorder) {
-            connector = isLast ? '└─ ' : '├─ ';
-        } else {
-            connector = '  ';
-        }
+        var connector = isLast ? '└─ ' : '├─ ';
         result = prefix + connector + icon + node.text + '\n';
     }
 
