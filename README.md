@@ -71,6 +71,7 @@ Vercel（`vercel.json`）。push すると `npm run build` が実行され `dist
 
 ## ドキュメント
 
+- `docs/local-version-readme.md` — ローカル版（`dist/local.html`）配布時にエンドユーザーへ同梱する説明書
 - `docs/REFACTORING_PLAN.md` — 2026-06 リファクタリングの計画と実施記録
 - `docs/refactor-baseline.md` — テスト基盤の経緯・既知バグの記録
 - `docs/notes/` — 機能ごとの仕様メモ（日付付き）
