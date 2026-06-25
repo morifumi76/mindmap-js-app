@@ -129,6 +129,22 @@
                 <button class="sidebar-close-btn" id="sidebarCloseBtn" title="閉じる">✕</button>
             </div>
             <div class="sidebar-tree" id="sidebarTree"></div>
+            <!-- 編集モード用のテキスト欄（罫線なしモードで[編集]を押すと表示） -->
+            <!-- コードエディタ風：左に行番号ガター、裏の飾り層にタブガイド・改行マーク・スペース警告、本文textareaを上に重ねる -->
+            <div class="sidebar-editor-wrap" id="sidebarEditorWrap" style="display:none">
+                <div class="sidebar-editor-gutter" aria-hidden="true"><div class="ge-inner" id="sidebarEditorGutter"></div></div>
+                <div class="sidebar-editor-highlights" id="sidebarEditorHighlights" aria-hidden="true"></div>
+                <div class="sidebar-editor-backdrop" aria-hidden="true"><div class="be-inner" id="sidebarEditorBackdrop"></div></div>
+                <textarea class="sidebar-tree-editor" id="sidebarTreeEditor" spellcheck="false" wrap="off"></textarea>
+            </div>
+            <!-- 取り込みエラー表示（編集モードのみ。ツリーナビ領域側に表示） -->
+            <div class="sidebar-edit-error" id="sidebarEditError" style="display:none"></div>
+            <!-- 編集／取り込みボタン（罫線なしモードのときだけ表示。区切り線の上＝ツリーナビ領域の右下） -->
+            <div class="sidebar-edit-area" id="sidebarEditArea" style="display:none">
+                <button class="sidebar-btn-edit" id="treeEditBtn" title="ツリーをテキストで編集する">編集</button>
+                <button class="sidebar-btn-import" id="treeImportBtn" style="display:none" title="編集内容をマインドマップに反映する">取り込み</button>
+                <button class="sidebar-btn-cancel" id="treeCancelBtn" style="display:none" title="編集をやめて元に戻す">キャンセル</button>
+            </div>
             <!-- Bottom panel: toggles + buttons -->
             <div class="sidebar-bottom-panel">
                 <div class="sidebar-bottom-separator"></div>

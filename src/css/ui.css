@@ -162,6 +162,13 @@
     align-items: center;
     gap: 8px;
     z-index: 601;
+    /* 中身ぶんの幅を保つ（サイドバーを広げても両端で挟まれて潰れない） */
+    width: max-content;
+}
+
+/* 各アイコン群は縮ませない（サイドバー幅に引っ張られて潰れるのを防ぐ二重の安全策） */
+.canvas-float-btns > * {
+    flex-shrink: 0;
 }
 
 /* Dot (grayout / highlight) control – white box matching zoom/expand controls */

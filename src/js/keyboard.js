@@ -212,8 +212,14 @@ export function handleKeyDown(e) {
     var isMac = /Mac/.test(navigator.platform);
     var cmdKey = isMac ? e.metaKey : e.ctrlKey;
 
-    // If focus is in a rename input field in My Maps sidebar, do NOT handle shortcuts
+    // ツリーナビのテキスト編集欄にフォーカスがある間は、アプリのショートカットを一切処理せず
+    // ブラウザ標準の入力（文字入力・削除・コピー/ペースト・Undo/Redo）に任せる
     var activeEl = document.activeElement;
+    if (activeEl && activeEl.id === 'sidebarTreeEditor') {
+        return;
+    }
+
+    // If focus is in a rename input field in My Maps sidebar, do NOT handle shortcuts
     if (activeEl && (activeEl.classList.contains('map-item-rename-input') ||
         (activeEl.classList.contains('map-item-name') && activeEl.contentEditable === 'true'))) {
         // Allow default behavior for the rename input (Enter/Escape は input の listener で処理)。
