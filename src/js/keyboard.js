@@ -28,11 +28,11 @@ import {
     addSiblingNode,
     deleteNode,
     deleteSelectedNodes,
-    demoteNode,
+    demoteSelection,
     findNode,
-    moveNodeDown,
-    moveNodeUp,
-    promoteNode
+    moveSelectionDown,
+    moveSelectionUp,
+    promoteSelection
 } from './nodes.js';
 import {
     clearSelection,
@@ -416,24 +416,28 @@ export function handleKeyDown(e) {
             break;
         case 'ArrowUp':
             e.preventDefault();
-            if (cmdKey) { if (currentId) moveNodeUp(currentId); }
+            // Option(Alt)+↑ で場所移動（メモ帳編集モードと統一）。複数選択時はまとめて移動
+            if (e.altKey) { moveSelectionUp(currentId); }
             else if (e.shiftKey) { shiftNavigateUp(); }
             else navigateUp();
             break;
         case 'ArrowDown':
             e.preventDefault();
-            if (cmdKey) { if (currentId) moveNodeDown(currentId); }
+            // Option(Alt)+↓ で場所移動。複数選択時はまとめて移動
+            if (e.altKey) { moveSelectionDown(currentId); }
             else if (e.shiftKey) { shiftNavigateDown(); }
             else navigateDown();
             break;
         case 'ArrowLeft':
             e.preventDefault();
-            if (cmdKey) { if (currentId) promoteNode(currentId); }
+            // Option(Alt)+← で親子移動（階層を1つ上げる＝外へ）。複数選択時はまとめて移動
+            if (e.altKey) { promoteSelection(currentId); }
             else navigateLeft();
             break;
         case 'ArrowRight':
             e.preventDefault();
-            if (cmdKey) { if (currentId) demoteNode(currentId); }
+            // Option(Alt)+→ で親子移動（階層を1つ下げる＝直前の兄弟の子へ）。複数選択時はまとめて移動
+            if (e.altKey) { demoteSelection(currentId); }
             else navigateRight();
             break;
         case 'z': case 'Z':

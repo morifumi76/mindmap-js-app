@@ -16,6 +16,7 @@ const TEST_FILES = [
     'grayout.test.js',
     'sidebar.test.js',
     'tree-import.test.js',
+    'node-move.test.js',
     'left-sidebar.test.js',
     'relations-reconnect.test.js',
     'cloud.test.js',

@@ -2,6 +2,7 @@
 import { getCurrentCopyText } from '../clipboard.js';
 import { parseTabIndentedText } from '../tree-import.js';
 import { undo } from '../history.js';
+import { selectNode, toggleSelectNode } from '../selection.js';
 import { getVisibleNodesInOrder } from '../nodes.js';
 import { closeRightSidebar, openRightSidebar } from '../sidebar-right.js';
 import {
@@ -104,3 +105,5 @@ window.setNodeHighlightState = setNodeHighlightState;
 window.toggleNodeHighlight = toggleNodeHighlight;
 window.parseTabIndentedText = parseTabIndentedText;
 window.undo = undo;
+window.selectNode = selectNode;
+window.toggleSelectNode = toggleSelectNode;
