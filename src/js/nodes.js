@@ -173,51 +173,97 @@ export function updateNodeText(nodeId, newText) {
     }
 }
 
-export function moveNodeUp(nodeId) {
-    var result = findNode(nodeId);
-    if (result && result.parent && result.index > 0) {
-        var s = result.parent.children;
-        var tmp = s[result.index - 1];
-        s[result.index - 1] = s[result.index];
-        s[result.index] = tmp;
-        saveState();
-        render();
+// 現在の選択（複数可、root除外）を集め、全て同じ親に属していれば
+// { parent, indices(昇順), nodes(昇順) } を返す。選択が無ければ fallback（現在ノード）を使う。
+// 親が異なる／見つからない場合は null（＝安全のため何もしない）。
+function getSameParentSelection(fallbackNodeId) {
+    var ids = [];
+    selectedNodeIds.forEach(function(id) { if (id !== 'root') ids.push(id); });
+    if (ids.length === 0 && fallbackNodeId && fallbackNodeId !== 'root') ids.push(fallbackNodeId);
+    if (ids.length === 0) return null;
+
+    var parent = null;
+    var items = [];
+    for (var i = 0; i < ids.length; i++) {
+        var r = findNode(ids[i]);
+        if (!r || !r.parent) return null;        // root などは対象外
+        if (parent === null) parent = r.parent;
+        else if (r.parent !== parent) return null; // 親が異なる → 中止
+        items.push({ index: r.index, node: r.node });
     }
+    items.sort(function(a, b) { return a.index - b.index; });
+    return {
+        parent: parent,
+        indices: items.map(function(it) { return it.index; }),
+        nodes: items.map(function(it) { return it.node; })
+    };
 }
 
-export function moveNodeDown(nodeId) {
-    var result = findNode(nodeId);
-    if (result && result.parent && result.index < result.parent.children.length - 1) {
-        var s = result.parent.children;
-        var tmp = s[result.index];
-        s[result.index] = s[result.index + 1];
-        s[result.index + 1] = tmp;
-        saveState();
-        render();
-    }
-}
+// 選択（複数可）を1つ上/下へまとめて並び替える。相対順序は保つ。子はノードごと一緒に動く。
+// dir: -1 = 上へ, +1 = 下へ
+function moveSelection(dir, fallbackNodeId) {
+    var sel = getSameParentSelection(fallbackNodeId);
+    if (!sel) return;
+    var s = sel.parent.children;
+    var indices = sel.indices;
 
-export function promoteNode(nodeId) {
-    var result = findNode(nodeId);
-    if (!result || !result.parent || result.parent.id === 'root') return;
-    var gpResult = findNode(result.parent.id);
-    if (gpResult && gpResult.parent) {
-        result.parent.children.splice(result.index, 1);
-        gpResult.parent.children.splice(gpResult.index + 1, 0, result.node);
-        saveState();
-        render();
-        selectNode(nodeId);
+    if (dir < 0) {
+        if (indices[0] <= 0) return; // 先頭が一番上なら動かさない
+        for (var u = 0; u < indices.length; u++) {
+            var iu = indices[u];
+            var tmpU = s[iu - 1]; s[iu - 1] = s[iu]; s[iu] = tmpU;
+        }
+    } else {
+        if (indices[indices.length - 1] >= s.length - 1) return; // 末尾が一番下なら動かさない
+        for (var d = indices.length - 1; d >= 0; d--) {
+            var idn = indices[d];
+            var tmpD = s[idn + 1]; s[idn + 1] = s[idn]; s[idn] = tmpD;
+        }
     }
-}
-
-export function demoteNode(nodeId) {
-    var result = findNode(nodeId);
-    if (!result || !result.parent || result.index === 0) return;
-    var prevSibling = result.parent.children[result.index - 1];
-    result.parent.children.splice(result.index, 1);
-    prevSibling.children.push(result.node);
     saveState();
     render();
-    selectNode(nodeId);
+}
+
+export function moveSelectionUp(fallbackNodeId) { moveSelection(-1, fallbackNodeId); }
+export function moveSelectionDown(fallbackNodeId) { moveSelection(1, fallbackNodeId); }
+
+// 選択（複数可）を1階層下げて、隣の兄弟の子にする。相対順序は保つ。
+// 入れる相手は「すぐ上の兄弟」を優先し、選択が一番上で上の兄弟がいない場合は
+// 「すぐ下の兄弟」に入れる（見た目で隣にあるノードの子に入る、という直感に合わせる）。
+export function demoteSelection(fallbackNodeId) {
+    var sel = getSameParentSelection(fallbackNodeId);
+    if (!sel) return;
+    var parent = sel.parent, indices = sel.indices, nodes = sel.nodes;
+    var firstIdx = indices[0];
+    var lastIdx = indices[indices.length - 1];
+    // 上の隣を優先、なければ下の隣を新しい親にする
+    var target = null;
+    if (firstIdx > 0) target = parent.children[firstIdx - 1];
+    else if (lastIdx < parent.children.length - 1) target = parent.children[lastIdx + 1];
+    if (!target) return;                           // 上にも下にも兄弟がいない（全選択など）
+    if (selectedNodeIds.has(target.id)) return;    // 念のため（飛び選択の保険）
+    // 親から取り除く（添字がずれないよう後ろから）
+    for (var k = indices.length - 1; k >= 0; k--) parent.children.splice(indices[k], 1);
+    // 隣の兄弟の子として、既存の子の後ろに順番どおり追加
+    for (var m = 0; m < nodes.length; m++) target.children.push(nodes[m]);
+    saveState();
+    render();
+}
+
+// 選択（複数可）を1階層上げる（親の弟＝祖父母の子にする）。相対順序は保つ。
+export function promoteSelection(fallbackNodeId) {
+    var sel = getSameParentSelection(fallbackNodeId);
+    if (!sel) return;
+    var parent = sel.parent, indices = sel.indices, nodes = sel.nodes;
+    if (parent.id === 'root') return;              // 最上位はこれ以上上げられない
+    var gp = findNode(parent.id);
+    if (!gp || !gp.parent) return;
+    // 親から取り除く（後ろから）
+    for (var k = indices.length - 1; k >= 0; k--) parent.children.splice(indices[k], 1);
+    // 祖父母の中で「親の直後」に順番どおり差し込む
+    var insertAt = gp.index + 1;
+    for (var m = 0; m < nodes.length; m++) gp.parent.children.splice(insertAt + m, 0, nodes[m]);
+    saveState();
+    render();
 }
 
