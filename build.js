@@ -67,11 +67,26 @@ const appResult = buildSync({
 });
 const jsBlock = `<script>\n${appResult.outputFiles[0].text}\n</script>`;
 
+// ローカル版（オフライン配布）専用アプリバンドル（src/js/app-local.js がエントリポイント）。
+// app.js と違い cloud/（Supabase 認証・同期・共有）を import しないため、
+// 生成される local.html に外部通信し得るコードが一切含まれない。
+// クラウド版は従来どおり jsBlock（app.js 由来）を使うので、クラウド出力には一切影響しない。
+const localAppResult = buildSync({
+    entryPoints: [path.join(SRC, 'js', 'app-local.js')],
+    bundle: true,
+    format: 'iife',
+    write: false,
+    minify: false,
+    target: ['es2017'],
+});
+const localJsBlock = `<script>\n${localAppResult.outputFiles[0].text}\n</script>`;
+
 // テンプレート読み込み
 const template = read(path.join(SRC, 'index.html'));
 
 // 共通：プレースホルダー置換 → HTML 生成
-function buildHtml(adapterBlock, versionString) {
+// appBlock を省略した場合はクラウド版と同じ共通バンドル（jsBlock）を使う。
+function buildHtml(adapterBlock, versionString, appBlock) {
     let html = template;
     html = html.replace(
         / {4}<!-- BUILD:css -->[\s\S]*? {4}<!-- \/BUILD:css -->/,
@@ -79,7 +94,7 @@ function buildHtml(adapterBlock, versionString) {
     );
     html = html.replace(
         / {4}<!-- BUILD:js -->[\s\S]*? {4}<!-- \/BUILD:js -->/,
-        adapterBlock + '\n    ' + jsBlock
+        adapterBlock + '\n    ' + (appBlock || jsBlock)
     );
     html = html.split('__APP_VERSION__').join(versionString);
     return html;
@@ -94,8 +109,9 @@ fs.writeFileSync(path.join(DIST, 'index.html'), cloudHtml, 'utf-8');
 
 // --- ローカル版（dist/local.html） ---
 // バージョン表記: "1.0.0 (2026-05-30)"
+// cloud/ を含まないローカル専用バンドル（localJsBlock）を使う。
 const localVersionString = `${APP_VERSION} (${BUILD_DATE})`;
-let localHtml = buildHtml(localBundleBlock, localVersionString);
+let localHtml = buildHtml(localBundleBlock, localVersionString, localJsBlock);
 
 // ローカル版固有の HTML 差分：
 //   1) leftSidebarFooter は起動時から表示（クラウドは認証後に display:'' する）
@@ -107,6 +123,19 @@ localHtml = localHtml.replace(
 localHtml = localHtml.replace(
     '<button class="logout-btn" id="logoutBtn">ログアウト</button>',
     '<button class="logout-btn" id="backupBtn">JSONバックアップ</button>'
+);
+//   3) オフライン配布版の自己完結化（外部参照の除去）:
+//      OGP / Twitter Card / canonical は外部ドメイン(mindmap.johosauce.com)を指すため除去する。
+//      ※開いた時点では通信しないが、配布版にはそもそも不要なメタ情報のため取り除く。
+//      favicon（data: で埋め込み済み）は残す。
+localHtml = localHtml.replace(
+    / {4}<!-- OGP -->[\s\S]*?<link rel="canonical"[^>]*>\n/,
+    '    <!-- 配布版: 外部参照のOGP/Twitter/canonicalメタを除去（自己完結化） -->\n'
+);
+//   4) フッターの notion.site への外部リンクを、リンクなしのテキスト（span）に置き換える
+localHtml = localHtml.replace(
+    /<a class="footer-info-link"[\s\S]*?>このマインドマップについて<\/a>/,
+    '<span class="footer-info-link">このマインドマップについて</span>'
 );
 
 fs.writeFileSync(path.join(DIST, 'local.html'), localHtml, 'utf-8');
