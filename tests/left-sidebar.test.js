@@ -1048,6 +1048,24 @@ function assert(cond, msg) {
         await page.keyboard.press('ArrowRight'); // 折りたたみ中に → → 展開
         await page.waitForTimeout(300);
         assert((await getFolderCollapsed(folderId31)) === false, 'ArrowRight expands the selected folder');
+
+        // Finder同様、展開済みフォルダで → を押しても移動せずフォルダに留まる
+        await page.keyboard.press('ArrowRight');
+        await page.waitForTimeout(300);
+        let stayInfo = await page.evaluate((fid) => {
+            var sel = document.querySelector('#mapList .map-item.sidebar-selected');
+            return {
+                selected: sel ? String(sel.dataset.mapId) : null,
+                collapsed: (function() {
+                    try {
+                        var cs = JSON.parse(localStorage.getItem('mindmap-collapse-state') || '{}');
+                        return cs[fid] === true;
+                    } catch (e) { return false; }
+                })(fid)
+            };
+        }, folderId31);
+        assert(stayInfo.selected === folderId31 && stayInfo.collapsed === false,
+            'ArrowRight on an expanded folder stays on the folder (Finder-like)');
     } else {
         assert(true, 'No folder present (skipped folder open/close check)');
     }
@@ -1057,6 +1075,92 @@ function assert(cond, msg) {
     await page.waitForTimeout(300);
     let navModeFinal = await page.evaluate(() => window.sidebarNavigationMode);
     assert(navModeFinal === false, 'Clicking a canvas node returns arrow keys to node operations');
+
+    // ========================================
+    // Test 32: ★ページ（お気に入り登録ページ）を跨ぐ↑↓移動でお気に入り欄へ飛ばない
+    // （回帰テスト: ★ページは一覧に2箇所表示されるため、ID検索がDOM先頭の
+    //   お気に入り欄コピーにヒットし、次の移動でお気に入り欄へジャンプしていた）
+    // ========================================
+    console.log('\n=== Test 32: Starred page does not hijack arrow navigation ===');
+
+    // 「直前がページで、直後にも項目がある」通常欄のページを1つ選んでお気に入り登録する
+    const starTarget = await page.evaluate(() => {
+        var items = Array.from(document.querySelectorAll('#mapList .map-item'));
+        for (var i = 1; i < items.length - 1; i++) {
+            var cur = items[i], prev = items[i - 1];
+            if (cur.classList.contains('page-item') && cur.dataset.inFav !== 'true' &&
+                prev.classList.contains('page-item') && prev.dataset.inFav !== 'true') {
+                // お気に入り登録（メタを直接更新して再描画）
+                var id = String(cur.dataset.mapId);
+                var list = window.getMetaList();
+                for (var m = 0; m < list.length; m++) {
+                    if (String(list[m].id) === id) { list[m].starred = true; list[m].starOrder = 999; }
+                }
+                localStorage.setItem('mindmap-meta', JSON.stringify(list));
+                window.renderMapList();
+                return { id: id, prevId: String(prev.dataset.mapId) };
+            }
+        }
+        return null;
+    });
+    await page.waitForTimeout(400);
+
+    if (starTarget) {
+        // 星付けにより一覧が [お気に入り欄: X ... / 通常欄: ... prev, X, next ...] になったことを確認し、
+        // 通常欄の X の次の項目（期待される移動先）を控える
+        const expected = await page.evaluate((t) => {
+            var items = Array.from(document.querySelectorAll('#mapList .map-item'));
+            var copies = items.filter(el => String(el.dataset.mapId) === t.id);
+            var privIdx = items.findIndex(el => String(el.dataset.mapId) === t.id && el.dataset.inFav !== 'true');
+            return {
+                copyCount: copies.length,
+                nextId: (privIdx !== -1 && privIdx + 1 < items.length) ? String(items[privIdx + 1].dataset.mapId) : null
+            };
+        }, starTarget);
+        assert(expected.copyCount === 2, 'Starred page appears twice in the list (precondition)');
+
+        // 通常欄で ★ページの1つ上のページをクリック → ↓で★ページに乗る → さらに↓
+        await page.evaluate((t) => {
+            var items = Array.from(document.querySelectorAll('#mapList .map-item'));
+            var el = items.find(it => String(it.dataset.mapId) === t.prevId && it.dataset.inFav !== 'true');
+            if (el) el.click();
+        }, starTarget);
+        await page.waitForTimeout(500);
+
+        await page.keyboard.press('ArrowDown'); // ★ページ（通常欄側）へ
+        await page.waitForTimeout(400);
+        let onStarred = await page.evaluate(() => {
+            var sel = document.querySelector('#mapList .map-item.sidebar-selected');
+            return sel ? String(sel.dataset.mapId) : null;
+        });
+        assert(onStarred === starTarget.id, 'ArrowDown moves onto the starred page');
+
+        if (expected.nextId && expected.nextId !== starTarget.id) {
+            await page.keyboard.press('ArrowDown'); // ★ページの次へ（お気に入り欄へ飛ばないこと）
+            await page.waitForTimeout(400);
+            let afterStarred = await page.evaluate(() => {
+                var sel = document.querySelector('#mapList .map-item.sidebar-selected');
+                return sel ? String(sel.dataset.mapId) : null;
+            });
+            assert(afterStarred === expected.nextId,
+                'ArrowDown from the starred page continues in the main list (no jump to favorites): ' + afterStarred + ' === ' + expected.nextId);
+        } else {
+            assert(true, 'No distinct next item below starred page (skipped continuation check)');
+        }
+
+        // 後始末: お気に入り解除
+        await page.evaluate((t) => {
+            var list = window.getMetaList();
+            for (var m = 0; m < list.length; m++) {
+                if (String(list[m].id) === t.id) { list[m].starred = false; delete list[m].starOrder; }
+            }
+            localStorage.setItem('mindmap-meta', JSON.stringify(list));
+            window.renderMapList();
+        }, starTarget);
+        await page.waitForTimeout(300);
+    } else {
+        assert(true, 'No suitable page pair found (skipped starred-page navigation check)');
+    }
 
     // ========================================
     // Summary
