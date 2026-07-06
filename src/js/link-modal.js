@@ -79,7 +79,8 @@ export function openLinkModal() {
     var errorEl = document.getElementById('linkModalError');
     if (!overlay || !textInput || !urlInput) return;
 
-    textInput.value = existing ? (existing.displayText || r.node.text) : r.node.text;
+    // テキスト欄はノード本体のテキストを直接編集する（表示テキストの二重管理はしない）
+    textInput.value = r.node.text;
     urlInput.value = existing ? existing.url : '';
     deleteBtn.style.display = existing ? '' : 'none';
     errorEl.textContent = '';
@@ -120,8 +121,11 @@ function submitLinkModal() {
     var r = findNode(nodeId);
     if (!r || !r.node) { closeLinkModal(); return; }
 
-    var displayText = (textInput.value || '').trim() || r.node.text;
-    r.node.hyperlink = { url: normalized, displayText: displayText };
+    // テキスト欄の内容はノード本体のテキストとして反映する。
+    // 旧データの hyperlink.displayText は描画に使われないため、URL のみ保持する
+    var newText = (textInput.value || '').trim() || r.node.text;
+    r.node.text = newText;
+    r.node.hyperlink = { url: normalized };
     saveState();
     render();
     updateLinkButtonState();
@@ -169,6 +173,9 @@ export function initLinkModal() {
                 // IME変換中・変換確定直後のEnterはモーダル送信しない
                 if (isImeRelatedKey(e)) return;
                 e.preventDefault();
+                // 送信でモーダルが閉じた後に document までバブルすると、
+                // keyboard.js の「Enter=兄弟ノード追加」が誤発火するためここで止める
+                e.stopPropagation();
                 if (urlInput.selectionStart !== urlInput.selectionEnd) {
                     urlInput.selectionStart = urlInput.selectionEnd = urlInput.value.length;
                     return;
@@ -185,6 +192,9 @@ export function initLinkModal() {
                 // IME変換中・変換確定直後のEnterはモーダル送信しない
                 if (isImeRelatedKey(e)) return;
                 e.preventDefault();
+                // 送信でモーダルが閉じた後に document までバブルすると、
+                // keyboard.js の「Enter=兄弟ノード追加」が誤発火するためここで止める
+                e.stopPropagation();
                 if (urlInput && !urlInput.value.trim()) {
                     urlInput.focus();
                     return;
