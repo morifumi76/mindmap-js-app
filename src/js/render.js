@@ -6,12 +6,14 @@ import {
     isNodeGreen,
     isNodeHighlighted,
     isNodeRedText,
+    isVerticalLayout,
     lastSelectedNodeId,
     mindMapData,
     nodeDragState,
     selectedNodeIds,
     setLastRenderedPositions,
     setLastSelectedNodeId,
+    syncVerticalModeUI,
     toggleNodeCollapse,
     viewState
 } from './state.js';
@@ -36,12 +38,22 @@ export function render() {
     svg.innerHTML = '';
     if (endpointsSvg) endpointsSvg.innerHTML = '';
 
+    // 縦表示モード：折りたたみ●の位置などCSSで切り替えるためのクラスと、チェックボックス表示を同期
+    var vertical = isVerticalLayout();
+    var canvasContainer = document.getElementById('canvasContainer');
+    if (canvasContainer) canvasContainer.classList.toggle('vertical-layout', vertical);
+    syncVerticalModeUI();
+
     // Pass 1: Measure actual node dimensions by creating temporary elements
     var nodeDims = measureNodeDimensions(mindMapData.root, container);
 
     // Pass 2: Layout with actual dimensions
     var positions = {};
-    layoutNodes(mindMapData.root, positions, 0, 0, 1, nodeDims);
+    if (vertical) {
+        layoutNodesVertical(mindMapData.root, positions, 0, 0, 1, nodeDims);
+    } else {
+        layoutNodes(mindMapData.root, positions, 0, 0, 1, nodeDims);
+    }
 
     // Pass 3: Render nodes and lines
     renderNodes(mindMapData.root, container, positions);
@@ -138,6 +150,55 @@ function calcSubtreeHeight(node, gap, nodeDims) {
     }
     total += (node.children.length - 1) * gap;
     return Math.max(nodeHeight, total);
+}
+
+// 縦表示モードのレイアウト：横レイアウト（layoutNodes）の90度回転版。
+// ルートを最上部に置き、子は1段下・兄弟は左右に並ぶ。親は子ノード群の水平中央の真上。
+// 引数 cx はノードの水平中央、topY はノードの上端。
+// positions に格納する座標形式（x=左端, y=上下中央）は横レイアウトと完全に同一なので、
+// ドラッグ・関連線・投げ縄・ツリーナビ等の既存機能はそのまま動く。
+function layoutNodesVertical(node, positions, cx, topY, level, nodeDims) {
+    if (cx === undefined) cx = 0;
+    if (topY === undefined) topY = 0;
+    if (level === undefined) level = 1;
+    var dims = (nodeDims && nodeDims[node.id]) ? nodeDims[node.id] : { width: 150, height: 40 };
+    var nodeWidth = dims.width;
+    var nodeHeight = dims.height;
+    // 横レイアウトの hGap=40（親子間）/ vGap=16（兄弟間）を方向だけ入れ替えて同じ視覚的密度にする
+    var levelGap = 40, siblingGap = 16;
+    var collapsed = isNodeCollapsed(node.id);
+    var visibleChildren = collapsed ? [] : node.children;
+    var totalW = 0, childWidths = [];
+    for (var i = 0; i < visibleChildren.length; i++) {
+        var cw = calcSubtreeWidth(visibleChildren[i], siblingGap, nodeDims);
+        childWidths.push(cw);
+        totalW += cw;
+    }
+    if (visibleChildren.length > 1) totalW += (visibleChildren.length - 1) * siblingGap;
+    positions[node.id] = { x: cx - nodeWidth / 2, y: topY + nodeHeight / 2, width: nodeWidth, height: nodeHeight, level: level };
+    var childTopY = topY + nodeHeight + levelGap;
+    var childX = cx - totalW / 2;
+    for (i = 0; i < visibleChildren.length; i++) {
+        cw = childWidths[i];
+        var centerX = childX + cw / 2;
+        layoutNodesVertical(visibleChildren[i], positions, centerX, childTopY, level + 1, nodeDims);
+        childX += cw + siblingGap;
+    }
+    return positions;
+}
+
+// 部分木（subtree）の必要幅を再帰計算する。calcSubtreeHeight の縦横対称版。
+// ノード幅はテキスト長で可変なので、これで兄弟間・いとこ間の重なりを防ぐ。
+function calcSubtreeWidth(node, gap, nodeDims) {
+    var dims = (nodeDims && nodeDims[node.id]) ? nodeDims[node.id] : { width: 150, height: 40 };
+    var nodeWidth = dims.width;
+    if (node.children.length === 0 || isNodeCollapsed(node.id)) return nodeWidth;
+    var total = 0;
+    for (var i = 0; i < node.children.length; i++) {
+        total += calcSubtreeWidth(node.children[i], gap, nodeDims);
+    }
+    total += (node.children.length - 1) * gap;
+    return Math.max(nodeWidth, total);
 }
 
 function renderNodes(node, container, positions) {
@@ -286,17 +347,29 @@ function renderLines(node, svg, positions) {
     var pp = positions[node.id];
     if (!pp) return;
     var off = 5000;
+    var vertical = isVerticalLayout();
     var collapsed = isNodeCollapsed(node.id);
     var visibleChildren = collapsed ? [] : node.children;
     for (var i = 0; i < visibleChildren.length; i++) {
         var child = visibleChildren[i];
         var cp = positions[child.id];
         if (!cp) continue;
-        var sx = pp.x + pp.width + off, sy = pp.y + off;
-        var ex = cp.x + off, ey = cp.y + off;
-        var mx = sx + (ex - sx) / 2;
+        var sx, sy, ex, ey, d;
+        if (vertical) {
+            // 縦表示：親の下辺中央 → 子の上辺中央（positions の y は上下中央なので高さの半分で辺に変換）
+            sx = pp.x + pp.width / 2 + off; sy = pp.y + pp.height / 2 + off;
+            ex = cp.x + cp.width / 2 + off; ey = cp.y - cp.height / 2 + off;
+            var my = sy + (ey - sy) / 2;
+            d = 'M ' + sx + ' ' + sy + ' C ' + sx + ' ' + my + ', ' + ex + ' ' + my + ', ' + ex + ' ' + ey;
+        } else {
+            // 横表示：親の右辺中央 → 子の左辺中央（従来どおり）
+            sx = pp.x + pp.width + off; sy = pp.y + off;
+            ex = cp.x + off; ey = cp.y + off;
+            var mx = sx + (ex - sx) / 2;
+            d = 'M ' + sx + ' ' + sy + ' C ' + mx + ' ' + sy + ', ' + mx + ' ' + ey + ', ' + ex + ' ' + ey;
+        }
         var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.setAttribute('d', 'M ' + sx + ' ' + sy + ' C ' + mx + ' ' + sy + ', ' + mx + ' ' + ey + ', ' + ex + ' ' + ey);
+        path.setAttribute('d', d);
         path.setAttribute('class', 'connection-line');
         svg.appendChild(path);
         renderLines(child, svg, positions);
@@ -316,8 +389,14 @@ export function updateView() {
 export function resetView() {
     var container = document.getElementById('canvasContainer');
     viewState.zoom = 1;
-    viewState.panX = container.clientWidth / 2 - 75;
-    viewState.panY = container.clientHeight / 2;
+    if (isVerticalLayout()) {
+        // 縦表示：ルート（水平中央 x=0・上端 y=0）を上部中央に置き、ツリーが下へ見渡せる状態にする
+        viewState.panX = container.clientWidth / 2;
+        viewState.panY = 100;
+    } else {
+        viewState.panX = container.clientWidth / 2 - 75;
+        viewState.panY = container.clientHeight / 2;
+    }
     updateView();
 }
 

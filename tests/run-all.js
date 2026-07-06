@@ -19,6 +19,7 @@ const TEST_FILES = [
     'node-move.test.js',
     'left-sidebar.test.js',
     'relations-reconnect.test.js',
+    'vertical-layout.test.js',
     'cloud.test.js',
 ];
 

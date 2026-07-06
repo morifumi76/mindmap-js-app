@@ -23,6 +23,7 @@ import {
     setNodeGreenState,
     setNodeHighlightState,
     setNodeRedTextState,
+    setVerticalLayout,
     syncFastModeToggleUI
 } from './state.js';
 import { showToast } from './utils.js';
@@ -120,6 +121,18 @@ export function init() {
                 e.preventDefault();
                 e.stopPropagation();
                 setFastMode(!getFastMode());
+            });
+        }
+
+        // 縦表示チェックボックス：マップデータの isVertical を切り替えて即再レイアウト。
+        // 保存は render() 内の既存自動保存に乗る。saveState() は呼ばない（Undo/Redoの対象外）。
+        var verticalCb = document.getElementById('verticalModeCheckbox');
+        if (verticalCb) {
+            verticalCb.addEventListener('change', function() {
+                setVerticalLayout(verticalCb.checked);
+                render();
+                // ルートノードが画面内に収まるよう自動でセンタリング
+                resetView();
             });
         }
     }

@@ -373,6 +373,31 @@ export function syncFastModeToggleUI() {
 
 
 // ========================================
+// 縦表示モード（Vertical Layout）
+// ルートを最上部に置き、子ノードを下へ展開する家系図型レイアウト。
+// フラグはマップデータ本体（mindMapData.isVertical）に保存されるため、
+// マップごとに保持され、共有先のユーザーにも同じモードで表示される。
+// フラグを持たない既存マップは横レイアウト（false）として扱う。
+// ========================================
+export function isVerticalLayout() {
+    return !!(mindMapData && mindMapData.isVertical === true);
+}
+export function setVerticalLayout(on) {
+    if (!mindMapData) return;
+    if (on) {
+        mindMapData.isVertical = true;
+    } else {
+        // OFF時はフラグ自体を消し、既存マップのデータ形状を元のまま保つ
+        delete mindMapData.isVertical;
+    }
+    syncVerticalModeUI();
+}
+export function syncVerticalModeUI() {
+    var cb = document.getElementById('verticalModeCheckbox');
+    if (cb) cb.checked = isVerticalLayout();
+}
+
+// ========================================
 // モジュール間 setter
 // ESモジュールの import 束縛は読み取り専用のため、他モジュールからの
 // 再代入はこの setter を経由する（読み取りは import した束縛をそのまま使える）
