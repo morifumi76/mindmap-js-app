@@ -446,15 +446,24 @@ const { BASE_URL, CMD } = require('./helpers');
     await page.waitForTimeout(400);
 
     // ========================================
-    // Test 11: ルートノード（0階層）のみテキスト中央揃え
+    // Test 11: テキスト揃え（縦表示=全ノード中央揃え／横表示=全ノード左揃え）
     // ========================================
-    console.log('\n=== Test 11: ルートノードの中央揃え ===');
-    const align = await page.evaluate(() => ({
-        root: getComputedStyle(document.querySelector('.node.root .node-text')).textAlign,
-        child: getComputedStyle(document.querySelector('[data-id="pa"] .node-text')).textAlign
-    }));
-    assert(align.root === 'center', 'ルートのテキストが中央揃え: ' + align.root);
-    assert(align.child === 'start' || align.child === 'left', '子孫ノードは従来どおり左揃え: ' + align.child);
+    console.log('\n=== Test 11: テキスト揃えのモード切替 ===');
+    // 現在は縦表示ON
+    function getAligns() {
+        return page.evaluate(() => ({
+            root: getComputedStyle(document.querySelector('.node.root .node-text')).textAlign,
+            child: getComputedStyle(document.querySelector('[data-id="pa"] .node-text')).textAlign
+        }));
+    }
+    const alignV = await getAligns();
+    assert(alignV.root === 'center' && alignV.child === 'center', '縦表示: 全ノードのテキストが中央揃え: ' + JSON.stringify(alignV));
+
+    await page.click('#verticalModeCheckbox'); // 横へ
+    await page.waitForTimeout(400);
+    const alignH = await getAligns();
+    const isLeft = v => v === 'start' || v === 'left';
+    assert(isLeft(alignH.root) && isLeft(alignH.child), '横表示: 全ノードのテキストが左揃え: ' + JSON.stringify(alignH));
 
     // ========================================
     // 結果
