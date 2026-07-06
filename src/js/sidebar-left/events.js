@@ -307,23 +307,7 @@ export function initLeftSidebar() {
                     setCollapseState(cs);
                     renderMapList();
                 } else if (e.key === 'ArrowRight' && !curCollapsed) {
-                    // 展開済み → 最初の子アイテムへ移動
-                    var allItems = Array.from(document.querySelectorAll('#mapList .map-item'));
-                    var curPos = -1;
-                    for (var ci = 0; ci < allItems.length; ci++) {
-                        if (String(allItems[ci].dataset.mapId) === String(sbState.lastSelectedId)) { curPos = ci; break; }
-                    }
-                    if (curPos !== -1 && curPos + 1 < allItems.length) {
-                        var fcId = String(allItems[curPos + 1].dataset.mapId);
-                        clearSidebarSelection();
-                        sidebarSelectedIds.add(fcId);
-                        sbState.lastSelectedId = fcId;
-                        sbState.anchorId = fcId;
-                        updateSidebarSelectionDisplay();
-                        allItems[curPos + 1].scrollIntoView({ block: 'nearest' });
-                        var fcMeta = findMetaById(fcId);
-                        if (fcMeta && fcMeta.type === 'page') switchToMap(fcMeta.id);
-                    }
+                    // 展開済みのフォルダで → は何もしない（Finderと同じくフォルダに留まる）
                 } else if (e.key === 'ArrowLeft' && !curCollapsed) {
                     // 折りたたむ
                     cs[curMeta.id] = true;
@@ -362,13 +346,28 @@ export function initLeftSidebar() {
         var items = Array.from(document.querySelectorAll('#mapList .map-item'));
         if (items.length === 0) return;
 
-        // 現在位置を sbState.lastSelectedId から特定
+        // 現在位置を sbState.lastSelectedId から特定。
+        // お気に入り登録ページはお気に入り欄と通常欄の2箇所に表示されるため、
+        // IDだけで探すと常にDOM先頭（お気に入り欄）のコピーにヒットして
+        // 移動中に突然お気に入り欄へ飛んでしまう。どちらの欄で選択したか
+        // （sbState.lastSelectedInFav）も一致する項目を優先して現在位置とする。
         var currentIndex = -1;
         if (sbState.lastSelectedId) {
+            var wantFav = sbState.lastSelectedInFav === true;
             for (var i = 0; i < items.length; i++) {
-                if (String(items[i].dataset.mapId) === String(sbState.lastSelectedId)) {
+                if (String(items[i].dataset.mapId) === String(sbState.lastSelectedId) &&
+                    (items[i].dataset.inFav === 'true') === wantFav) {
                     currentIndex = i;
                     break;
+                }
+            }
+            // 欄の情報が合わない場合はID一致のみで探す（保険）
+            if (currentIndex === -1) {
+                for (i = 0; i < items.length; i++) {
+                    if (String(items[i].dataset.mapId) === String(sbState.lastSelectedId)) {
+                        currentIndex = i;
+                        break;
+                    }
                 }
             }
         }
@@ -383,6 +382,7 @@ export function initLeftSidebar() {
         if (nextIndex === currentIndex) return;
 
         var nextId = String(items[nextIndex].dataset.mapId);
+        var nextInFav = items[nextIndex].dataset.inFav === 'true';
 
         // Shift+↑↓: 範囲選択
         if (e.shiftKey) {
@@ -396,14 +396,23 @@ export function initLeftSidebar() {
         sidebarSelectedIds.add(nextId);
         sbState.lastSelectedId = nextId;
         sbState.anchorId = nextId;
+        sbState.lastSelectedInFav = nextInFav;
         updateSidebarSelectionDisplay();
 
         var nextMeta = findMetaById(nextId);
         if (nextMeta && nextMeta.type === 'page') {
             switchToMap(nextMeta.id);
             setTimeout(function() {
-                var newEl = document.querySelector('#mapList .map-item[data-map-id="' + nextId + '"]');
-                if (newEl) newEl.scrollIntoView({ block: 'nearest' });
+                // マップ切替でリストが再描画されるため要素を探し直す。
+                // お気に入り登録ページは2箇所にあるので、移動していた側の欄のコピーへスクロールする
+                var candidates = document.querySelectorAll('#mapList .map-item[data-map-id="' + nextId + '"]');
+                for (var ci = 0; ci < candidates.length; ci++) {
+                    if ((candidates[ci].dataset.inFav === 'true') === nextInFav) {
+                        candidates[ci].scrollIntoView({ block: 'nearest' });
+                        return;
+                    }
+                }
+                if (candidates.length > 0) candidates[0].scrollIntoView({ block: 'nearest' });
             }, 0);
         } else {
             items[nextIndex].scrollIntoView({ block: 'nearest' });

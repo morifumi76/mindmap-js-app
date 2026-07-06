@@ -11,6 +11,7 @@ import {
     isNodeGreen,
     isNodeHighlighted,
     isNodeRedText,
+    isVerticalLayout,
     selectedNodeIds,
     selectedRelationId,
     setEditingNodeId,
@@ -382,7 +383,22 @@ export function handleKeyDown(e) {
         }
     }
 
-    switch (e.key) {
+    // 縦表示モードでは矢印キーを見た目の方向に読み替える（90度回転）。
+    // 縦表示: ↑=親へ / ↓=子へ / ←→=同階層の左右移動。
+    // Option（場所移動・階層変更）や Shift（範囲選択）付きも同じ読み替えが適用されるため、
+    // 「押した方向にノードが動く／選択が伸びる」という見た目との一致が全修飾キーで保たれる。
+    var navKey = e.key;
+    if (isVerticalLayout()) {
+        var verticalArrowMap = {
+            ArrowUp: 'ArrowLeft',    // 上 → 親へ（横表示の←相当）
+            ArrowDown: 'ArrowRight', // 下 → 子へ（横表示の→相当）
+            ArrowLeft: 'ArrowUp',    // 左 → 前の兄弟へ（横表示の↑相当）
+            ArrowRight: 'ArrowDown'  // 右 → 次の兄弟へ（横表示の↓相当）
+        };
+        if (verticalArrowMap[navKey]) navKey = verticalArrowMap[navKey];
+    }
+
+    switch (navKey) {
         case 'Enter':
             e.preventDefault();
             if (typeof getFastMode === 'function' && getFastMode()) {

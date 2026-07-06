@@ -189,6 +189,10 @@
 
     <!-- Floating action buttons (top-center of canvas) -->
     <div class="canvas-float-btns" id="canvasFloatBtns">
+        <div class="vertical-mode-control" id="verticalModeControl" title="ルートを上に置き、子ノードを下へ展開する縦レイアウト（マップごとに保存）">
+            <label class="vertical-mode-label" for="verticalModeCheckbox">縦表示</label>
+            <input type="checkbox" class="vertical-mode-checkbox" id="verticalModeCheckbox" aria-label="縦表示">
+        </div>
         <div class="fast-mode-control" id="fastModeControl" title="Enter連打で次のノードを自動作成（上級者向け）">
             <span class="fast-mode-label">高速モード</span>
             <button class="fast-mode-toggle" id="fastModeToggle" role="switch" aria-checked="false" aria-label="高速モード">

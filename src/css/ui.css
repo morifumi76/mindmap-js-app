@@ -441,6 +441,61 @@
     user-select: none;
 }
 
+/* 縦表示チェックボックス（高速モードの左隣に配置） */
+.vertical-mode-control {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    padding: 0 10px;
+    height: 28px;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+    box-sizing: border-box;
+    user-select: none;
+    cursor: pointer;
+}
+.vertical-mode-checkbox {
+    /* Notion風のチェックボックス（ネイティブの見た目を消して描き直す） */
+    appearance: none;
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    border: 1.5px solid #c6c5c0;
+    border-radius: 3px;
+    background: #fff;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s, border-color 0.15s;
+    position: relative;
+}
+.vertical-mode-checkbox:hover {
+    border-color: #a5a29a;
+}
+.vertical-mode-checkbox:checked {
+    background: #2383e2;
+    border-color: #2383e2;
+}
+.vertical-mode-checkbox:checked::after {
+    /* チェックマーク */
+    content: '';
+    position: absolute;
+    left: 3.5px;
+    top: 0.5px;
+    width: 4px;
+    height: 8px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+.vertical-mode-label {
+    font-size: 13px;
+    color: #37352f;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
 /* 高速モードトグル（ツールバー左端、«の左に配置） */
 .fast-mode-control {
     display: flex;

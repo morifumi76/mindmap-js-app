@@ -945,6 +945,224 @@ function assert(cond, msg) {
     assert(navModeOff === false, 'Clicking a canvas node exits navigation mode');
 
     // ========================================
+    // Test 31: マイマップ選択後の矢印キー操作（Finder風）
+    // （回帰テスト: 以前は switchToMap がナビゲーションモードを解除してしまい、
+    //   別マップをクリックした直後や↑↓移動の1回目以降で矢印キーが効かなくなっていた）
+    // ========================================
+    console.log('\n=== Test 31: Sidebar arrow-key navigation (Finder-like) ===');
+
+    // 現在のマップと「違う」ページをクリックする（switchToMap が実行されるケースを踏む）
+    const otherPageId = await page.evaluate(() => {
+        var cur = String(window.getCurrentMapId());
+        var items = document.querySelectorAll('#mapList .map-item.page-item');
+        for (var i = 0; i < items.length; i++) {
+            if (String(items[i].dataset.mapId) !== cur) {
+                items[i].click();
+                return String(items[i].dataset.mapId);
+            }
+        }
+        return null;
+    });
+    await page.waitForTimeout(500);
+    assert(otherPageId !== null, 'A non-active page exists to click (precondition)');
+
+    let navAfterSwitch = await page.evaluate(() => ({
+        mode: window.sidebarNavigationMode,
+        mapId: String(window.getCurrentMapId())
+    }));
+    assert(navAfterSwitch.mapId === otherPageId, 'Clicking another page switches to it');
+    assert(navAfterSwitch.mode === true, 'Navigation mode stays ON after switching maps');
+
+    // ↓ で次のアイテムへ、↑ で戻る（選択表示 sidebar-selected が移動する）
+    const neighborInfo = await page.evaluate((clickedId) => {
+        var items = Array.from(document.querySelectorAll('#mapList .map-item'));
+        var idx = items.findIndex(el => String(el.dataset.mapId) === clickedId);
+        var next = (idx !== -1 && idx + 1 < items.length) ? items[idx + 1] : null;
+        return next ? { id: String(next.dataset.mapId), isPage: next.classList.contains('page-item') } : null;
+    }, otherPageId);
+
+    if (neighborInfo) {
+        await page.keyboard.press('ArrowDown');
+        await page.waitForTimeout(400);
+        let afterDown = await page.evaluate(() => {
+            var sel = document.querySelector('#mapList .map-item.sidebar-selected');
+            return {
+                mode: window.sidebarNavigationMode,
+                selected: sel ? String(sel.dataset.mapId) : null,
+                mapId: String(window.getCurrentMapId())
+            };
+        });
+        assert(afterDown.selected === neighborInfo.id, 'ArrowDown moves sidebar selection to next item');
+        assert(afterDown.mode === true, 'Navigation mode stays ON after ArrowDown');
+        if (neighborInfo.isPage) {
+            assert(afterDown.mapId === neighborInfo.id, 'ArrowDown onto a page switches the map');
+        }
+
+        await page.keyboard.press('ArrowUp');
+        await page.waitForTimeout(400);
+        let afterUp = await page.evaluate(() => {
+            var sel = document.querySelector('#mapList .map-item.sidebar-selected');
+            return {
+                selected: sel ? String(sel.dataset.mapId) : null,
+                mode: window.sidebarNavigationMode
+            };
+        });
+        assert(afterUp.selected === otherPageId, 'ArrowUp moves sidebar selection back');
+        assert(afterUp.mode === true, 'Navigation mode stays ON after ArrowUp');
+    } else {
+        assert(true, 'No neighbor item below (skipped ArrowDown/Up check)');
+    }
+
+    // フォルダの ←（閉じる）／→（開く）
+    const folderId31 = await page.evaluate(() => {
+        var f = document.querySelector('#mapList .map-item.folder-item');
+        return f ? String(f.dataset.mapId) : null;
+    });
+    if (folderId31) {
+        function getFolderCollapsed(id) {
+            return page.evaluate((fid) => {
+                try {
+                    var cs = JSON.parse(localStorage.getItem('mindmap-collapse-state') || '{}');
+                    return cs[fid] === true || cs[String(fid)] === true;
+                } catch (e) { return false; }
+            }, id);
+        }
+        function clickFolder(id) {
+            return page.evaluate((fid) => {
+                var f = document.querySelector('#mapList .map-item.folder-item[data-map-id="' + fid + '"]');
+                if (f) f.click();
+            }, id);
+        }
+        // フォルダをクリックして選択（クリックは開閉もトグルする仕様）。展開状態に揃える
+        await clickFolder(folderId31);
+        await page.waitForTimeout(300);
+        if (await getFolderCollapsed(folderId31)) {
+            await clickFolder(folderId31);
+            await page.waitForTimeout(300);
+        }
+
+        await page.keyboard.press('ArrowLeft'); // 展開中に ← → 折りたたむ
+        await page.waitForTimeout(300);
+        assert((await getFolderCollapsed(folderId31)) === true, 'ArrowLeft collapses the selected folder');
+
+        await page.keyboard.press('ArrowRight'); // 折りたたみ中に → → 展開
+        await page.waitForTimeout(300);
+        assert((await getFolderCollapsed(folderId31)) === false, 'ArrowRight expands the selected folder');
+
+        // Finder同様、展開済みフォルダで → を押しても移動せずフォルダに留まる
+        await page.keyboard.press('ArrowRight');
+        await page.waitForTimeout(300);
+        let stayInfo = await page.evaluate((fid) => {
+            var sel = document.querySelector('#mapList .map-item.sidebar-selected');
+            return {
+                selected: sel ? String(sel.dataset.mapId) : null,
+                collapsed: (function() {
+                    try {
+                        var cs = JSON.parse(localStorage.getItem('mindmap-collapse-state') || '{}');
+                        return cs[fid] === true;
+                    } catch (e) { return false; }
+                })(fid)
+            };
+        }, folderId31);
+        assert(stayInfo.selected === folderId31 && stayInfo.collapsed === false,
+            'ArrowRight on an expanded folder stays on the folder (Finder-like)');
+    } else {
+        assert(true, 'No folder present (skipped folder open/close check)');
+    }
+
+    // キャンバスのノードをクリックすればモード解除→ノード操作に戻る（Test 27 と同じ経路の最終確認）
+    await page.locator('.node').first().click();
+    await page.waitForTimeout(300);
+    let navModeFinal = await page.evaluate(() => window.sidebarNavigationMode);
+    assert(navModeFinal === false, 'Clicking a canvas node returns arrow keys to node operations');
+
+    // ========================================
+    // Test 32: ★ページ（お気に入り登録ページ）を跨ぐ↑↓移動でお気に入り欄へ飛ばない
+    // （回帰テスト: ★ページは一覧に2箇所表示されるため、ID検索がDOM先頭の
+    //   お気に入り欄コピーにヒットし、次の移動でお気に入り欄へジャンプしていた）
+    // ========================================
+    console.log('\n=== Test 32: Starred page does not hijack arrow navigation ===');
+
+    // 「直前がページで、直後にも項目がある」通常欄のページを1つ選んでお気に入り登録する
+    const starTarget = await page.evaluate(() => {
+        var items = Array.from(document.querySelectorAll('#mapList .map-item'));
+        for (var i = 1; i < items.length - 1; i++) {
+            var cur = items[i], prev = items[i - 1];
+            if (cur.classList.contains('page-item') && cur.dataset.inFav !== 'true' &&
+                prev.classList.contains('page-item') && prev.dataset.inFav !== 'true') {
+                // お気に入り登録（メタを直接更新して再描画）
+                var id = String(cur.dataset.mapId);
+                var list = window.getMetaList();
+                for (var m = 0; m < list.length; m++) {
+                    if (String(list[m].id) === id) { list[m].starred = true; list[m].starOrder = 999; }
+                }
+                localStorage.setItem('mindmap-meta', JSON.stringify(list));
+                window.renderMapList();
+                return { id: id, prevId: String(prev.dataset.mapId) };
+            }
+        }
+        return null;
+    });
+    await page.waitForTimeout(400);
+
+    if (starTarget) {
+        // 星付けにより一覧が [お気に入り欄: X ... / 通常欄: ... prev, X, next ...] になったことを確認し、
+        // 通常欄の X の次の項目（期待される移動先）を控える
+        const expected = await page.evaluate((t) => {
+            var items = Array.from(document.querySelectorAll('#mapList .map-item'));
+            var copies = items.filter(el => String(el.dataset.mapId) === t.id);
+            var privIdx = items.findIndex(el => String(el.dataset.mapId) === t.id && el.dataset.inFav !== 'true');
+            return {
+                copyCount: copies.length,
+                nextId: (privIdx !== -1 && privIdx + 1 < items.length) ? String(items[privIdx + 1].dataset.mapId) : null
+            };
+        }, starTarget);
+        assert(expected.copyCount === 2, 'Starred page appears twice in the list (precondition)');
+
+        // 通常欄で ★ページの1つ上のページをクリック → ↓で★ページに乗る → さらに↓
+        await page.evaluate((t) => {
+            var items = Array.from(document.querySelectorAll('#mapList .map-item'));
+            var el = items.find(it => String(it.dataset.mapId) === t.prevId && it.dataset.inFav !== 'true');
+            if (el) el.click();
+        }, starTarget);
+        await page.waitForTimeout(500);
+
+        await page.keyboard.press('ArrowDown'); // ★ページ（通常欄側）へ
+        await page.waitForTimeout(400);
+        let onStarred = await page.evaluate(() => {
+            var sel = document.querySelector('#mapList .map-item.sidebar-selected');
+            return sel ? String(sel.dataset.mapId) : null;
+        });
+        assert(onStarred === starTarget.id, 'ArrowDown moves onto the starred page');
+
+        if (expected.nextId && expected.nextId !== starTarget.id) {
+            await page.keyboard.press('ArrowDown'); // ★ページの次へ（お気に入り欄へ飛ばないこと）
+            await page.waitForTimeout(400);
+            let afterStarred = await page.evaluate(() => {
+                var sel = document.querySelector('#mapList .map-item.sidebar-selected');
+                return sel ? String(sel.dataset.mapId) : null;
+            });
+            assert(afterStarred === expected.nextId,
+                'ArrowDown from the starred page continues in the main list (no jump to favorites): ' + afterStarred + ' === ' + expected.nextId);
+        } else {
+            assert(true, 'No distinct next item below starred page (skipped continuation check)');
+        }
+
+        // 後始末: お気に入り解除
+        await page.evaluate((t) => {
+            var list = window.getMetaList();
+            for (var m = 0; m < list.length; m++) {
+                if (String(list[m].id) === t.id) { list[m].starred = false; delete list[m].starOrder; }
+            }
+            localStorage.setItem('mindmap-meta', JSON.stringify(list));
+            window.renderMapList();
+        }, starTarget);
+        await page.waitForTimeout(300);
+    } else {
+        assert(true, 'No suitable page pair found (skipped starred-page navigation check)');
+    }
+
+    // ========================================
     // Summary
     // ========================================
     console.log('\n' + '='.repeat(50));

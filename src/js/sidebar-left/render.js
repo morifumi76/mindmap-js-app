@@ -226,6 +226,7 @@ function createFolderElement(folder, hasPages, isCollapsed, isDndEnabled, depth,
             sidebarSelectedIds.add(String(folderId));
             sbState.lastSelectedId = String(folderId);
             sbState.anchorId = String(folderId);
+            sbState.lastSelectedInFav = false; // フォルダはお気に入り欄に表示されない
             var cs = getCollapseState();
             cs[folderId] = !cs[folderId];
             setCollapseState(cs);
@@ -388,6 +389,8 @@ function createPageElement(page, isActive, isDndEnabled, depth, inFavSection) {
             sidebarSelectedIds.add(String(pageId));
             sbState.lastSelectedId = String(pageId);
             sbState.anchorId = String(pageId);
+            // ★ページは2箇所に表示されるため、どちらの欄でクリックしたかを矢印キー移動用に記録
+            sbState.lastSelectedInFav = !!inFavSection;
             updateSidebarSelectionDisplay();
             window.sidebarNavigationMode = true;
             switchToMap(pageId);

@@ -409,8 +409,9 @@ export function switchToMap(mapId) {
         var ae = document.activeElement;
         if (ae && ae.blur && ae !== document.body) ae.blur();
     } catch(e) {}
-    // サイドバーナビゲーションモードを解除（切替後はキャンバス操作に戻す）
-    window.sidebarNavigationMode = false;
+    // 注: ここでサイドバーナビゲーションモードは解除しない。
+    // マイマップでマップを選んだ後も矢印キーでリスト移動・フォルダ開閉を続けられるようにする（Finder風）。
+    // モードの解除は「サイドバー外の mousedown」を捕捉するリスナー（events.js）が担う。
 
     // Save current map
     saveToLocalStorage();

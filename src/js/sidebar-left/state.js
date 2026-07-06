@@ -7,6 +7,7 @@
 // 左サイドバーの可変状態（分割後の各サブモジュールから共有するためオブジェクトに集約）
 export var sbState = {
     lastSelectedId: null, // 最後に選択した項目ID
+    lastSelectedInFav: false, // 最後に選択した項目がお気に入り欄側か（★ページは2箇所に表示されるため区別する）
     anchorId: null, // Shift選択のアンカー
     clipboard: null, // { mode: 'copy'|'cut', ids: [] }
     history: [], // メタ操作の undo 履歴

@@ -2,12 +2,14 @@ import {
     MAX_HISTORY,
     getNodeGrayoutState,
     getNodeHighlightState,
+    isVerticalLayout,
     mindMapData,
     setMindMapData,
     setNodeGrayoutState,
     setNodeHighlightState,
     setUndoHistory,
     setUndoIndex,
+    setVerticalLayout,
     undoHistory,
     undoIndex
 } from './state.js';
@@ -36,7 +38,10 @@ export function undo() {
     if (undoIndex > 0) {
         setUndoIndex(undoIndex - 1);
         var snapshot = undoHistory[undoIndex];
+        // 縦表示モードはUndo/Redoの対象外：スナップショット復元後も現在の表示モードを維持する
+        var keepVertical = isVerticalLayout();
         setMindMapData(deepClone(snapshot.data));
+        setVerticalLayout(keepVertical);
         setNodeGrayoutState(deepClone(snapshot.grayout || {}));
         setNodeHighlightState(deepClone(snapshot.highlight || {}));
         render();
@@ -48,7 +53,10 @@ export function redo() {
     if (undoIndex < undoHistory.length - 1) {
         setUndoIndex(undoIndex + 1);
         var snapshot = undoHistory[undoIndex];
+        // 縦表示モードはUndo/Redoの対象外：スナップショット復元後も現在の表示モードを維持する
+        var keepVertical = isVerticalLayout();
         setMindMapData(deepClone(snapshot.data));
+        setVerticalLayout(keepVertical);
         setNodeGrayoutState(deepClone(snapshot.grayout || {}));
         setNodeHighlightState(deepClone(snapshot.highlight || {}));
         render();
