@@ -360,6 +360,95 @@ const { BASE_URL, CMD } = require('./helpers');
     assert(mapAState.checked === true && mapAState.isVertical, 'マップAは縦表示のまま維持されている');
 
     // ========================================
+    // Test 10: 矢印キーが見た目の方向と一致する（縦表示時のみ読み替え）
+    // ========================================
+    console.log('\n=== Test 10: 矢印キーの方向読み替え ===');
+    // 現在マップA（縦表示ON）。cb2 を選択して各方向を検証
+    function selectedId() {
+        return page.evaluate(() => {
+            var el = document.querySelector('.node.selected');
+            return el ? el.dataset.id : null;
+        });
+    }
+    async function selectNodeById(id) {
+        await page.click('[data-id="' + id + '"]');
+        await page.waitForTimeout(150);
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(150);
+    }
+
+    await selectNodeById('cb2');
+    await page.keyboard.press('ArrowUp'); // 縦表示: ↑ = 親へ
+    await page.waitForTimeout(150);
+    assert((await selectedId()) === 'pb', '縦: ↑で親（pb）へ移動する');
+
+    await page.keyboard.press('ArrowDown'); // 縦表示: ↓ = 最初の子へ
+    await page.waitForTimeout(150);
+    assert((await selectedId()) === 'cb1', '縦: ↓で最初の子（cb1）へ移動する');
+
+    await page.keyboard.press('ArrowRight'); // 縦表示: → = 右隣（次の兄弟）へ
+    await page.waitForTimeout(150);
+    assert((await selectedId()) === 'cb2', '縦: →で右隣の兄弟（cb2）へ移動する');
+
+    await page.keyboard.press('ArrowLeft'); // 縦表示: ← = 左隣（前の兄弟）へ
+    await page.waitForTimeout(150);
+    assert((await selectedId()) === 'cb1', '縦: ←で左隣の兄弟（cb1）へ移動する');
+
+    // 見た目との一致確認：→で移動した先が実際に画面上で右にあること
+    const visualCheck = await page.evaluate(() => {
+        var a = document.querySelector('[data-id="cb1"]').getBoundingClientRect();
+        var b = document.querySelector('[data-id="cb2"]').getBoundingClientRect();
+        var p = document.querySelector('[data-id="pb"]').getBoundingClientRect();
+        return { siblingIsRight: b.left > a.left, parentIsAbove: p.bottom <= a.top };
+    });
+    assert(visualCheck.siblingIsRight && visualCheck.parentIsAbove, '縦: 読み替え先が画面上の方向と一致している');
+
+    // Shift+矢印の範囲選択も見た目の方向（左右）で動く
+    await selectNodeById('cb1');
+    await page.keyboard.press('Shift+ArrowRight');
+    await page.waitForTimeout(150);
+    const rangeSel = await page.evaluate(() => Array.from(window.getSelectedNodeIds()).sort());
+    assert(rangeSel.join(',') === 'cb1,cb2', '縦: Shift+→で右隣へ範囲選択が伸びる');
+
+    // Option+矢印の場所移動も見た目の方向で動く（Alt+→ = 右隣と入れ替え）
+    await selectNodeById('cb1');
+    await page.keyboard.press('Alt+ArrowRight');
+    await page.waitForTimeout(300);
+    const orderAfterMove = await page.evaluate(() => {
+        var d = window.getMindMapData();
+        var pb = d.root.children.find(c => c.id === 'pb');
+        return pb.children.map(c => c.id).join(',');
+    });
+    assert(orderAfterMove === 'cb2,cb1,cb3', '縦: Option+→でノードが右隣と入れ替わる');
+    await page.keyboard.press('Alt+ArrowLeft'); // 元に戻す
+    await page.waitForTimeout(300);
+
+    // 横表示に戻すと従来の意味（↑↓=兄弟、←→=親子）のまま
+    await page.click('#verticalModeCheckbox');
+    await page.waitForTimeout(400);
+    await selectNodeById('cb2');
+    await page.keyboard.press('ArrowUp'); // 横表示: ↑ = 前の兄弟
+    await page.waitForTimeout(150);
+    assert((await selectedId()) === 'cb1', '横: ↑は従来どおり前の兄弟（cb1）へ移動する');
+    await page.keyboard.press('ArrowLeft'); // 横表示: ← = 親
+    await page.waitForTimeout(150);
+    assert((await selectedId()) === 'pb', '横: ←は従来どおり親（pb）へ移動する');
+    // マップAを縦に戻す（後始末）
+    await page.click('#verticalModeCheckbox');
+    await page.waitForTimeout(400);
+
+    // ========================================
+    // Test 11: ルートノード（0階層）のみテキスト中央揃え
+    // ========================================
+    console.log('\n=== Test 11: ルートノードの中央揃え ===');
+    const align = await page.evaluate(() => ({
+        root: getComputedStyle(document.querySelector('.node.root .node-text')).textAlign,
+        child: getComputedStyle(document.querySelector('[data-id="pa"] .node-text')).textAlign
+    }));
+    assert(align.root === 'center', 'ルートのテキストが中央揃え: ' + align.root);
+    assert(align.child === 'start' || align.child === 'left', '子孫ノードは従来どおり左揃え: ' + align.child);
+
+    // ========================================
     // 結果
     // ========================================
     console.log('\n========================================');
