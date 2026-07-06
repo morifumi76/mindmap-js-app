@@ -217,6 +217,12 @@ body.connection-mode .node {
     border-width: 3px;
 }
 
+/* ルートノード（0階層）のみテキストを中央揃えにする。
+   min-width(120px) に満たない短いタイトルでも左に寄らない。子孫ノードは従来どおり左揃え */
+.node.root .node-text {
+    text-align: center;
+}
+
 .node.editing {
     cursor: text;
 }
