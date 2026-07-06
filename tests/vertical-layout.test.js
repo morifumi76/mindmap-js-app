@@ -73,6 +73,14 @@ const { BASE_URL, CMD } = require('./helpers');
     });
     assert(isLeftOfFastMode, '高速モードボタンの左隣に配置されている');
 
+    // 高速モードと同じ「テキスト→ボタン」の並び：チェックボックスはラベルの右側
+    const cbRightOfLabel = await page.evaluate(() => {
+        var label = document.querySelector('.vertical-mode-label').getBoundingClientRect();
+        var box = document.getElementById('verticalModeCheckbox').getBoundingClientRect();
+        return box.left >= label.right;
+    });
+    assert(cbRightOfLabel, 'チェックボックスがラベル「縦表示」の右側にある');
+
     const checkedDefault = await page.$eval('#verticalModeCheckbox', el => el.checked);
     assert(checkedDefault === false, 'デフォルトはOFF（横レイアウト）');
 
