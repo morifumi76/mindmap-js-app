@@ -133,37 +133,80 @@ const { BASE_URL, CMD } = require('./helpers');
     assert(!cousinOverlap, '縦モード: いとこ同士のノードが重ならない');
 
     // ========================================
-    // Test 3: 接続線（親の下辺中央→子の上辺中央）
+    // Test 3: 接続線（組織図風の直交3セグメント: 縦→水平→縦）
     // ========================================
-    console.log('\n=== Test 3: 接続線の始点・終点 ===');
-    const lineOk = await page.evaluate(() => {
+    console.log('\n=== Test 3: 接続線の直交セグメント ===');
+    // 縦表示の全接続線をパースして始点・折れ点・終点を返すヘルパ
+    const vLines = await page.evaluate(() => {
         var off = 5000;
-        var root = document.querySelector('[data-id="root"]');
-        var pa = document.querySelector('[data-id="pa"]');
-        // ノードのstyle座標（キャンバス座標系）から辺の中央を計算
         function canvasPos(el) {
             var x = parseFloat(el.style.left), y = parseFloat(el.style.top);
             var w = el.offsetWidth, h = el.offsetHeight;
             // top は上下中央基準（translateY(-50%)）
             return { bottomCx: x + w / 2, bottomY: y + h / 2, topCx: x + w / 2, topY: y - h / 2 };
         }
-        var rp = canvasPos(root), pp = canvasPos(pa);
-        var paths = document.querySelectorAll('#linesSvg .connection-line');
-        // ルート→ParentA の線（始点がルート下辺中央、終点がParentA上辺中央）を探す
-        for (var i = 0; i < paths.length; i++) {
-            var d = paths[i].getAttribute('d');
-            var m = d.match(/M ([\d.-]+) ([\d.-]+) C .*, ([\d.-]+) ([\d.-]+)$/);
-            if (!m) continue;
-            var sx = parseFloat(m[1]) - off, sy = parseFloat(m[2]) - off;
-            var ex = parseFloat(m[3]) - off, ey = parseFloat(m[4]) - off;
-            if (Math.abs(sx - rp.bottomCx) < 1 && Math.abs(sy - rp.bottomY) < 1 &&
-                Math.abs(ex - pp.topCx) < 1 && Math.abs(ey - pp.topY) < 1) {
-                return true;
-            }
-        }
-        return false;
+        var nodes = {};
+        ['root', 'pa', 'pb', 'pc', 'cb1', 'cb2', 'cb3'].forEach(function(id) {
+            nodes[id] = canvasPos(document.querySelector('[data-id="' + id + '"]'));
+        });
+        var lines = [];
+        document.querySelectorAll('#linesSvg .connection-line').forEach(function(p) {
+            var m = p.getAttribute('d').match(
+                /^M ([\d.-]+) ([\d.-]+) L ([\d.-]+) ([\d.-]+) L ([\d.-]+) ([\d.-]+) L ([\d.-]+) ([\d.-]+)$/
+            );
+            if (!m) { lines.push({ bad: p.getAttribute('d') }); return; }
+            var n = m.slice(1).map(function(v) { return parseFloat(v) - off; });
+            lines.push({ sx: n[0], sy: n[1], x2: n[2], y2: n[3], x3: n[4], y3: n[5], ex: n[6], ey: n[7] });
+        });
+        return { nodes: nodes, lines: lines };
     });
-    assert(lineOk, '接続線が親の下辺中央→子の上辺中央に描画される');
+
+    const badLines = vLines.lines.filter(l => l.bad);
+    assert(badLines.length === 0, '縦表示の全接続線が直交3セグメント形式（M L L L）: ' + (badLines[0] ? badLines[0].bad : 'OK'));
+
+    function findLine(fromPos, toPos) {
+        return vLines.lines.find(l => !l.bad &&
+            Math.abs(l.sx - fromPos.bottomCx) < 1 && Math.abs(l.sy - fromPos.bottomY) < 1 &&
+            Math.abs(l.ex - toPos.topCx) < 1 && Math.abs(l.ey - toPos.topY) < 1);
+    }
+    function isOrthogonal(l) {
+        // 縦（x不変）→ 水平（y不変）→ 縦（x不変）で、水平線は親の下辺と子の上辺の間にある
+        return Math.abs(l.sx - l.x2) < 0.01 && Math.abs(l.y2 - l.y3) < 0.01 &&
+            Math.abs(l.x3 - l.ex) < 0.01 && l.y2 > l.sy && l.y2 < l.ey;
+    }
+
+    const rootToPa = findLine(vLines.nodes.root, vLines.nodes.pa);
+    assert(!!rootToPa, '接続線が親の下辺中央→子の上辺中央に描画される');
+    assert(rootToPa && isOrthogonal(rootToPa), '線が縦→水平→縦の直角折れ線になっている');
+
+    // 兄弟への水平線が全員同じ高さ（バス）に揃う: ルートの子 pa/pb/pc で確認
+    const rootToPb = findLine(vLines.nodes.root, vLines.nodes.pb);
+    const rootToPc = findLine(vLines.nodes.root, vLines.nodes.pc);
+    assert(!!rootToPb && !!rootToPc, 'ルートから全ての子への線が存在する');
+    if (rootToPa && rootToPb && rootToPc) {
+        assert(Math.abs(rootToPa.y2 - rootToPb.y2) < 0.01 && Math.abs(rootToPb.y2 - rootToPc.y2) < 0.01,
+            '兄弟への水平線が同じ高さに揃う（バス）: ' + [rootToPa.y2, rootToPb.y2, rootToPc.y2].join(', '));
+    }
+    // 別の親（ParentB → cb1/cb2/cb3）でもバスの高さが揃う
+    const pbToCb1 = findLine(vLines.nodes.pb, vLines.nodes.cb1);
+    const pbToCb3 = findLine(vLines.nodes.pb, vLines.nodes.cb3);
+    assert(!!pbToCb1 && !!pbToCb3 && Math.abs(pbToCb1.y2 - pbToCb3.y2) < 0.01,
+        'ParentBの子への水平線も同じ高さに揃う');
+
+    // 横表示に戻すと従来どおりベジェ曲線（C）で描かれる（無変更の確認）→ 確認後に縦へ戻す
+    await page.click('#verticalModeCheckbox');
+    await page.waitForTimeout(400);
+    const hCurveOk = await page.evaluate(() => {
+        var paths = document.querySelectorAll('#linesSvg .connection-line');
+        if (paths.length === 0) return false;
+        for (var i = 0; i < paths.length; i++) {
+            if (!/^M [\d.-]+ [\d.-]+ C /.test(paths[i].getAttribute('d'))) return false;
+        }
+        return true;
+    });
+    assert(hCurveOk, '横表示の接続線は従来どおり曲線（C）のまま');
+    await page.click('#verticalModeCheckbox');
+    await page.waitForTimeout(400);
 
     // ========================================
     // Test 4: 折りたたみ●がノード下側に出て、クリックで展開できる
