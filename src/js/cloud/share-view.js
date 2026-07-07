@@ -16,8 +16,8 @@ function enterReadOnlyMode() {
     var banner = document.getElementById('readonlyBanner');
     if (banner) banner.classList.add('show');
     document.body.classList.add('readonly-mode');
-    // Hide left sidebar completely
-    ['leftSidebar', 'leftSidebarHoverZone', 'leftSidebarFloatToggle'].forEach(function(id) {
+    // 左サイドバーと、閲覧者には不要なお気に入り星ボタンを非表示にする
+    ['leftSidebar', 'leftSidebarHoverZone', 'leftSidebarFloatToggle', 'canvasStarBtn'].forEach(function(id) {
         var el = document.getElementById(id);
         if (el) el.style.display = 'none';
     });

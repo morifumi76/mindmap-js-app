@@ -491,13 +491,10 @@ body.readonly-mode .sidebar {
     height: calc(100% - 32px);
 }
 
-/* 閲覧専用モード時：編集用のドットボタンは非表示、🌲ボタンをバナー分下へ */
+/* 閲覧専用モード時：編集用のドットボタンは非表示。
+   🌲ボタンは通常時と同じ右下（sidebar-right.css の bottom/right 指定）のまま使う */
 body.readonly-mode .canvas-float-btns {
     display: none;
-}
-
-body.readonly-mode .sidebar-float-toggle {
-    top: 44px;
 }
 
 /* ========================================

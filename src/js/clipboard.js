@@ -1,6 +1,7 @@
 import {
     getNodeCyanState,
     getNodeGrayoutState,
+    getNodeGreenState,
     getNodeHighlightState,
     getNodeRedTextState,
     isNodeCollapsed,
@@ -11,6 +12,7 @@ import {
     setLastSelectedNodeId,
     setNodeCyanState,
     setNodeGrayoutState,
+    setNodeGreenState,
     setNodeHighlightState,
     setNodeRedTextState
 } from './state.js';
@@ -31,19 +33,21 @@ let clipboardIsCut = false;
 
 // クリップボードに格納するクローンノードのサブツリーへ、各ノードの色状態を
 // `_capturedColors` という一時プロパティで埋め込む。
-// これによりページを跨いだコピペでも色（grayout/highlight/cyan/redtext）が保持される。
+// これによりページを跨いだコピペでも色（grayout/highlight/cyan/green/redtext）が保持される。
 // 色の実体はマップごとの localStorage に別保存されているため、コピー時のスナップショットを
 // クローン側に同梱しておき、ペースト時に新IDで貼り先マップの localStorage に書き戻す。
 function captureNodeColorsToClone(clonedNode) {
     var grayState = getNodeGrayoutState();
     var hlState = getNodeHighlightState();
     var cyanState = getNodeCyanState();
+    var greenState = getNodeGreenState();
     var rtState = getNodeRedTextState();
     function walk(n) {
         var captured = {};
         if (grayState[n.id]) captured.grayout = true;
         if (hlState[n.id]) captured.highlight = true;
         if (cyanState[n.id]) captured.cyan = true;
+        if (greenState[n.id]) captured.green = true;
         if (rtState[n.id]) captured.redtext = true;
         if (Object.keys(captured).length > 0) n._capturedColors = captured;
         if (n.children) {
@@ -179,19 +183,22 @@ function applyPendingColorsToCurrentMap(list) {
     var grayState = getNodeGrayoutState();
     var hlState = getNodeHighlightState();
     var cyanState = getNodeCyanState();
+    var greenState = getNodeGreenState();
     var rtState = getNodeRedTextState();
-    var changedG = false, changedH = false, changedC = false, changedR = false;
+    var changedG = false, changedH = false, changedC = false, changedGr = false, changedR = false;
     for (var i = 0; i < list.length; i++) {
         var nid = list[i].id;
         var c = list[i].colors || {};
-        if (c.grayout)   { grayState[nid] = true; changedG = true; }
-        if (c.highlight) { hlState[nid] = true;   changedH = true; }
-        if (c.cyan)      { cyanState[nid] = true; changedC = true; }
-        if (c.redtext)   { rtState[nid] = true;   changedR = true; }
+        if (c.grayout)   { grayState[nid] = true;  changedG = true; }
+        if (c.highlight) { hlState[nid] = true;    changedH = true; }
+        if (c.cyan)      { cyanState[nid] = true;  changedC = true; }
+        if (c.green)     { greenState[nid] = true; changedGr = true; }
+        if (c.redtext)   { rtState[nid] = true;    changedR = true; }
     }
     if (changedG) setNodeGrayoutState(grayState);
     if (changedH) setNodeHighlightState(hlState);
     if (changedC) setNodeCyanState(cyanState);
+    if (changedGr) setNodeGreenState(greenState);
     if (changedR) setNodeRedTextState(rtState);
 }
 

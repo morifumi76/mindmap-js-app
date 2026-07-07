@@ -149,6 +149,30 @@ function assert(cond, msg) {
     assert(sharedState.rootText.includes('共有された中心テーマ'), 'Shared map content rendered: ' + sharedState.rootText);
     assert(!sharedState.metaWritten, 'Shared view does not write to localStorage');
 
+    // 閲覧専用モードのUI: 星ボタン非表示・🌲は右下・ツリーナビの[編集]非表示
+    const sharedUi = await sharedPage.evaluate(() => {
+        var star = document.getElementById('canvasStarBtn');
+        var tree = document.getElementById('sidebarFloatToggle');
+        var cs = tree ? getComputedStyle(tree) : null;
+        return {
+            starHidden: !star || star.style.display === 'none',
+            treeTop: cs ? cs.top : '',
+            treeBottom: cs ? cs.bottom : '',
+        };
+    });
+    assert(sharedUi.starHidden, 'お気に入り星ボタンが非表示');
+    assert(sharedUi.treeBottom === '24px', '🌲ボタンが右下に配置される (bottom=' + sharedUi.treeBottom + ')');
+    assert(sharedUi.treeTop !== '44px', '🌲ボタンが右上(top:44px)に飛ばされていない (top=' + sharedUi.treeTop + ')');
+
+    // ツリーナビを開いて[編集]ボタンが出ないことを確認
+    await sharedPage.click('#sidebarFloatToggle');
+    await sharedPage.waitForTimeout(400);
+    const editAreaDisplay = await sharedPage.evaluate(() => {
+        var area = document.getElementById('sidebarEditArea');
+        return area ? area.style.display : '(なし)';
+    });
+    assert(editAreaDisplay === 'none', '閲覧専用モードではツリーナビの[編集]ボタンが非表示: ' + editAreaDisplay);
+
     // ========================================
     // Test 8: 存在しない共有IDはエラー表示
     // ========================================
