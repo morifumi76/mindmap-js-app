@@ -282,7 +282,10 @@ export function handleKeyDown(e) {
                 var prevId = editingNodeId;
                 var prevInfo = findNode(prevId);
                 finishEditing();
-                if (prevInfo && prevInfo.parent) {
+                if (isVerticalLayout()) {
+                    // 縦書きモード：Enterは「下へ降りる」＝子ノードを追加（ルートからも可）
+                    addChildNode(prevId, '', true);
+                } else if (prevInfo && prevInfo.parent) {
                     addSiblingNode(prevId, '', true, false);
                 }
             } else {
@@ -336,7 +339,14 @@ export function handleKeyDown(e) {
             e.preventDefault();
             finishEditing();
             if (e.shiftKey) { goToParent(); }
-            else { var cid = getSelectedNodeId(); if (cid) addChildNode(cid); }
+            else {
+                var cid = getSelectedNodeId();
+                if (cid) {
+                    // 縦書きモード：Tabは「横に増やす」＝兄弟ノードを追加。横表示は従来どおり子を追加
+                    if (isVerticalLayout()) addSiblingNode(cid);
+                    else addChildNode(cid);
+                }
+            }
         } else if (cmdKey && (e.key === 'z' || e.key === 'Z')) {
             e.preventDefault(); finishEditing(); undo();
         } else if (cmdKey && (e.key === 'y' || e.key === 'Y')) {
@@ -405,6 +415,9 @@ export function handleKeyDown(e) {
                 // 高速モード：選択中ノードを編集モードに突入させる（HHKB等F2なしユーザー向け）。
                 // ON 時の選択モードでは Shift+Enter は無効化（仕様）。
                 if (currentId && !e.shiftKey) startEditing(currentId);
+            } else if (isVerticalLayout()) {
+                // 縦書きモード：Enterは「下へ降りる」＝子ノードを追加（Shiftの有無は区別しない）
+                if (currentId) addChildNode(currentId);
             } else {
                 // 既存仕様：Shift+Enter は上に、通常の Enter は下に同階層ノードを追加
                 if (currentId) addSiblingNode(currentId, undefined, undefined, e.shiftKey);
@@ -413,7 +426,11 @@ export function handleKeyDown(e) {
         case 'Tab':
             e.preventDefault();
             if (e.shiftKey) goToParent();
-            else if (currentId) addChildNode(currentId);
+            else if (currentId) {
+                // 縦書きモード：Tabは「横に増やす」＝兄弟ノードを追加。横表示は従来どおり子を追加
+                if (isVerticalLayout()) addSiblingNode(currentId);
+                else addChildNode(currentId);
+            }
             break;
         case 'Delete':
         case 'Backspace':

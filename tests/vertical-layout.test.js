@@ -52,19 +52,27 @@ const { BASE_URL, CMD } = require('./helpers');
     // ========================================
     // Test 1: チェックボックスのUI（高速モードの左隣・デフォルトOFF）
     // ========================================
-    console.log('\n=== Test 1: 縦表示チェックボックスUI ===');
-    const cb = await page.$('#verticalModeCheckbox');
-    assert(!!cb, '縦表示チェックボックスが存在する');
+    console.log('\n=== Test 1: 縦書きモードトグルUI（高速モードと同一の見た目） ===');
+    const toggle = await page.$('#verticalModeToggle');
+    assert(!!toggle, '縦書きモードトグルボタンが存在する');
 
-    const labelText = await page.$eval('.vertical-mode-label', el => el.textContent.trim());
-    assert(labelText === '縦表示', 'ラベルが「縦表示」: ' + labelText);
+    const labelText = await page.$eval('#verticalModeControl .fast-mode-label', el => el.textContent.trim());
+    assert(labelText === '縦書きモード', 'ラベルが「縦書きモード」: ' + labelText);
 
-    const labelStyle = await page.$eval('.vertical-mode-label', el => {
-        var s = getComputedStyle(el);
-        return { fontSize: s.fontSize, color: s.color };
+    // 高速モードと同じトグルUI（同一のCSSクラスとON/OFFスイッチ構造）
+    const sameUi = await page.evaluate(() => {
+        var ctrl = document.getElementById('verticalModeControl');
+        var btn = document.getElementById('verticalModeToggle');
+        return {
+            ctrlClass: ctrl ? ctrl.className : '',
+            role: btn ? btn.getAttribute('role') : '',
+            hasOnOff: !!(btn && btn.querySelector('.fast-mode-toggle-text-on') &&
+                btn.querySelector('.fast-mode-toggle-text-off') && btn.querySelector('.fast-mode-toggle-knob'))
+        };
     });
-    assert(labelStyle.fontSize === '13px', 'ラベルが13px: ' + labelStyle.fontSize);
-    assert(labelStyle.color === 'rgb(55, 53, 47)', 'ラベル色が#37352f: ' + labelStyle.color);
+    assert(sameUi.ctrlClass === 'fast-mode-control', '高速モードと同じコントロールUI（fast-mode-control）: ' + sameUi.ctrlClass);
+    assert(sameUi.role === 'switch', 'トグルは role=switch のスイッチボタン');
+    assert(sameUi.hasOnOff, 'ON/OFF表示とツマミを持つ高速モードと同一構造');
 
     // 高速モードの左隣（同じ親の直前の兄弟要素）に配置されている
     const isLeftOfFastMode = await page.evaluate(() => {
@@ -73,16 +81,8 @@ const { BASE_URL, CMD } = require('./helpers');
     });
     assert(isLeftOfFastMode, '高速モードボタンの左隣に配置されている');
 
-    // 高速モードと同じ「テキスト→ボタン」の並び：チェックボックスはラベルの右側
-    const cbRightOfLabel = await page.evaluate(() => {
-        var label = document.querySelector('.vertical-mode-label').getBoundingClientRect();
-        var box = document.getElementById('verticalModeCheckbox').getBoundingClientRect();
-        return box.left >= label.right;
-    });
-    assert(cbRightOfLabel, 'チェックボックスがラベル「縦表示」の右側にある');
-
-    const checkedDefault = await page.$eval('#verticalModeCheckbox', el => el.checked);
-    assert(checkedDefault === false, 'デフォルトはOFF（横レイアウト）');
+    const checkedDefault = await page.$eval('#verticalModeToggle', el => el.getAttribute('aria-checked'));
+    assert(checkedDefault === 'false', 'デフォルトはOFF（横レイアウト）');
 
     // 横レイアウト：子はルートの右側
     const hRootPa = await page.evaluate(() => {
@@ -96,7 +96,7 @@ const { BASE_URL, CMD } = require('./helpers');
     // Test 2: チェックONで縦レイアウトに即時切替
     // ========================================
     console.log('\n=== Test 2: 縦レイアウトへの切替 ===');
-    await page.click('#verticalModeCheckbox');
+    await page.click('#verticalModeToggle');
     await page.waitForTimeout(400);
 
     const vGeom = await page.evaluate(() => {
@@ -194,7 +194,7 @@ const { BASE_URL, CMD } = require('./helpers');
         'ParentBの子への水平線も同じ高さに揃う');
 
     // 横表示に戻すと従来どおりベジェ曲線（C）で描かれる（無変更の確認）→ 確認後に縦へ戻す
-    await page.click('#verticalModeCheckbox');
+    await page.click('#verticalModeToggle');
     await page.waitForTimeout(400);
     const hCurveOk = await page.evaluate(() => {
         var paths = document.querySelectorAll('#linesSvg .connection-line');
@@ -205,7 +205,7 @@ const { BASE_URL, CMD } = require('./helpers');
         return true;
     });
     assert(hCurveOk, '横表示の接続線は従来どおり曲線（C）のまま');
-    await page.click('#verticalModeCheckbox');
+    await page.click('#verticalModeToggle');
     await page.waitForTimeout(400);
 
     // ========================================
@@ -254,8 +254,8 @@ const { BASE_URL, CMD } = require('./helpers');
     await page.reload();
     await page.waitForSelector('.node', { state: 'attached', timeout: 10000 });
     await page.waitForTimeout(800);
-    const checkedAfterReload = await page.$eval('#verticalModeCheckbox', el => el.checked);
-    assert(checkedAfterReload === true, 'リロード後も縦表示が維持される');
+    const checkedAfterReload = await page.$eval('#verticalModeToggle', el => el.getAttribute('aria-checked'));
+    assert(checkedAfterReload === 'true', 'リロード後も縦書きモードが維持される');
 
     const stillVertical = await page.evaluate(() => {
         var r = document.querySelector('[data-id="root"]').getBoundingClientRect();
@@ -288,7 +288,7 @@ const { BASE_URL, CMD } = require('./helpers');
     await page.click('#copyBtn');
     await page.waitForTimeout(300);
     // 横に切り替えて再度コピー
-    await page.click('#verticalModeCheckbox');
+    await page.click('#verticalModeToggle');
     await page.waitForTimeout(400);
     await page.click('#copyBtn');
     await page.waitForTimeout(300);
@@ -326,7 +326,7 @@ const { BASE_URL, CMD } = require('./helpers');
     });
     assert(childCountBefore === 1, 'ノード追加ができている（前提確認）');
 
-    await page.click('#verticalModeCheckbox'); // 縦へ
+    await page.click('#verticalModeToggle'); // 縦へ
     await page.waitForTimeout(400);
     // ノード追加＋テキスト編集確定で履歴が2段積まれるため2回Undoする
     await page.keyboard.press(CMD + '+z');
@@ -340,7 +340,7 @@ const { BASE_URL, CMD } = require('./helpers');
         return {
             childCount: pc ? pc.children.length : -1,
             isVertical: d.isVertical === true,
-            checked: document.getElementById('verticalModeCheckbox').checked
+            checked: document.getElementById('verticalModeToggle').getAttribute('aria-checked') === 'true'
         };
     });
     assert(afterUndo.childCount === 0, 'Undoでノード追加だけが取り消される');
@@ -356,11 +356,11 @@ const { BASE_URL, CMD } = require('./helpers');
     const bothOn = await page.evaluate(() => ({
         fast: localStorage.getItem('mindmap.fastMode') === 'true',
         vertical: window.getMindMapData().isVertical === true,
-        cbChecked: document.getElementById('verticalModeCheckbox').checked
+        cbChecked: document.getElementById('verticalModeToggle').getAttribute('aria-checked') === 'true'
     }));
     assert(bothOn.fast && bothOn.vertical && bothOn.cbChecked, '高速モードONにしても縦表示は維持される（併用可能）');
 
-    await page.click('#verticalModeCheckbox'); // 縦OFF
+    await page.click('#verticalModeToggle'); // 縦OFF
     await page.waitForTimeout(300);
     const fastStillOn = await page.evaluate(() => localStorage.getItem('mindmap.fastMode') === 'true');
     assert(fastStillOn, '縦表示OFFにしても高速モードは維持される');
@@ -372,7 +372,7 @@ const { BASE_URL, CMD } = require('./helpers');
     // ========================================
     console.log('\n=== Test 9: マップ単位の設定 ===');
     // 現在のマップ（A）を縦に
-    await page.click('#verticalModeCheckbox');
+    await page.click('#verticalModeToggle');
     await page.waitForTimeout(400);
     const mapAId = await page.evaluate(() => window.getCurrentMapId());
 
@@ -389,7 +389,7 @@ const { BASE_URL, CMD } = require('./helpers');
 
     const mapBState = await page.evaluate(() => ({
         id: window.getCurrentMapId(),
-        checked: document.getElementById('verticalModeCheckbox').checked
+        checked: document.getElementById('verticalModeToggle').getAttribute('aria-checked') === 'true'
     }));
     assert(mapBState.id !== mapAId, '新規マップBに切り替わっている（前提確認）');
     assert(mapBState.checked === false, '新規マップBは横レイアウト（チェックOFF）');
@@ -404,7 +404,7 @@ const { BASE_URL, CMD } = require('./helpers');
     await page.waitForTimeout(600);
     const mapAState = await page.evaluate(() => ({
         id: window.getCurrentMapId(),
-        checked: document.getElementById('verticalModeCheckbox').checked,
+        checked: document.getElementById('verticalModeToggle').getAttribute('aria-checked') === 'true',
         isVertical: window.getMindMapData().isVertical === true
     }));
     assert(String(mapAState.id) === String(mapAId), 'マップAに戻れている（前提確認）');
@@ -475,7 +475,7 @@ const { BASE_URL, CMD } = require('./helpers');
     await page.waitForTimeout(300);
 
     // 横表示に戻すと従来の意味（↑↓=兄弟、←→=親子）のまま
-    await page.click('#verticalModeCheckbox');
+    await page.click('#verticalModeToggle');
     await page.waitForTimeout(400);
     await selectNodeById('cb2');
     await page.keyboard.press('ArrowUp'); // 横表示: ↑ = 前の兄弟
@@ -485,7 +485,7 @@ const { BASE_URL, CMD } = require('./helpers');
     await page.waitForTimeout(150);
     assert((await selectedId()) === 'pb', '横: ←は従来どおり親（pb）へ移動する');
     // マップAを縦に戻す（後始末）
-    await page.click('#verticalModeCheckbox');
+    await page.click('#verticalModeToggle');
     await page.waitForTimeout(400);
 
     // ========================================
@@ -502,11 +502,88 @@ const { BASE_URL, CMD } = require('./helpers');
     const alignV = await getAligns();
     assert(alignV.root === 'center' && alignV.child === 'center', '縦表示: 全ノードのテキストが中央揃え: ' + JSON.stringify(alignV));
 
-    await page.click('#verticalModeCheckbox'); // 横へ
+    await page.click('#verticalModeToggle'); // 横へ
     await page.waitForTimeout(400);
     const alignH = await getAligns();
     const isLeft = v => v === 'start' || v === 'left';
     assert(isLeft(alignH.root) && isLeft(alignH.child), '横表示: 全ノードのテキストが左揃え: ' + JSON.stringify(alignH));
+
+    // ========================================
+    // Test 12: 縦書きモードのキー操作（Enter=子ノード追加／Tab=兄弟ノード追加）
+    // ========================================
+    console.log('\n=== Test 12: 縦書きモードの Enter/Tab ===');
+    // 現在は横表示。まず横の従来挙動を確認してから縦書きモードで検証する
+    async function nodeInfo(id) {
+        return page.evaluate((nid) => {
+            var found = null;
+            (function walk(n, parent) {
+                if (n.id === nid) found = { parentId: parent ? parent.id : null, childCount: n.children.length };
+                n.children.forEach(function(c) { walk(c, n); });
+            })(window.getMindMapData().root, null);
+            return found;
+        }, id);
+    }
+    // 追加操作で入る編集モードを確定し、新ノードのID/親を返す
+    async function pressAndGetNewNode(key) {
+        const before = await page.evaluate(() => {
+            var ids = [];
+            (function walk(n) { ids.push(n.id); n.children.forEach(walk); })(window.getMindMapData().root);
+            return ids;
+        });
+        await page.keyboard.press(key);
+        await page.waitForTimeout(300);
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(300);
+        return page.evaluate((beforeIds) => {
+            var added = null;
+            (function walk(n, parent) {
+                if (beforeIds.indexOf(n.id) === -1) added = { id: n.id, parentId: parent ? parent.id : null };
+                n.children.forEach(function(c) { walk(c, n); });
+            })(window.getMindMapData().root, null);
+            return added;
+        }, before);
+    }
+
+    // 横表示（従来仕様の回帰確認）: Enter=兄弟、Tab=子
+    await selectNodeById('pc');
+    const hEnter = await pressAndGetNewNode('Enter');
+    assert(hEnter && hEnter.parentId === 'root', '横: Enterで兄弟ノードが追加される（親=root）: ' + JSON.stringify(hEnter));
+    await selectNodeById('pc');
+    const hTab = await pressAndGetNewNode('Tab');
+    assert(hTab && hTab.parentId === 'pc', '横: Tabで子ノードが追加される（親=pc）: ' + JSON.stringify(hTab));
+
+    // 縦書きモードON: Enter=子、Tab=兄弟
+    await page.click('#verticalModeToggle');
+    await page.waitForTimeout(400);
+    await selectNodeById('pc');
+    const vEnter = await pressAndGetNewNode('Enter');
+    assert(vEnter && vEnter.parentId === 'pc', '縦書き: Enterで子ノードが追加される（下に降りる）: ' + JSON.stringify(vEnter));
+    await selectNodeById('pc');
+    const vTab = await pressAndGetNewNode('Tab');
+    assert(vTab && vTab.parentId === 'root', '縦書き: Tabで兄弟ノードが追加される（横に増える）: ' + JSON.stringify(vTab));
+
+    // 編集モード中のTabも縦書きでは兄弟追加（編集確定→兄弟）
+    await selectNodeById('pc');
+    await page.keyboard.press('F2');
+    await page.waitForTimeout(300);
+    const vEditTab = await pressAndGetNewNode('Tab');
+    assert(vEditTab && vEditTab.parentId === 'root', '縦書き: 編集中のTabでも兄弟ノードが追加される: ' + JSON.stringify(vEditTab));
+
+    // Shift+Tab は従来どおり親へ移動（ノードは増えない）
+    await selectNodeById('cb2');
+    const beforeShiftTab = await nodeInfo('pb');
+    await page.keyboard.press('Shift+Tab');
+    await page.waitForTimeout(300);
+    const afterShiftTab = await nodeInfo('pb');
+    assert((await selectedId()) === 'pb' && beforeShiftTab.childCount === afterShiftTab.childCount,
+        '縦書き: Shift+Tabは従来どおり親へ移動（ノード追加なし）');
+
+    // 横に戻すと従来仕様（Enter=兄弟）に戻る
+    await page.click('#verticalModeToggle');
+    await page.waitForTimeout(400);
+    await selectNodeById('pc');
+    const hEnter2 = await pressAndGetNewNode('Enter');
+    assert(hEnter2 && hEnter2.parentId === 'root', '横に戻すとEnterは兄弟追加に戻る: ' + JSON.stringify(hEnter2));
 
     // ========================================
     // 結果
