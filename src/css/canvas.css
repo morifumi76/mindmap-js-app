@@ -304,6 +304,10 @@ body.connection-mode .node {
     min-width: 50px;
     display: block;
     white-space: pre;
+    /* line-height: normal だと英数字だけの行（約18px）と日本語を含む行（24px）で
+       行ボックスの高さが変わり、ノードの縦サイズが不揃いになる。
+       日本語行の実測値（16px × 1.5 = 24px）に固定して全ノードの高さを統一する */
+    line-height: 1.5;
 }
 
 .node-text[contenteditable="true"] {
