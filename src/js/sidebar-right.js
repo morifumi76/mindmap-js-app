@@ -227,10 +227,11 @@ export function renderSidebarTree() {
 // ========================================
 
 // 編集エリア（[編集]ボタン）の表示。罫線の有無に関係なく常に表示する
+// ただし閲覧専用モード（共有URL）ではマップを編集できないため表示しない
 function updateEditAreaVisibility() {
     var area = document.getElementById('sidebarEditArea');
     if (!area) return;
-    area.style.display = 'flex';
+    area.style.display = window._isReadOnly ? 'none' : 'flex';
 }
 
 // 編集／取り込み／キャンセルの各ボタンの出し分け

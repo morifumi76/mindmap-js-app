@@ -1,9 +1,19 @@
 import {
     getNodeCollapseState,
+    getNodeCyanState,
+    getNodeGrayoutState,
+    getNodeGreenState,
+    getNodeHighlightState,
+    getNodeRedTextState,
     nodeDragState,
     selectedNodeIds,
     setLastSelectedNodeId,
-    setNodeCollapseState
+    setNodeCollapseState,
+    setNodeCyanState,
+    setNodeGrayoutState,
+    setNodeGreenState,
+    setNodeHighlightState,
+    setNodeRedTextState
 } from './state.js';
 import { deepClone, generateId, showToast } from './utils.js';
 import { saveState } from './history.js';
@@ -205,19 +215,20 @@ export function endNodeDrag() {
 }
 
 // ノードを深くコピーし、すべての ID を新規採番して返す
+// text 以外のプロパティ（hyperlink などの装飾）もそのまま引き継ぐ
 // 戻り値: { cloned: ノードオブジェクト, idMap: { 旧ID: 新ID, ... } }
 function deepCloneWithNewIds(node) {
     var idMap = {};
-    function cloneNode(n) {
+    var cloned = deepClone(node);
+    (function reassignIds(n) {
         var newId = generateId();
         idMap[n.id] = newId;
-        var cloned = { id: newId, text: n.text, children: [] };
+        n.id = newId;
         for (var i = 0; i < n.children.length; i++) {
-            cloned.children.push(cloneNode(n.children[i]));
+            reassignIds(n.children[i]);
         }
-        return cloned;
-    }
-    return { cloned: cloneNode(node), idMap: idMap };
+    })(cloned);
+    return { cloned: cloned, idMap: idMap };
 }
 
 // Cmd/Ctrl + ドラッグでノードを複製（移動ではなくコピー）
@@ -271,6 +282,26 @@ function duplicateNodes(nodeIds, targetId, position) {
         }
     }
     setNodeCollapseState(newColState);
+
+    // 色状態（グレーアウト/黄ハイライト/青/緑/赤文字）も複製元から引き継ぐ
+    // 色はツリー本体ではなく localStorage にノードID単位で保存されているため、新IDへ写す
+    [
+        [getNodeGrayoutState, setNodeGrayoutState],
+        [getNodeHighlightState, setNodeHighlightState],
+        [getNodeCyanState, setNodeCyanState],
+        [getNodeGreenState, setNodeGreenState],
+        [getNodeRedTextState, setNodeRedTextState]
+    ].forEach(function(pair) {
+        var st = pair[0]();
+        var changed = false;
+        for (var oid in allIdMap) {
+            if (st[oid]) {
+                st[allIdMap[oid]] = true;
+                changed = true;
+            }
+        }
+        if (changed) pair[1](st);
+    });
 
     // Undo 対応の状態保存
     saveState();

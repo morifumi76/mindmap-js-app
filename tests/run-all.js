@@ -17,6 +17,7 @@ const TEST_FILES = [
     'sidebar.test.js',
     'tree-import.test.js',
     'node-move.test.js',
+    'duplicate.test.js',
     'left-sidebar.test.js',
     'relations-reconnect.test.js',
     'vertical-layout.test.js',
