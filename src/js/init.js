@@ -17,6 +17,7 @@ import {
     setCtxMenuTargetMapId,
     setCurrentMapId,
     setFastMode,
+    isVerticalLayout,
     setMindMapData,
     setNodeCyanState,
     setNodeGrayoutState,
@@ -124,12 +125,14 @@ export function init() {
             });
         }
 
-        // 縦表示チェックボックス：マップデータの isVertical を切り替えて即再レイアウト。
+        // 縦書きモードトグル：マップデータの isVertical を切り替えて即再レイアウト。
         // 保存は render() 内の既存自動保存に乗る。saveState() は呼ばない（Undo/Redoの対象外）。
-        var verticalCb = document.getElementById('verticalModeCheckbox');
-        if (verticalCb) {
-            verticalCb.addEventListener('change', function() {
-                setVerticalLayout(verticalCb.checked);
+        var verticalToggle = document.getElementById('verticalModeToggle');
+        if (verticalToggle) {
+            verticalToggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                setVerticalLayout(!isVerticalLayout());
                 render();
                 // ルートノードが画面内に収まるよう自動でセンタリング
                 resetView();

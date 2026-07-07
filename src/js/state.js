@@ -393,8 +393,13 @@ export function setVerticalLayout(on) {
     syncVerticalModeUI();
 }
 export function syncVerticalModeUI() {
-    var cb = document.getElementById('verticalModeCheckbox');
-    if (cb) cb.checked = isVerticalLayout();
+    // 高速モードと同じトグルボタンUI（ON/OFFスイッチ）に状態を反映する
+    var on = isVerticalLayout();
+    var toggleEl = document.getElementById('verticalModeToggle');
+    if (toggleEl) {
+        toggleEl.setAttribute('aria-checked', on ? 'true' : 'false');
+        toggleEl.classList.toggle('on', on);
+    }
 }
 
 // ========================================

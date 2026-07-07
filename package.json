@@ -1,6 +1,6 @@
 {
   "name": "mindmap-js-app",
-  "version": "2.3.3",
+  "version": "2.4.0",
   "scripts": {
     "build": "node build.js",
     "serve": "node tests/server.js",
