@@ -101,17 +101,18 @@ const { BASE_URL, CMD } = require('./helpers');
 
     const vGeom = await page.evaluate(() => {
         function rect(id) { return document.querySelector('[data-id="' + id + '"]').getBoundingClientRect(); }
+        function cx(r) { return r.left + r.width / 2; }
         var root = rect('root'), pa = rect('pa'), pb = rect('pb'), pc = rect('pc');
         var ca1 = rect('ca1'), ca2 = rect('ca2');
         var cb1 = rect('cb1'), cb3 = rect('cb3');
         return {
-            rootBottom: root.bottom, rootCx: root.left + root.width / 2,
+            rootBottom: root.bottom, rootCx: cx(root),
             paTop: pa.top, pbTop: pb.top, pcTop: pc.top,
             paRight: pa.right, pbLeft: pb.left, pbRight: pb.right, pcLeft: pc.left,
-            paCx: pa.left + pa.width / 2, pcCx: pc.left + pc.width / 2,
+            paCx: cx(pa), pcCx: cx(pc),
             ca1Top: ca1.top, paBottom: pa.bottom,
-            pbCx: pb.left + pb.width / 2,
-            pbChildrenCenterX: (cb1.left + cb3.right) / 2,
+            pbCx: cx(pb),
+            ca1Cx: cx(ca1), ca2Cx: cx(ca2), cb1Cx: cx(cb1), cb3Cx: cx(cb3),
             ca1Right: ca1.right, ca2Left: ca2.left
         };
     });
@@ -119,9 +120,16 @@ const { BASE_URL, CMD } = require('./helpers');
     assert(vGeom.pbTop >= vGeom.rootBottom && vGeom.pcTop >= vGeom.rootBottom, '縦モード: 全ての子がルートの下にある');
     assert(vGeom.paRight <= vGeom.pbLeft && vGeom.pbRight <= vGeom.pcLeft, '縦モード: 兄弟が左右に並び重ならない');
     assert(vGeom.ca1Top >= vGeom.paBottom, '縦モード: 孫はさらに1段下にある');
-    // 親は「子ノード群（部分木）」の水平中央の真上に置かれる。子が全員葉のParentBで厳密に検証する
-    assert(Math.abs(vGeom.pbCx - vGeom.pbChildrenCenterX) < 2, '縦モード: 親は子ノード群の水平中央の真上にある');
-    assert(vGeom.paCx < vGeom.pbCx && vGeom.pbCx < vGeom.pcCx, '縦モード: ルートは子の部分木の並びの中央上にある（並び順が左→右）');
+    // 配置ルール（Reingold-Tilford）: 親のX中心 = 左端の子の中心と右端の子の中心の中間点
+    assert(Math.abs(vGeom.pbCx - (vGeom.cb1Cx + vGeom.cb3Cx) / 2) < 2,
+        '縦モード: 親（ParentB）は左端の子と右端の子の中心の中間点にある');
+    // 非対称な枝（ca1=孫持ちの長文ノード、ca2=葉）でも親は子の中心の中間点に来る
+    assert(Math.abs(vGeom.paCx - (vGeom.ca1Cx + vGeom.ca2Cx) / 2) < 2,
+        '縦モード: 非対称な枝でも親（ParentA）は子の中心の中間点にある');
+    // ルートも同じルール（左端の子 pa と右端の子 pc の中間点）
+    assert(Math.abs(vGeom.rootCx - (vGeom.paCx + vGeom.pcCx) / 2) < 2,
+        '縦モード: ルートも左端の子と右端の子の中心の中間点にある');
+    assert(vGeom.paCx < vGeom.pbCx && vGeom.pbCx < vGeom.pcCx, '縦モード: 兄弟の並び順が左→右');
     assert(vGeom.ca1Right <= vGeom.ca2Left, '縦モード: 長文ノードの兄弟も重ならない（幅の再帰計算）');
 
     // いとこ間（ca2 と cb1）の重なりも確認

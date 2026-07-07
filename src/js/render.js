@@ -152,53 +152,80 @@ function calcSubtreeHeight(node, gap, nodeDims) {
     return Math.max(nodeHeight, total);
 }
 
-// 縦表示モードのレイアウト：横レイアウト（layoutNodes）の90度回転版。
-// ルートを最上部に置き、子は1段下・兄弟は左右に並ぶ。親は子ノード群の水平中央の真上。
-// 引数 cx はノードの水平中央、topY はノードの上端。
+// 縦表示モードのレイアウト：Reingold-Tilford の考え方に基づく2パスの下から上方式。
+// パス1（buildVerticalSubtree）で末端から部分木を相対座標で組み立て、
+// 「親のX中心 = 左端の子の中心と右端の子の中心の中間点」に置く（組織図の配置ルール）。
+// パス2（placeVerticalSubtree）で相対座標を絶対座標へ変換して positions に書き込む。
 // positions に格納する座標形式（x=左端, y=上下中央）は横レイアウトと完全に同一なので、
-// ドラッグ・関連線・投げ縄・ツリーナビ等の既存機能はそのまま動く。
+// ドラッグ・関連線・投げ縄・ツリーナビ・接続線等の既存機能はそのまま動く。
 function layoutNodesVertical(node, positions, cx, topY, level, nodeDims) {
     if (cx === undefined) cx = 0;
     if (topY === undefined) topY = 0;
     if (level === undefined) level = 1;
-    var dims = (nodeDims && nodeDims[node.id]) ? nodeDims[node.id] : { width: 150, height: 40 };
-    var nodeWidth = dims.width;
-    var nodeHeight = dims.height;
     // 横レイアウトの hGap=40（親子間）/ vGap=16（兄弟間）を方向だけ入れ替えて同じ視覚的密度にする
     var levelGap = 40, siblingGap = 16;
-    var collapsed = isNodeCollapsed(node.id);
-    var visibleChildren = collapsed ? [] : node.children;
-    var totalW = 0, childWidths = [];
-    for (var i = 0; i < visibleChildren.length; i++) {
-        var cw = calcSubtreeWidth(visibleChildren[i], siblingGap, nodeDims);
-        childWidths.push(cw);
-        totalW += cw;
-    }
-    if (visibleChildren.length > 1) totalW += (visibleChildren.length - 1) * siblingGap;
-    positions[node.id] = { x: cx - nodeWidth / 2, y: topY + nodeHeight / 2, width: nodeWidth, height: nodeHeight, level: level };
-    var childTopY = topY + nodeHeight + levelGap;
-    var childX = cx - totalW / 2;
-    for (i = 0; i < visibleChildren.length; i++) {
-        cw = childWidths[i];
-        var centerX = childX + cw / 2;
-        layoutNodesVertical(visibleChildren[i], positions, centerX, childTopY, level + 1, nodeDims);
-        childX += cw + siblingGap;
-    }
+    var layout = buildVerticalSubtree(node, nodeDims, siblingGap);
+    // 引数 cx はルートノードの水平中央なので、部分木の左端に読み替えて配置する
+    placeVerticalSubtree(layout, positions, cx - layout.nodeCenter, topY, level, nodeDims, levelGap);
     return positions;
 }
 
-// 部分木（subtree）の必要幅を再帰計算する。calcSubtreeHeight の縦横対称版。
-// ノード幅はテキスト長で可変なので、これで兄弟間・いとこ間の重なりを防ぐ。
-function calcSubtreeWidth(node, gap, nodeDims) {
+// パス1: 部分木を「左端=0」の相対座標で組み立てる（post-order＝末端から上へ）。
+// 返り値: { node, width: 部分木の全幅, nodeCenter: このノードの中心X（相対）,
+//           childLayouts: 子の相対レイアウト, childOffsets: 各子部分木の左端X（相対） }
+function buildVerticalSubtree(node, nodeDims, siblingGap) {
     var dims = (nodeDims && nodeDims[node.id]) ? nodeDims[node.id] : { width: 150, height: 40 };
     var nodeWidth = dims.width;
-    if (node.children.length === 0 || isNodeCollapsed(node.id)) return nodeWidth;
-    var total = 0;
-    for (var i = 0; i < node.children.length; i++) {
-        total += calcSubtreeWidth(node.children[i], gap, nodeDims);
+    var visibleChildren = isNodeCollapsed(node.id) ? [] : node.children;
+    if (visibleChildren.length === 0) {
+        return { node: node, width: nodeWidth, nodeCenter: nodeWidth / 2, childLayouts: [], childOffsets: [] };
     }
-    total += (node.children.length - 1) * gap;
-    return Math.max(nodeWidth, total);
+
+    // 子の部分木をバウンディング幅＋一定間隔で左から詰めて並べる（枝同士は重ならない）
+    var childLayouts = [];
+    var childOffsets = [];
+    var cursor = 0;
+    for (var i = 0; i < visibleChildren.length; i++) {
+        var cl = buildVerticalSubtree(visibleChildren[i], nodeDims, siblingGap);
+        if (i > 0) cursor += siblingGap;
+        childOffsets.push(cursor);
+        childLayouts.push(cl);
+        cursor += cl.width;
+    }
+
+    // 親の中心 = 左端の子の中心と右端の子の中心の中間点（子が1つならその真上）
+    var firstCenter = childOffsets[0] + childLayouts[0].nodeCenter;
+    var lastCenter = childOffsets[childOffsets.length - 1] + childLayouts[childLayouts.length - 1].nodeCenter;
+    var nodeCenter = (firstCenter + lastCenter) / 2;
+
+    // 親ノード自身が子の並びからはみ出す場合（親が幅広い等）は、はみ出し分も
+    // 部分木の幅に含めて、隣の枝（いとこ）との重なりを防ぐ
+    var left = Math.min(0, nodeCenter - nodeWidth / 2);
+    var right = Math.max(cursor, nodeCenter + nodeWidth / 2);
+    if (left < 0) {
+        // 左へのはみ出し分だけ全体を右にずらし、相対座標の左端を0に保つ
+        var shift = -left;
+        nodeCenter += shift;
+        for (i = 0; i < childOffsets.length; i++) childOffsets[i] += shift;
+    }
+    return { node: node, width: right - left, nodeCenter: nodeCenter, childLayouts: childLayouts, childOffsets: childOffsets };
+}
+
+// パス2: 相対レイアウトを絶対座標へ変換して positions に書き込む
+function placeVerticalSubtree(layout, positions, leftX, topY, level, nodeDims, levelGap) {
+    var node = layout.node;
+    var dims = (nodeDims && nodeDims[node.id]) ? nodeDims[node.id] : { width: 150, height: 40 };
+    positions[node.id] = {
+        x: leftX + layout.nodeCenter - dims.width / 2,
+        y: topY + dims.height / 2,
+        width: dims.width,
+        height: dims.height,
+        level: level
+    };
+    var childTopY = topY + dims.height + levelGap;
+    for (var i = 0; i < layout.childLayouts.length; i++) {
+        placeVerticalSubtree(layout.childLayouts[i], positions, leftX + layout.childOffsets[i], childTopY, level + 1, nodeDims, levelGap);
+    }
 }
 
 function renderNodes(node, container, positions) {
