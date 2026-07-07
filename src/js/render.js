@@ -350,17 +350,31 @@ function renderLines(node, svg, positions) {
     var vertical = isVerticalLayout();
     var collapsed = isNodeCollapsed(node.id);
     var visibleChildren = collapsed ? [] : node.children;
+
+    // 縦表示：兄弟への水平線を同じ高さに揃えるため、親ごとにバスの高さを先に決める。
+    // 親の下辺と「最も高い位置にある子の上辺」の中間（子の高さがバラバラでも全兄弟で共通）
+    var busY = 0;
+    if (vertical && visibleChildren.length > 0) {
+        var parentBottom = pp.y + pp.height / 2;
+        var minChildTop = Infinity;
+        for (var k = 0; k < visibleChildren.length; k++) {
+            var kp = positions[visibleChildren[k].id];
+            if (kp && kp.y - kp.height / 2 < minChildTop) minChildTop = kp.y - kp.height / 2;
+        }
+        busY = (parentBottom + minChildTop) / 2 + off;
+    }
+
     for (var i = 0; i < visibleChildren.length; i++) {
         var child = visibleChildren[i];
         var cp = positions[child.id];
         if (!cp) continue;
         var sx, sy, ex, ey, d;
         if (vertical) {
-            // 縦表示：親の下辺中央 → 子の上辺中央（positions の y は上下中央なので高さの半分で辺に変換）
+            // 縦表示：組織図風の直交線。親の下辺中央から真下→バスの高さで水平→子の上辺中央へ真下。
+            // 親からの縦線は全兄弟で同じ座標に重なるため、見た目は1本の幹から分岐する形になる
             sx = pp.x + pp.width / 2 + off; sy = pp.y + pp.height / 2 + off;
             ex = cp.x + cp.width / 2 + off; ey = cp.y - cp.height / 2 + off;
-            var my = sy + (ey - sy) / 2;
-            d = 'M ' + sx + ' ' + sy + ' C ' + sx + ' ' + my + ', ' + ex + ' ' + my + ', ' + ex + ' ' + ey;
+            d = 'M ' + sx + ' ' + sy + ' L ' + sx + ' ' + busY + ' L ' + ex + ' ' + busY + ' L ' + ex + ' ' + ey;
         } else {
             // 横表示：親の右辺中央 → 子の左辺中央（従来どおり）
             sx = pp.x + pp.width + off; sy = pp.y + off;
