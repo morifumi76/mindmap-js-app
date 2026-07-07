@@ -18,6 +18,7 @@ const TEST_FILES = [
     'tree-import.test.js',
     'node-move.test.js',
     'duplicate.test.js',
+    'node-height.test.js',
     'left-sidebar.test.js',
     'relations-reconnect.test.js',
     'vertical-layout.test.js',
