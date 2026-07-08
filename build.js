@@ -108,6 +108,37 @@ localHtml = localHtml.replace(
     '<button class="logout-btn" id="logoutBtn">ログアウト</button>',
     '<button class="logout-btn" id="backupBtn">JSONバックアップ</button>'
 );
+//   3) SNSシェア用メタタグ（OGP / Twitter Card / canonical）を削除。
+//      クラウドサイトのURLを含み、顧客配布のローカルファイルには不要なため
+localHtml = localHtml.replace(
+    / {4}<!-- OGP -->[\s\S]*?<link rel="canonical"[^>]*>\n/,
+    ''
+);
+//   4) 外部リンク（Notion「このマインドマップについて」）を削除
+localHtml = localHtml.replace(
+    / *<a class="footer-info-link"[\s\S]*?<\/a>\n/,
+    ''
+);
+//   5) クラウド専用UI（ローカルでは一切動作しない非表示要素）を削除。
+//      対応するJS側の配線はすべて要素の存在チェック付きなので、無くても安全に素通りする
+localHtml = localHtml.replace(/ {4}<!-- Set Password Overlay[\s\S]*?\n {4}<\/div>\n/, '');
+localHtml = localHtml.replace(/ {4}<!-- Login Overlay -->[\s\S]*?\n {4}<\/div>\n/, '');
+localHtml = localHtml.replace(/ {4}<!-- Migration Dialog -->[\s\S]*?\n {4}<\/div>\n/, '');
+localHtml = localHtml.replace(/ {4}<!-- Share Dialog -->[\s\S]*?\n {4}<\/div>\n/, '');
+localHtml = localHtml.replace(/ *<div id="readonlyBanner">[^\n]*<\/div>\n/, '');
+localHtml = localHtml.replace(/ *<div class="ctx-menu-item" data-action="share"[^\n]*<\/div>\n/, '');
+
+// ローカル版のゴミ取りが効いていることをビルド時に検証する（置換漏れの検知）。
+// 要素IDはバンドル済みJS（動作しない死にコード）内にも文字列として残るため、
+// HTMLタグにしか現れない `id="..."` の形で照合する
+const forbiddenInLocal = ['og:image', 'twitter:card', 'rel="canonical"', 'notion.site',
+    'mindmap.johosauce.com', 'id="setPasswordOverlay"', 'id="authOverlay"',
+    'id="migrationOverlay"', 'id="shareOverlay"', 'id="readonlyBanner"'];
+for (const word of forbiddenInLocal) {
+    if (localHtml.includes(word)) {
+        throw new Error(`local.html に不要な文字列が残っています: ${word}`);
+    }
+}
 
 fs.writeFileSync(path.join(DIST, 'local.html'), localHtml, 'utf-8');
 
