@@ -46,6 +46,10 @@ function enterCollabGuestMode(shareId, result) {
     window._isReadOnly = false;
     setupSharedMemoryState(result);
     hideOwnerOnlyUi();
+    // ゲストのツールバー: 縦書きモードだけ非表示（マップ全体設定のため）。
+    // 高速モード・開閉・ズーム・色付け・リンク・接続はそのまま使える
+    var verticalCtrl = document.getElementById('verticalModeControl');
+    if (verticalCtrl) verticalCtrl.style.display = 'none';
 
     // オーナーが共同編集をOFFにしたら、即座に閲覧専用へ切り替える
     window._collabOnEnded = function() {

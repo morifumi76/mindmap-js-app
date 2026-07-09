@@ -15,15 +15,36 @@ import { deepClone, showToast } from '../utils.js';
 import {
     currentMapId,
     editingNodeId,
+    getNodeCyanState,
+    getNodeGrayoutState,
+    getNodeGreenState,
+    getNodeHighlightState,
+    getNodeRedTextState,
     mindMapData,
-    setEditingNodeId
+    setEditingNodeId,
+    setNodeCyanState,
+    setNodeGrayoutState,
+    setNodeGreenState,
+    setNodeHighlightState,
+    setNodeRedTextState
 } from '../state.js';
 import { findMetaById, getMapDataKey, isSharedReadonly } from '../storage.js';
 import { render } from '../render.js';
 
+// 色状態（5種）の取得・設定関数の対応表。色の同期イベント（t:'color'）で使う
+var COLOR_KINDS = {
+    grayout:   { get: getNodeGrayoutState,   set: setNodeGrayoutState },
+    highlight: { get: getNodeHighlightState, set: setNodeHighlightState },
+    cyan:      { get: getNodeCyanState,      set: setNodeCyanState },
+    green:     { get: getNodeGreenState,     set: setNodeGreenState },
+    redtext:   { get: getNodeRedTextState,   set: setNodeRedTextState }
+};
+
 // ---- セッション状態 ----
 var session = null; // { shareId, isOwner, handle, clientId, nickname, color, mapLocalId }
 var lastSyncedTree = null;   // 前回同期時点のツリー（差分の基準）
+var lastSyncedExtras = null; // 前回同期時点の色5種＋関連線（JSON文字列で保持）
+var reconnectTimer = null;   // 自前の再接続タイマー
 var undoStack = [];          // 自分の操作ログ [{ops, inverses}]
 var redoStack = [];
 var MAX_OP_LOG = 100;
@@ -109,13 +130,18 @@ function diffTrees(oldRoot, newRoot) {
         inverses.push({ t: 'add', parentId: e.parentId, index: e.index, node: deepClone(e.node) });
     }
 
-    // 移動・テキスト変更: 両方に存在するノード
+    // 移動・テキスト・リンク変更: 両方に存在するノード
     for (id in newIdx) {
         if (!oldIdx[id]) continue;
         var o = oldIdx[id], n = newIdx[id];
         if (o.node.text !== n.node.text) {
             ops.push({ t: 'text', nodeId: id, text: n.node.text });
             inverses.push({ t: 'text', nodeId: id, text: o.node.text });
+        }
+        // ハイパーリンクの設定・変更・削除も同期する
+        if (JSON.stringify(o.node.hyperlink || null) !== JSON.stringify(n.node.hyperlink || null)) {
+            ops.push({ t: 'link', nodeId: id, hyperlink: n.node.hyperlink ? deepClone(n.node.hyperlink) : null });
+            inverses.push({ t: 'link', nodeId: id, hyperlink: o.node.hyperlink ? deepClone(o.node.hyperlink) : null });
         }
         if (o.parentId !== n.parentId) {
             ops.push({ t: 'move', nodeId: id, parentId: n.parentId, index: n.index });
@@ -188,7 +214,46 @@ function applyOp(root, op) {
         destNode.children.splice(di, 0, r.node);
         return true;
     }
+    if (op.t === 'link') {
+        r = findInTree(root, op.nodeId);
+        if (!r) return false;
+        if (op.hyperlink) r.node.hyperlink = deepClone(op.hyperlink);
+        else delete r.node.hyperlink;
+        return true;
+    }
     return false;
+}
+
+// ========================================
+// 全操作共通の適用（受信・Undo・Redoで使用）。
+// ツリー系は mindMapData と lastSyncedTree の両方へ、色・関連線は状態ストアへ適用する
+// ========================================
+function applyOpEverywhere(op) {
+    if (op.t === 'color') {
+        var kind = COLOR_KINDS[op.kind];
+        if (!kind) return false;
+        kind.set(deepClone(op.state || {}));
+        if (lastSyncedExtras) lastSyncedExtras[op.kind] = JSON.stringify(op.state || {});
+        return true;
+    }
+    if (op.t === 'rel') {
+        mindMapData.relations = deepClone(op.relations || []);
+        if (lastSyncedExtras) lastSyncedExtras.relations = JSON.stringify(op.relations || []);
+        return true;
+    }
+    var changed = applyOp(mindMapData.root, op);
+    if (changed) applyOp(lastSyncedTree, op); // 相手の変更は自分の差分に含めない
+    return changed;
+}
+
+// 色5種＋関連線の現在値をJSON文字列のスナップショットとして集める
+function collectExtras() {
+    var extras = {};
+    for (var kind in COLOR_KINDS) {
+        extras[kind] = JSON.stringify(COLOR_KINDS[kind].get() || {});
+    }
+    extras.relations = JSON.stringify((mindMapData && mindMapData.relations) || []);
+    return extras;
 }
 
 // ========================================
@@ -231,8 +296,26 @@ function renderPreservingEditing() {
 // ========================================
 function onLocalSave() {
     if (!session || applyingRemote || !mindMapData || !mindMapData.root) return;
-    if (!lastSyncedTree) { lastSyncedTree = deepClone(mindMapData.root); return; }
+    if (!lastSyncedTree) {
+        lastSyncedTree = deepClone(mindMapData.root);
+        lastSyncedExtras = collectExtras();
+        return;
+    }
     var d = diffTrees(lastSyncedTree, mindMapData.root);
+
+    // 色（5種）・関連線の変更も操作イベントとして拾う
+    var extras = collectExtras();
+    for (var kind in COLOR_KINDS) {
+        if (lastSyncedExtras[kind] !== extras[kind]) {
+            d.ops.push({ t: 'color', kind: kind, state: JSON.parse(extras[kind]) });
+            d.inverses.push({ t: 'color', kind: kind, state: JSON.parse(lastSyncedExtras[kind]) });
+        }
+    }
+    if (lastSyncedExtras.relations !== extras.relations) {
+        d.ops.push({ t: 'rel', relations: JSON.parse(extras.relations) });
+        d.inverses.push({ t: 'rel', relations: JSON.parse(lastSyncedExtras.relations) });
+    }
+
     if (d.ops.length === 0) return;
     for (var i = 0; i < d.ops.length; i++) {
         var op = d.ops[i];
@@ -244,6 +327,7 @@ function onLocalSave() {
     if (undoStack.length > MAX_OP_LOG) undoStack.shift();
     redoStack = [];
     lastSyncedTree = deepClone(mindMapData.root);
+    lastSyncedExtras = extras;
     persistAfterOwnEdit();
 }
 
@@ -272,13 +356,14 @@ function onEditingInput(e) {
 // ========================================
 function onRemoteOp(op) {
     if (!session || !op || op.sender === session.clientId) return;
+    // イベントが届いた＝接続は生きている。切断バナーが出ていたら復旧処理を行う
+    noteConnectionAlive();
     applyingRemote = true;
     try {
         // 自分が編集中のノードへのライブテキストは適用しない（後勝ち: 自分の確定が勝つ）
         if (!(op.t === 'text' && op.live && editingNodeId === op.nodeId)) {
-            var changed = applyOp(mindMapData.root, op);
+            var changed = applyOpEverywhere(op);
             if (changed) {
-                applyOp(lastSyncedTree, op); // 相手の変更は自分の差分に含めない
                 renderPreservingEditing();
                 persistAfterRemoteOp();
             }
@@ -296,12 +381,20 @@ function persistAfterOwnEdit() {
         // オーナーは既存の自動保存（storage.js → sync.js のデバウンス）に乗る。ここでは何もしない
         return;
     }
-    // ゲストは share_id 経由でデバウンス保存
+    // ゲストは share_id 経由でデバウンス保存。
+    // 色状態（メモリ上）は data の _grayout 等へマージして保存する（オーナーの保存形式と同じ）
     clearTimeout(guestSaveTimer);
     guestSaveTimer = setTimeout(function() {
         guestSaveTimer = null;
         if (!session) return;
-        window._supa.updateSharedMapData(session.shareId, deepClone(mindMapData)).catch(function() {});
+        var data = deepClone(mindMapData);
+        data._grayout   = deepClone(getNodeGrayoutState());
+        data._highlight = deepClone(getNodeHighlightState());
+        data._cyan      = deepClone(getNodeCyanState());
+        data._green     = deepClone(getNodeGreenState());
+        data._redtext   = deepClone(getNodeRedTextState());
+        delete data._collapse; // 折りたたみは各自ローカル（DBに保存しない）
+        window._supa.updateSharedMapData(session.shareId, data).catch(function() {});
     }, GUEST_SAVE_MS);
 }
 
@@ -401,31 +494,68 @@ function tick() {
 }
 
 // ========================================
-// 接続状態（再接続バナー）
+// 接続状態（再接続バナーと自前の再接続管理）
+// Supabase側の自動復帰でSUBSCRIBED通知が再発火しないケースがあるため、
+// ①切断検知後は3秒ごとにチャンネルへ入り直す ②イベント受信も「復旧の証拠」として扱う
 // ========================================
 function onStatusChange(status) {
     if (!session) return;
     if (status === 'SUBSCRIBED') {
-        hideReconnectBanner();
-        // 再接続時: DBから最新データを取り直してから同期を再開する
-        if (session.hadDisconnect) {
-            session.hadDisconnect = false;
-            window._supa.fetchSharedMap(session.shareId).then(function(result) {
-                if (!result || !result.data || !session) return;
-                applyingRemote = true;
-                try {
-                    mindMapData.root = deepClone(result.data.root);
-                    if (result.data.relations) mindMapData.relations = deepClone(result.data.relations);
-                    lastSyncedTree = deepClone(mindMapData.root);
-                    renderPreservingEditing();
-                } finally {
-                    applyingRemote = false;
-                }
-            }).catch(function() {});
-        }
+        handleRecovered();
     } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
         session.hadDisconnect = true;
         showReconnectBanner();
+        scheduleReconnect();
+    }
+}
+
+// 切断後にイベントが届いた場合も復旧扱いにする（バナー消去＋最新データ取得）
+function noteConnectionAlive() {
+    if (session && session.hadDisconnect) handleRecovered();
+}
+
+function handleRecovered() {
+    if (!session) return;
+    hideReconnectBanner();
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+    if (!session.hadDisconnect) return;
+    session.hadDisconnect = false;
+    // 切断中に取りこぼした操作を埋めるため、DBから最新データを取り直してから同期を再開する
+    window._supa.fetchSharedMap(session.shareId).then(function(result) {
+        if (!result || !result.data || !session) return;
+        applyingRemote = true;
+        try {
+            mindMapData.root = deepClone(result.data.root);
+            if (result.data.relations) mindMapData.relations = deepClone(result.data.relations);
+            hydrateColorsFromData(result.data);
+            lastSyncedTree = deepClone(mindMapData.root);
+            lastSyncedExtras = collectExtras();
+            renderPreservingEditing();
+        } finally {
+            applyingRemote = false;
+        }
+    }).catch(function() {});
+}
+
+// 3秒ごとにチャンネルへ入り直す（成功すれば onStatus の SUBSCRIBED → handleRecovered が走る）
+function scheduleReconnect() {
+    if (reconnectTimer) return;
+    reconnectTimer = setTimeout(function() {
+        reconnectTimer = null;
+        if (!session || !session.hadDisconnect) return;
+        try { session.handle.leave(); } catch (e) {}
+        session.handle = joinChannel();
+        scheduleReconnect(); // 失敗に備えて次回分を予約（成功時は handleRecovered が解除）
+    }, 3000);
+}
+
+// 取得した data の _grayout 等を現在の色状態ストアへ反映する
+// （ゲスト=メモリ上の _sharedData、オーナー=localStorage）
+function hydrateColorsFromData(data) {
+    var mapping = { grayout: '_grayout', highlight: '_highlight', cyan: '_cyan', green: '_green', redtext: '_redtext' };
+    for (var kind in mapping) {
+        if (data[mapping[kind]]) COLOR_KINDS[kind].set(deepClone(data[mapping[kind]]));
     }
 }
 
@@ -452,8 +582,7 @@ export function collabUndo() {
         // 逆操作を逆順に適用（相手に消されたノード等は黙ってスキップ）
         for (var i = entry.inverses.length - 1; i >= 0; i--) {
             var inv = entry.inverses[i];
-            if (applyOp(mindMapData.root, inv)) {
-                applyOp(lastSyncedTree, inv);
+            if (applyOpEverywhere(inv)) {
                 inv.sender = session.clientId;
                 inv.ts = Date.now();
                 session.handle.sendOp(inv);
@@ -475,8 +604,7 @@ export function collabRedo() {
     try {
         for (var i = 0; i < entry.ops.length; i++) {
             var op = entry.ops[i];
-            if (applyOp(mindMapData.root, op)) {
-                applyOp(lastSyncedTree, op);
+            if (applyOpEverywhere(op)) {
                 op.ts = Date.now();
                 session.handle.sendOp(op);
             }
@@ -531,20 +659,26 @@ export function startCollabSession(opts) {
         handle: null
     };
     lastSyncedTree = (mindMapData && mindMapData.root) ? deepClone(mindMapData.root) : null;
+    lastSyncedExtras = collectExtras();
     undoStack = [];
     redoStack = [];
     presencePeers = {};
-    session.handle = window._supa.collabJoin(opts.shareId, {
-        clientId: clientId,
-        presence: { name: opts.nickname, color: color, editing: null },
+    session.handle = joinChannel();
+    document.addEventListener('input', onEditingInput, true);
+    tickTimer = setInterval(tick, 400);
+    renderAvatars();
+}
+
+// 現在のセッション情報でRealtimeチャンネルへ参加する（初回参加・再接続の共通処理）
+function joinChannel() {
+    return window._supa.collabJoin(session.shareId, {
+        clientId: session.clientId,
+        presence: { name: session.nickname, color: session.color, editing: lastPresenceEditing },
         onOp: onRemoteOp,
         onPresence: onPresenceSync,
         onStatus: onStatusChange,
         onEnd: function() { if (window._collabOnEnded) window._collabOnEnded(); }
     });
-    document.addEventListener('input', onEditingInput, true);
-    tickTimer = setInterval(tick, 400);
-    renderAvatars();
 }
 
 export function stopCollabSession() {
@@ -553,10 +687,13 @@ export function stopCollabSession() {
     document.removeEventListener('input', onEditingInput, true);
     clearInterval(tickTimer);
     clearTimeout(guestSaveTimer);
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
     for (var k in textDebounceTimers) clearTimeout(textDebounceTimers[k]);
     textDebounceTimers = {};
     session = null;
     lastSyncedTree = null;
+    lastSyncedExtras = null;
     presencePeers = {};
     hideReconnectBanner();
     var box = document.getElementById('collabAvatars');

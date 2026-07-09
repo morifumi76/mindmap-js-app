@@ -284,6 +284,82 @@ function assert(cond, msg) {
     assert(persisted.indexOf('G追加') !== -1, 'ゲストの編集内容がDB（モック）に保存される');
 
     // ========================================
+    // Test 8.5: 色付け・リンク・関連線の同期／ゲストのツールバー制限
+    // ========================================
+    console.log('\n=== Test 8.5: 色・リンク・関連線の同期とゲストUI ===');
+    // ゲストのツールバー: 縦書きモードだけ非表示、他は表示
+    const guestToolbar = await guest.evaluate(() => ({
+        vertical: (document.getElementById('verticalModeControl') || {}).style.display === 'none',
+        fastVisible: !!document.getElementById('fastModeControl') &&
+            document.getElementById('fastModeControl').style.display !== 'none',
+        colorVisible: !!document.getElementById('grayoutFloatBtn'),
+        linkVisible: !!document.getElementById('linkFloatBtn'),
+        connectVisible: !!document.getElementById('connectFloatBtn')
+    }));
+    assert(guestToolbar.vertical, 'ゲスト: 縦書きモードトグルは非表示');
+    assert(guestToolbar.fastVisible && guestToolbar.colorVisible && guestToolbar.linkVisible && guestToolbar.connectVisible,
+        'ゲスト: 高速モード・色・リンク・接続のUIは使える');
+
+    // 色付けの同期: ゲストが collab1 をグレーアウト → オーナーに反映
+    await guest.click('.node[data-id="collab1"]');
+    await guest.waitForTimeout(150);
+    await guest.keyboard.press('Escape');
+    await guest.waitForTimeout(150);
+    await guest.click('#grayoutFloatBtn');
+    await guest.waitForTimeout(800);
+    assert(await guest.$eval('.node[data-id="collab1"]', el => el.classList.contains('grayed-out')),
+        'ゲスト画面で色（グレーアウト）が付く');
+    assert(await owner.$eval('.node[data-id="collab1"]', el => el.classList.contains('grayed-out')),
+        '色付けがオーナー画面に同期される');
+    // ゲストのlocalStorageに色データが書き込まれていない（メモリ上のみ）
+    const guestColorLs = await guest.evaluate(() => localStorage.getItem('mindmap-node-grayout-2'));
+    assert(guestColorLs === null, 'ゲストの色変更はlocalStorageを汚さない');
+
+    // リンクの同期: オーナーが collab1 にリンク設定 → ゲストに反映
+    await owner.click('.node[data-id="collab1"]');
+    await owner.waitForTimeout(200);
+    await owner.keyboard.press('Escape');
+    await owner.waitForTimeout(200);
+    await owner.click('#linkFloatBtn');
+    await owner.waitForTimeout(300);
+    await owner.fill('#linkModalUrl', 'https://example.com');
+    await owner.waitForTimeout(100);
+    await owner.click('#linkModalOk');
+    await owner.waitForTimeout(800);
+    assert(await guest.$eval('.node[data-id="collab1"]', el => el.classList.contains('has-link')),
+        'リンク設定がゲスト画面に同期される');
+
+    // 関連線の同期: ゲストが root → collab1 に関連線を作成 → オーナーに反映
+    await guest.click('.node.root');
+    await guest.waitForTimeout(150);
+    await guest.keyboard.press('Escape');
+    await guest.waitForTimeout(150);
+    await guest.click('#connectFloatBtn');
+    await guest.waitForTimeout(300);
+    await guest.click('.node[data-id="collab1"]');
+    await guest.waitForTimeout(800);
+    const relCounts = await Promise.all([
+        guest.evaluate(() => (window.getMindMapData().relations || []).length),
+        owner.evaluate(() => (window.getMindMapData().relations || []).length)
+    ]);
+    assert(relCounts[0] === 1 && relCounts[1] === 1,
+        '関連線がゲストで作成されオーナーに同期される: guest=' + relCounts[0] + ' owner=' + relCounts[1]);
+
+    // 全ノード閉じる/開く（«»）がゲストでも動く（ローカルのみ・同期はされない）
+    await guest.click('#collapseAllBtn');
+    await guest.waitForTimeout(400);
+    const guestCollapsed = await guest.evaluate(() => document.querySelectorAll('.node').length);
+    const ownerNodesStill = await owner.evaluate(() => document.querySelectorAll('.node').length);
+    assert(guestCollapsed < ownerNodesStill, 'ゲストの「すべて閉じる」がローカルで効く（相手には影響しない）: guest=' + guestCollapsed + ' owner=' + ownerNodesStill);
+    await guest.click('#expandAllBtn');
+    await guest.waitForTimeout(400);
+    const guestExpanded = await guest.evaluate(() => document.querySelectorAll('.node').length);
+    assert(guestExpanded === ownerNodesStill, 'ゲストの「すべて開く」で元に戻る');
+    // 折りたたみ操作でもlocalStorageは汚れない
+    const guestCollapseLs = await guest.evaluate(() => localStorage.getItem('mindmap-node-collapse-2'));
+    assert(guestCollapseLs === null, 'ゲストの開閉操作はlocalStorageを汚さない');
+
+    // ========================================
     // Test 9: 終了イベントでゲストが閲覧専用に切り替わる
     // ========================================
     console.log('\n=== Test 9: 共同編集の終了 ===');
