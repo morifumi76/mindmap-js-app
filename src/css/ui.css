@@ -556,14 +556,30 @@
    共同編集（Collaboration）
    ======================================== */
 
-/* 参加者アバター（キャンバス右上・色付きの丸＋頭文字） */
+/* 参加者アバター（キャンバス右上・色付きの丸＋頭文字）。
+   下段にオーナー向けの「共同編集中」ラベルを重ねられるよう縦並びコンテナにする */
 .collab-avatars {
     position: fixed;
     top: 12px;
     right: 60px;
     display: flex;
-    gap: 6px;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
     z-index: 650;
+}
+.collab-avatar-row {
+    display: flex;
+    gap: 6px;
+}
+/* オーナー画面用: アバターの下に小さくオレンジで表示する状態ラベル */
+.collab-status-label {
+    font-size: 11px;
+    color: #d9730d;
+    font-family: 'Meiryo UI', Meiryo, sans-serif;
+    font-weight: bold;
+    white-space: nowrap;
+    user-select: none;
 }
 .collab-avatar {
     width: 32px;

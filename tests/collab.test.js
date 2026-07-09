@@ -86,6 +86,31 @@ function assert(cond, msg) {
     const guestAvatars = await guest.evaluate(() => document.querySelectorAll('.collab-avatar').length);
     assert(ownerAvatars === 2 && guestAvatars === 2, '両画面に参加者アバターが2つ表示される: owner=' + ownerAvatars + ' guest=' + guestAvatars);
 
+    // ゲスト側: 編集可能で共有されていることが分かるオレンジのバナー
+    const guestBanner = await guest.evaluate(() => {
+        var b = document.getElementById('collabGuestBanner');
+        return {
+            exists: !!b,
+            text: b ? b.textContent : '',
+            bg: b ? getComputedStyle(b).backgroundColor : '',
+            bodyClass: document.body.classList.contains('collab-guest-mode')
+        };
+    });
+    assert(guestBanner.exists && guestBanner.text.includes('共同編集モード') && guestBanner.text.includes('編集できます'),
+        'ゲストに「共同編集モード（編集可能）」バナーが表示される: ' + guestBanner.text);
+    assert(guestBanner.bg === 'rgb(217, 115, 13)' && guestBanner.bodyClass,
+        'バナーはオレンジ（#d9730d）でレイアウトも調整される');
+
+    // オーナー側: アバターの下にオレンジで「共同編集中」ラベル
+    const ownerLabel = await owner.evaluate(() => {
+        var el = document.querySelector('.collab-status-label');
+        return { text: el ? el.textContent : null, color: el ? getComputedStyle(el).color : null };
+    });
+    assert(ownerLabel.text === '共同編集中' && ownerLabel.color === 'rgb(217, 115, 13)',
+        'オーナーのアバター下にオレンジで「共同編集中」ラベル: ' + JSON.stringify(ownerLabel));
+    const guestHasLabel = await guest.evaluate(() => !!document.querySelector('.collab-status-label'));
+    assert(!guestHasLabel, 'ゲスト側には「共同編集中」ラベルは出ない（バナーで表現）');
+
     // ========================================
     // Test 2: ノード追加の双方向同期
     // ========================================
@@ -376,9 +401,12 @@ function assert(cond, msg) {
     await guest.waitForTimeout(1000);
     const guestEnded = await guest.evaluate(() => ({
         readonly: !!window._isReadOnly,
-        bodyClass: document.body.classList.contains('readonly-mode')
+        bodyClass: document.body.classList.contains('readonly-mode'),
+        collabBannerGone: !document.getElementById('collabGuestBanner') &&
+            !document.body.classList.contains('collab-guest-mode')
     }));
     assert(guestEnded.readonly && guestEnded.bodyClass, '終了イベントでゲストが閲覧専用モードに切り替わる');
+    assert(guestEnded.collabBannerGone, '終了時に共同編集バナーが消えて閲覧専用バナーに切り替わる');
 
     // ========================================
     // Test 10: 閲覧専用の共有（allow_collab=false）は従来どおり

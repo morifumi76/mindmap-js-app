@@ -442,6 +442,8 @@ function renderAvatars() {
         document.body.appendChild(box);
     }
     box.innerHTML = '';
+    var row = document.createElement('div');
+    row.className = 'collab-avatar-row';
     var keys = Object.keys(presencePeers);
     for (var i = 0; i < keys.length; i++) {
         var p = presencePeers[keys[i]];
@@ -450,7 +452,15 @@ function renderAvatars() {
         av.style.background = p.color || '#999';
         av.textContent = (p.name || '?').charAt(0);
         av.title = p.name || '';
-        box.appendChild(av);
+        row.appendChild(av);
+    }
+    box.appendChild(row);
+    // オーナー画面: アバターの下に小さくオレンジで「共同編集中」を表示する
+    if (session.isOwner) {
+        var label = document.createElement('div');
+        label.className = 'collab-status-label';
+        label.textContent = '共同編集中';
+        box.appendChild(label);
     }
 }
 

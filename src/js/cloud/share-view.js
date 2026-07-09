@@ -51,10 +51,14 @@ function enterCollabGuestMode(shareId, result) {
     var verticalCtrl = document.getElementById('verticalModeControl');
     if (verticalCtrl) verticalCtrl.style.display = 'none';
 
+    // 「編集可能な状態で共有されている」ことが分かるバナー（閲覧専用バナーと同形・オレンジ）
+    showCollabGuestBanner();
+
     // オーナーが共同編集をOFFにしたら、即座に閲覧専用へ切り替える
     window._collabOnEnded = function() {
         stopCollabSession();
         window._collabGuest = false;
+        hideCollabGuestBanner();
         enterReadOnlyMode();
         if (typeof showToast === 'function') showToast('共同編集が終了しました');
     };
@@ -76,6 +80,23 @@ function enterCollabGuestMode(shareId, result) {
             startCollabSession({ shareId: shareId, isOwner: false, nickname: nickname });
         });
     }
+}
+
+// ゲスト向けバナー（動的生成: ローカル版のHTMLに要素を残さないため）
+function showCollabGuestBanner() {
+    if (document.getElementById('collabGuestBanner')) return;
+    var banner = document.createElement('div');
+    banner.id = 'collabGuestBanner';
+    banner.className = 'collab-guest-banner';
+    banner.textContent = '🤝 共同編集モード — このマップを編集できます';
+    document.body.appendChild(banner);
+    document.body.classList.add('collab-guest-mode');
+}
+
+function hideCollabGuestBanner() {
+    var banner = document.getElementById('collabGuestBanner');
+    if (banner) banner.remove();
+    document.body.classList.remove('collab-guest-mode');
 }
 
 // ニックネーム入力ダイアログ。「参加する」で入力値（未入力なら null）をコールバックへ渡す

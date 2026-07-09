@@ -555,6 +555,42 @@ body.readonly-mode .canvas-float-btns {
 }
 
 /* ========================================
+   共同編集: ゲスト向けバナー（閲覧専用バナーと同じ形・オレンジ）
+   「編集可能な状態で共有されている」ことをひと目で分かるようにする
+   ======================================== */
+.collab-guest-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 32px;
+    background: #d9730d;
+    color: #ffffff;
+    font-family: 'Meiryo UI', Meiryo, sans-serif;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+/* ゲスト参加中はバナーの高さぶんキャンバス・ツールバー・アバターを下げる
+   （閲覧専用モードの body.readonly-mode と同じレイアウト調整） */
+body.collab-guest-mode .canvas-container {
+    top: 32px;
+}
+body.collab-guest-mode .sidebar {
+    top: 32px;
+    height: calc(100% - 32px);
+}
+body.collab-guest-mode .canvas-float-btns {
+    top: 46px;
+}
+body.collab-guest-mode .collab-avatars {
+    top: 44px;
+}
+
+/* ========================================
    共同編集: 共有ダイアログのトグル行
    ======================================== */
 .share-actions-row {
