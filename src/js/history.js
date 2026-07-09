@@ -1,12 +1,18 @@
 import {
     MAX_HISTORY,
+    getNodeCyanState,
     getNodeGrayoutState,
+    getNodeGreenState,
     getNodeHighlightState,
+    getNodeRedTextState,
     isVerticalLayout,
     mindMapData,
     setMindMapData,
+    setNodeCyanState,
     setNodeGrayoutState,
+    setNodeGreenState,
     setNodeHighlightState,
+    setNodeRedTextState,
     setUndoHistory,
     setUndoIndex,
     setVerticalLayout,
@@ -22,10 +28,14 @@ import { render } from './render.js';
 
 export function saveState() {
     setUndoHistory(undoHistory.slice(0, undoIndex + 1));
+    // 色状態は5色すべてを含める（漏れると Ctrl+Z でその色だけ戻らないバグになる）
     undoHistory.push({
         data: deepClone(mindMapData),
         grayout: deepClone(getNodeGrayoutState()),
-        highlight: deepClone(getNodeHighlightState())
+        highlight: deepClone(getNodeHighlightState()),
+        cyan: deepClone(getNodeCyanState()),
+        green: deepClone(getNodeGreenState()),
+        redtext: deepClone(getNodeRedTextState())
     });
     if (undoHistory.length > MAX_HISTORY) {
         undoHistory.shift();
@@ -34,17 +44,24 @@ export function saveState() {
     }
 }
 
+// スナップショットの内容を現在の状態へ書き戻す（undo / redo 共通）
+function restoreSnapshot(snapshot) {
+    // 縦表示モードはUndo/Redoの対象外：スナップショット復元後も現在の表示モードを維持する
+    var keepVertical = isVerticalLayout();
+    setMindMapData(deepClone(snapshot.data));
+    setVerticalLayout(keepVertical);
+    setNodeGrayoutState(deepClone(snapshot.grayout || {}));
+    setNodeHighlightState(deepClone(snapshot.highlight || {}));
+    setNodeCyanState(deepClone(snapshot.cyan || {}));
+    setNodeGreenState(deepClone(snapshot.green || {}));
+    setNodeRedTextState(deepClone(snapshot.redtext || {}));
+    render();
+}
+
 export function undo() {
     if (undoIndex > 0) {
         setUndoIndex(undoIndex - 1);
-        var snapshot = undoHistory[undoIndex];
-        // 縦表示モードはUndo/Redoの対象外：スナップショット復元後も現在の表示モードを維持する
-        var keepVertical = isVerticalLayout();
-        setMindMapData(deepClone(snapshot.data));
-        setVerticalLayout(keepVertical);
-        setNodeGrayoutState(deepClone(snapshot.grayout || {}));
-        setNodeHighlightState(deepClone(snapshot.highlight || {}));
-        render();
+        restoreSnapshot(undoHistory[undoIndex]);
         showToast('元に戻しました');
     }
 }
@@ -52,14 +69,7 @@ export function undo() {
 export function redo() {
     if (undoIndex < undoHistory.length - 1) {
         setUndoIndex(undoIndex + 1);
-        var snapshot = undoHistory[undoIndex];
-        // 縦表示モードはUndo/Redoの対象外：スナップショット復元後も現在の表示モードを維持する
-        var keepVertical = isVerticalLayout();
-        setMindMapData(deepClone(snapshot.data));
-        setVerticalLayout(keepVertical);
-        setNodeGrayoutState(deepClone(snapshot.grayout || {}));
-        setNodeHighlightState(deepClone(snapshot.highlight || {}));
-        render();
+        restoreSnapshot(undoHistory[undoIndex]);
         showToast('やり直しました');
     }
 }
