@@ -29,7 +29,9 @@
     }
 
     // 共有状態（enableShare/disableShare で変化）
-    var shares = {}; // localId → shareId
+    var shares = {};      // localId → shareId
+    var collabFlags = {}; // localId → allow_collab
+    var shareCounter = 0; // 本物と同様「ONのたびに新しいIDを発行」を再現するための連番
 
     window._supa = {
         login: function(email, password) {
@@ -97,7 +99,8 @@
 
         enableShare: function(localId) {
             record('enableShare', arguments);
-            var shareId = 'mockshare-' + localId;
+            shareCounter++;
+            var shareId = 'mockshare-' + localId + '-' + shareCounter;
             shares[localId] = shareId;
             return Promise.resolve(shareId);
         },
@@ -109,8 +112,8 @@
         getShareInfo: function(localId) {
             return Promise.resolve(
                 shares[localId]
-                    ? { is_public: true, share_id: shares[localId] }
-                    : { is_public: false, share_id: null }
+                    ? { is_public: true, share_id: shares[localId], allow_collab: !!collabFlags[localId] }
+                    : { is_public: false, share_id: null, allow_collab: false }
             );
         },
 
@@ -120,12 +123,96 @@
                 return Promise.resolve({
                     name: '共有テストマップ',
                     is_public: true,
+                    allow_collab: false,
                     data: { root: { id: 'root', text: '共有された中心テーマ', children: [
                         { id: 'shared1', text: '共有ノード1', children: [] }
                     ] } }
                 });
             }
+            if (shareId === 'mockshare-collab') {
+                // 共同編集ONの共有マップ。データは localStorage の collab ストア（オーナーの
+                // updateSharedMapData / saveMap で更新される）を優先し、無ければ初期データを返す
+                var stored = null;
+                try { stored = JSON.parse(localStorage.getItem('mock-collab-map-data')); } catch (e) {}
+                return Promise.resolve({
+                    name: '共同編集テストマップ',
+                    is_public: true,
+                    allow_collab: true,
+                    data: stored || { root: { id: 'root', text: '共同編集の中心テーマ', children: [
+                        { id: 'collab1', text: '共同ノード1', children: [] }
+                    ] } }
+                });
+            }
             return Promise.resolve(null);
+        },
+
+        setCollabEnabled: function(localId, on) {
+            record('setCollabEnabled', arguments);
+            collabFlags[localId] = !!on;
+            return Promise.resolve();
+        },
+
+        updateSharedMapData: function(shareId, data) {
+            record('updateSharedMapData', arguments);
+            try { localStorage.setItem('mock-collab-map-data', JSON.stringify(data)); } catch (e) {}
+            return Promise.resolve();
+        },
+
+        // Realtimeモック: BroadcastChannel で同一ブラウザ内のタブ間通信を再現する。
+        // presence は join/update/leave のメッセージ交換で各クライアントが名簿を維持する
+        collabJoin: function(shareId, opts) {
+            record('collabJoin', [shareId]);
+            var bc = new BroadcastChannel('mock-collab-' + shareId);
+            var roster = {}; // clientId → presence state
+            var myKey = opts.clientId;
+
+            function emitPresence() {
+                if (!opts.onPresence) return;
+                var state = {};
+                for (var k in roster) state[k] = [roster[k]];
+                opts.onPresence(state);
+            }
+
+            bc.onmessage = function(ev) {
+                var msg = ev.data || {};
+                if (msg.kind === 'op') {
+                    if (opts.onOp) opts.onOp(msg.payload);
+                } else if (msg.kind === 'end') {
+                    if (opts.onEnd) opts.onEnd();
+                } else if (msg.kind === 'presence') {
+                    roster[msg.key] = msg.state;
+                    emitPresence();
+                    // 新入りに自分の presence を知らせる（hello への返信）
+                    if (msg.hello) {
+                        bc.postMessage({ kind: 'presence', key: myKey, state: roster[myKey] });
+                    }
+                } else if (msg.kind === 'presence-leave') {
+                    delete roster[msg.key];
+                    emitPresence();
+                }
+            };
+
+            // 参加: 自分を名簿に載せ、既存メンバーへ hello を送る
+            roster[myKey] = opts.presence || {};
+            setTimeout(function() {
+                if (opts.onStatus) opts.onStatus('SUBSCRIBED');
+                bc.postMessage({ kind: 'presence', key: myKey, state: roster[myKey], hello: true });
+                emitPresence();
+            }, 0);
+
+            return {
+                sendOp: function(op) { bc.postMessage({ kind: 'op', payload: op }); },
+                sendEnd: function() { bc.postMessage({ kind: 'end' }); },
+                updatePresence: function(p) {
+                    roster[myKey] = p;
+                    bc.postMessage({ kind: 'presence', key: myKey, state: p });
+                    emitPresence();
+                },
+                leave: function() {
+                    bc.postMessage({ kind: 'presence-leave', key: myKey });
+                    bc.close();
+                }
+            };
         },
 
         migrateFromLocalStorage: function() {

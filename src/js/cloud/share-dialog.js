@@ -1,7 +1,9 @@
-// クラウド版: 共有ダイアログ（共有リンクの発行・解除）
+// クラウド版: 共有ダイアログ（共有リンクの発行・解除・共同編集の許可）
 import { renderMapList } from '../sidebar-left/render.js';
-import { saveToLocalStorage } from '../storage.js';
+import { duplicateMapToFolder } from '../sidebar-left/history-clipboard.js';
+import { findMetaById, saveToLocalStorage } from '../storage.js';
 import { showToast } from '../utils.js';
+import { broadcastCollabEnd, getCollabSession, stopCollabSession } from './collab-engine.js';
 
 // ---- Share dialog ----
 var shareDialogTargetId = null; // showShareDialog で開いたマップのID
@@ -13,6 +15,7 @@ export function initShareDialog() {
     var urlBox      = document.getElementById('shareUrlBox');
     var urlInput    = document.getElementById('shareUrlInput');
     var copyBtn     = document.getElementById('shareUrlCopyBtn');
+    var collabInput = document.getElementById('collabToggleInput');
     if (!overlay) return;
 
     if (closeBtn) {
@@ -57,25 +60,33 @@ export function initShareDialog() {
                         return window._supa.enableShare(mapId);
                     }).then(function(shareId) {
                         setShareUrl(shareId, urlInput, urlBox);
-                        updateLocalShareMeta(mapId, true, shareId);
+                        updateLocalShareMeta(mapId, true, shareId, false);
+                        setCollabRowVisible(true, false);
                     }).catch(function() {
                         toggleInput.checked = false;
                         if (typeof showToast === 'function') showToast('共有の設定に失敗しました');
                     });
                 } else {
+                    // 共有ONのたびに新しい share_id を発行する（古いURLは無効になる＝流出対策）
                     window._supa.enableShare(mapId).then(function(shareId) {
                         setShareUrl(shareId, urlInput, urlBox);
-                        updateLocalShareMeta(mapId, true, shareId);
+                        updateLocalShareMeta(mapId, true, shareId, false);
+                        setCollabRowVisible(true, false);
                     }).catch(function() {
                         toggleInput.checked = false;
                         if (typeof showToast === 'function') showToast('共有の設定に失敗しました');
                     });
                 }
             } else {
+                // 共有OFF: 共同編集も自動的にOFFへ戻す（消し忘れ事故の防止）
+                var wasCollab = collabInput && collabInput.checked;
                 window._supa.disableShare(mapId).then(function() {
+                    if (wasCollab) return turnCollabOff(mapId);
+                }).then(function() {
                     urlBox.classList.remove('show');
                     urlInput.value = '';
-                    updateLocalShareMeta(mapId, false, null);
+                    updateLocalShareMeta(mapId, false, null, false);
+                    setCollabRowVisible(false, false);
                 }).catch(function() {
                     toggleInput.checked = true;
                     if (typeof showToast === 'function') showToast('共有の解除に失敗しました');
@@ -83,6 +94,93 @@ export function initShareDialog() {
             }
         });
     }
+
+    if (collabInput) {
+        collabInput.addEventListener('change', function() {
+            var mapId = shareDialogTargetId;
+            if (!mapId) return;
+            if (collabInput.checked) {
+                // お守りバックアップ確認 → その後 allow_collab = true
+                showBackupConfirm(mapId, function() {
+                    window._supa.setCollabEnabled(mapId, true).then(function() {
+                        var meta = findMetaById(mapId);
+                        updateLocalShareMeta(mapId, true, meta ? meta.shareId : null, true);
+                        if (typeof showToast === 'function') showToast('共同編集を開始しました');
+                    }).catch(function() {
+                        collabInput.checked = false;
+                        if (typeof showToast === 'function') showToast('共同編集の設定に失敗しました');
+                    });
+                });
+            } else {
+                turnCollabOff(mapId).then(function() {
+                    if (typeof showToast === 'function') showToast('共同編集を終了しました');
+                }).catch(function() {
+                    collabInput.checked = true;
+                    if (typeof showToast === 'function') showToast('共同編集の解除に失敗しました');
+                });
+            }
+        });
+    }
+
+    initBackupConfirmDialog();
+}
+
+// 共同編集をOFFにする共通処理:
+// 参加中のゲストへ終了イベントを送ってから自分も退室し、DBのフラグを下ろす
+function turnCollabOff(mapId) {
+    var session = getCollabSession();
+    if (session && session.isOwner) {
+        broadcastCollabEnd();
+        stopCollabSession();
+    }
+    return window._supa.setCollabEnabled(mapId, false).then(function() {
+        var meta = findMetaById(mapId);
+        updateLocalShareMeta(mapId, !!(meta && meta.isPublic), meta ? meta.shareId : null, false);
+    });
+}
+
+// ---- お守りバックアップ確認ダイアログ ----
+var backupResolve = null;
+
+function initBackupConfirmDialog() {
+    var overlay = document.getElementById('backupConfirmOverlay');
+    var yesBtn = document.getElementById('backupYesBtn');
+    var noBtn = document.getElementById('backupNoBtn');
+    if (!overlay || !yesBtn || !noBtn) return;
+
+    yesBtn.addEventListener('click', function() {
+        overlay.classList.remove('show');
+        if (backupResolve) { var r = backupResolve; backupResolve = null; r(true); }
+    });
+    noBtn.addEventListener('click', function() {
+        overlay.classList.remove('show');
+        if (backupResolve) { var r = backupResolve; backupResolve = null; r(false); }
+    });
+}
+
+// 確認を表示し、「はい」なら複製バックアップを作ってから onProceed を呼ぶ。
+// 「いいえ」は何もせず onProceed（自動バックアップはしない仕様）
+function showBackupConfirm(mapId, onProceed) {
+    var overlay = document.getElementById('backupConfirmOverlay');
+    if (!overlay) { onProceed(); return; }
+    overlay.classList.add('show');
+    backupResolve = function(doBackup) {
+        if (doBackup) {
+            var meta = findMetaById(mapId);
+            if (meta) {
+                // 「{マップ名}_バックアップ_YYYY-MM-DD」で複製（既存の複製機能を流用・非公開で作成）
+                var d = new Date();
+                var dateStr = d.getFullYear() + '-' +
+                    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+                    String(d.getDate()).padStart(2, '0');
+                var backupName = meta.name + '_バックアップ_' + dateStr;
+                duplicateMapToFolder(mapId, meta.folderId || null, backupName);
+                if (typeof renderMapList === 'function') renderMapList();
+                if (typeof showToast === 'function') showToast('バックアップを保存しました');
+            }
+        }
+        onProceed();
+    };
 }
 
 function setShareUrl(shareId, urlInput, urlBox) {
@@ -91,19 +189,28 @@ function setShareUrl(shareId, urlInput, urlBox) {
     urlBox.classList.add('show');
 }
 
-function updateLocalShareMeta(localId, isPublic, shareId) {
+// 共同編集トグル行の表示/状態を切り替える
+function setCollabRowVisible(visible, checked) {
+    var collabRow = document.getElementById('shareCollabRow');
+    var collabInput = document.getElementById('collabToggleInput');
+    if (collabRow) collabRow.classList.toggle('show', !!visible);
+    if (collabInput) collabInput.checked = !!checked;
+}
+
+function updateLocalShareMeta(localId, isPublic, shareId, allowCollab) {
     try {
         var metaList = JSON.parse(localStorage.getItem('mindmap-meta') || '[]');
         for (var i = 0; i < metaList.length; i++) {
             if (metaList[i].id === localId) {
                 metaList[i].isPublic = isPublic;
                 metaList[i].shareId  = shareId;
+                metaList[i].allowCollab = !!allowCollab;
                 break;
             }
         }
         localStorage.setItem('mindmap-meta', JSON.stringify(metaList));
     } catch(e) {}
-    // サイドバーのマップ名カラーを即時反映
+    // サイドバーのマップ名カラー（黒/青/オレンジ）を即時反映
     if (typeof renderMapList === 'function') renderMapList();
 }
 
@@ -120,11 +227,13 @@ window.showShareDialog = function(localId) {
     if (toggleInput) toggleInput.checked = false;
     if (urlBox) urlBox.classList.remove('show');
     if (urlInput) urlInput.value = '';
+    setCollabRowVisible(false, false);
     // Load current share state
     window._supa.getShareInfo(localId).then(function(info) {
         if (info && info.is_public && info.share_id) {
             if (toggleInput) toggleInput.checked = true;
             setShareUrl(info.share_id, urlInput, urlBox);
+            setCollabRowVisible(true, !!info.allow_collab);
         }
     });
     overlay.classList.add('show');

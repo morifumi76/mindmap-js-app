@@ -60,6 +60,8 @@ export function getNodeGrayoutState() {
 }
 export function setNodeGrayoutState(state) {
     if (!currentMapId) return;
+    // 共同編集ゲスト: メモリ上の共有データにだけ書く（localStorageを汚さない・同期はcollab-engine経由）
+    if (window._collabGuest && window._sharedData) { window._sharedData._grayout = state; return; }
     if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
     try { localStorage.setItem(NODE_GRAYOUT_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
 }
@@ -121,6 +123,8 @@ export function getNodeHighlightState() {
 }
 export function setNodeHighlightState(state) {
     if (!currentMapId) return;
+    // 共同編集ゲスト: メモリ上の共有データにだけ書く（localStorageを汚さない・同期はcollab-engine経由）
+    if (window._collabGuest && window._sharedData) { window._sharedData._highlight = state; return; }
     if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
     try { localStorage.setItem(NODE_HIGHLIGHT_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
 }
@@ -164,6 +168,8 @@ export function getNodeCyanState() {
 }
 export function setNodeCyanState(state) {
     if (!currentMapId) return;
+    // 共同編集ゲスト: メモリ上の共有データにだけ書く（localStorageを汚さない・同期はcollab-engine経由）
+    if (window._collabGuest && window._sharedData) { window._sharedData._cyan = state; return; }
     if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
     try { localStorage.setItem(NODE_CYAN_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
 }
@@ -187,6 +193,8 @@ export function getNodeGreenState() {
 }
 export function setNodeGreenState(state) {
     if (!currentMapId) return;
+    // 共同編集ゲスト: メモリ上の共有データにだけ書く（localStorageを汚さない・同期はcollab-engine経由）
+    if (window._collabGuest && window._sharedData) { window._sharedData._green = state; return; }
     if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
     try { localStorage.setItem(NODE_GREEN_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
 }
@@ -210,6 +218,8 @@ export function getNodeRedTextState() {
 }
 export function setNodeRedTextState(state) {
     if (!currentMapId) return;
+    // 共同編集ゲスト: メモリ上の共有データにだけ書く（localStorageを汚さない・同期はcollab-engine経由）
+    if (window._collabGuest && window._sharedData) { window._sharedData._redtext = state; return; }
     if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
     try { localStorage.setItem(NODE_REDTEXT_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
 }
@@ -230,6 +240,10 @@ export function isNodeLinked(nodeId) {
 
 export function getNodeCollapseState() {
     if (!currentMapId) return {};
+    // 共同編集ゲスト: メモリ上の状態を使う（折りたたみは各自ローカル・同期対象外）
+    if (window._collabGuest && window._sharedData) {
+        return window._sharedData._collapse || {};
+    }
     try {
         var raw = localStorage.getItem(NODE_COLLAPSE_KEY_PREFIX + currentMapId);
         if (raw) return JSON.parse(raw);
@@ -238,6 +252,7 @@ export function getNodeCollapseState() {
 }
 export function setNodeCollapseState(state) {
     if (!currentMapId) return;
+    if (window._collabGuest && window._sharedData) { window._sharedData._collapse = state; return; }
     if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
     try { localStorage.setItem(NODE_COLLAPSE_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
 }

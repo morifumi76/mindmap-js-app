@@ -355,7 +355,41 @@
             </div>
             <div class="share-url-box" id="shareUrlBox">
                 <input type="text" class="share-url-input" id="shareUrlInput" readonly>
-                <button class="share-copy-btn" id="shareUrlCopyBtn">URLをコピー</button>
+                <div class="share-actions-row">
+                    <button class="share-copy-btn" id="shareUrlCopyBtn">URLをコピー</button>
+                    <!-- 共同編集トグル（共有ONのときだけ表示） -->
+                    <div class="share-collab-toggle" id="shareCollabRow">
+                        <span class="share-collab-label">共同編集を許可</span>
+                        <label class="share-toggle-switch">
+                            <input type="checkbox" id="collabToggleInput">
+                            <span class="share-toggle-slider share-toggle-slider--collab"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- お守りバックアップ確認（共同編集をONにするとき） -->
+    <div id="backupConfirmOverlay" class="collab-modal-overlay">
+        <div class="collab-modal-card">
+            <h2 class="collab-modal-title">🛟 お守りバックアップ</h2>
+            <p class="collab-modal-desc">共同編集を始めると、URLを知っている人は<br>誰でもこのマップを編集できます。<br><br>今の状態のコピーを保存しますか？</p>
+            <div class="collab-modal-btns">
+                <button class="collab-modal-btn-primary" id="backupYesBtn">はい</button>
+                <button class="collab-modal-btn-secondary" id="backupNoBtn">いいえ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ゲストのニックネーム入力（共同編集URLを開いたとき） -->
+    <div id="nicknameOverlay" class="collab-modal-overlay">
+        <div class="collab-modal-card">
+            <h2 class="collab-modal-title">🤝 このマップは共同編集モードです</h2>
+            <p class="collab-modal-desc">表示する名前を入力してください</p>
+            <input type="text" class="collab-nickname-input" id="nicknameInput" placeholder="例：もりた" maxlength="20" autocomplete="off">
+            <div class="collab-modal-btns">
+                <button class="collab-modal-btn-primary" id="nicknameJoinBtn">参加する</button>
             </div>
         </div>
     </div>

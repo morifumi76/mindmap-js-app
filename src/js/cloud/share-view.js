@@ -1,5 +1,7 @@
-// クラウド版: 共有URLの検出と閲覧専用モード
+// クラウド版: 共有URLの検出と閲覧専用モード／共同編集ゲスト参加
 import { init } from '../init.js';
+import { showToast } from '../utils.js';
+import { startCollabSession, stopCollabSession } from './collab-engine.js';
 
 // ---- Share URL detection ----
 export function getShareIdFromUrl() {
@@ -16,11 +18,108 @@ function enterReadOnlyMode() {
     var banner = document.getElementById('readonlyBanner');
     if (banner) banner.classList.add('show');
     document.body.classList.add('readonly-mode');
-    // 左サイドバーと、閲覧者には不要なお気に入り星ボタンを非表示にする
+    hideOwnerOnlyUi();
+}
+
+// 左サイドバーと、閲覧者・ゲストには不要なお気に入り星ボタンを非表示にする
+function hideOwnerOnlyUi() {
     ['leftSidebar', 'leftSidebarHoverZone', 'leftSidebarFloatToggle', 'canvasStarBtn'].forEach(function(id) {
         var el = document.getElementById(id);
         if (el) el.style.display = 'none';
     });
+}
+
+// 共有マップは localStorage に一切書き込まずメモリ上にだけ保持する。
+// （別タブでログイン中のユーザーの localStorage を上書きする事故を防ぐ）
+function setupSharedMemoryState(result) {
+    window._sharedMeta = [
+        { id: 1, name: '未分類', type: 'folder', order: 999999, isDefault: true, createdAt: '', updatedAt: '' },
+        { id: 2, name: result.name, type: 'page', folderId: 1, order: 0, createdAt: '', updatedAt: '' }
+    ];
+    window._sharedData = result.data;
+    window._sharedMapId = 2;
+}
+
+// ---- 共同編集ゲストとして参加 ----
+function enterCollabGuestMode(shareId, result) {
+    window._collabGuest = true;
+    window._isReadOnly = false;
+    setupSharedMemoryState(result);
+    hideOwnerOnlyUi();
+    // ゲストのツールバー: 縦書きモードだけ非表示（マップ全体設定のため）。
+    // 高速モード・開閉・ズーム・色付け・リンク・接続はそのまま使える
+    var verticalCtrl = document.getElementById('verticalModeControl');
+    if (verticalCtrl) verticalCtrl.style.display = 'none';
+
+    // 「編集可能な状態で共有されている」ことが分かるバナー（閲覧専用バナーと同形・オレンジ）
+    showCollabGuestBanner();
+
+    // オーナーが共同編集をOFFにしたら、即座に閲覧専用へ切り替える
+    window._collabOnEnded = function() {
+        stopCollabSession();
+        window._collabGuest = false;
+        hideCollabGuestBanner();
+        enterReadOnlyMode();
+        if (typeof showToast === 'function') showToast('共同編集が終了しました');
+    };
+
+    init();
+
+    // ニックネームは sessionStorage に保持（リロード時に聞き直さない）。
+    // 保存済みなら即参加、未保存なら入力ダイアログを表示してから参加する。
+    // 未入力のまま参加した場合は presence 同期後に「ゲストN」で自動採番される
+    var saved = null;
+    try { saved = sessionStorage.getItem('collab-nickname'); } catch (e) {}
+    if (saved) {
+        startCollabSession({ shareId: shareId, isOwner: false, nickname: saved });
+    } else {
+        showNicknameDialog(function(nickname) {
+            if (nickname) {
+                try { sessionStorage.setItem('collab-nickname', nickname); } catch (e) {}
+            }
+            startCollabSession({ shareId: shareId, isOwner: false, nickname: nickname });
+        });
+    }
+}
+
+// ゲスト向けバナー（動的生成: ローカル版のHTMLに要素を残さないため）
+function showCollabGuestBanner() {
+    if (document.getElementById('collabGuestBanner')) return;
+    var banner = document.createElement('div');
+    banner.id = 'collabGuestBanner';
+    banner.className = 'collab-guest-banner';
+    banner.textContent = '🤝 共同編集モード — このマップを編集できます';
+    document.body.appendChild(banner);
+    document.body.classList.add('collab-guest-mode');
+}
+
+function hideCollabGuestBanner() {
+    var banner = document.getElementById('collabGuestBanner');
+    if (banner) banner.remove();
+    document.body.classList.remove('collab-guest-mode');
+}
+
+// ニックネーム入力ダイアログ。「参加する」で入力値（未入力なら null）をコールバックへ渡す
+function showNicknameDialog(onJoin) {
+    var overlay = document.getElementById('nicknameOverlay');
+    var input = document.getElementById('nicknameInput');
+    var joinBtn = document.getElementById('nicknameJoinBtn');
+    if (!overlay || !input || !joinBtn) { onJoin(null); return; }
+
+    function join() {
+        overlay.classList.remove('show');
+        onJoin(input.value.trim() || null);
+    }
+    joinBtn.addEventListener('click', join, { once: true });
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.isComposing) {
+            e.preventDefault();
+            e.stopPropagation();
+            joinBtn.click();
+        }
+    });
+    overlay.classList.add('show');
+    setTimeout(function() { input.focus(); }, 0);
 }
 
 // ---- Handle shared map access ----
@@ -36,16 +135,15 @@ export function handleSharedAccess(shareId) {
             ].join('');
             return;
         }
-        // 共有マップは localStorage に一切書き込まずメモリ上にだけ保持する。
-        // （別タブでログイン中のユーザーの localStorage を上書きする事故を防ぐ）
-        window._sharedMeta = [
-            { id: 1, name: '未分類', type: 'folder', order: 999999, isDefault: true, createdAt: '', updatedAt: '' },
-            { id: 2, name: result.name, type: 'page', folderId: 1, order: 0, createdAt: '', updatedAt: '' }
-        ];
-        window._sharedData = result.data;
-        window._sharedMapId = 2;
-        enterReadOnlyMode();
-        init();
+        if (result.allow_collab) {
+            // 共同編集モード: ログイン不要でゲストとして編集参加
+            enterCollabGuestMode(shareId, result);
+        } else {
+            // 従来どおりの閲覧専用モード（変更なし）
+            setupSharedMemoryState(result);
+            enterReadOnlyMode();
+            init();
+        }
     }).catch(function() {
         document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:Meiryo UI,Meiryo,sans-serif;color:#37352f;font-size:16px;">マップの読み込みに失敗しました</div>';
     });

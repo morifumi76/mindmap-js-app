@@ -89,7 +89,9 @@ function sidebarGetPasteDestFolder() {
 }
 
 // ページを指定フォルダへ複製（コピー先フォルダを指定可能なduplicateMap）
-function duplicateMapToFolder(srcId, destFolderId) {
+// customName を渡すとその名前で複製する（お守りバックアップ等で使用）。
+// 複製は共有設定を引き継がない＝常に非公開のマップとして作られる
+export function duplicateMapToFolder(srcId, destFolderId, customName) {
     var srcMeta = findMetaById(srcId);
     if (!srcMeta || srcMeta.type !== 'page') return;
     var srcData = loadMapData(srcMeta.id);
@@ -105,7 +107,7 @@ function duplicateMapToFolder(srcId, destFolderId) {
             maxOrder = (metaList[i].order || 0) + 1;
         }
     }
-    var newMeta = { id: newId, name: srcMeta.name + ' のコピー', type: 'page',
+    var newMeta = { id: newId, name: customName || (srcMeta.name + ' のコピー'), type: 'page',
                     folderId: destFolderId, order: maxOrder, createdAt: now, updatedAt: now };
     metaList.push(newMeta);
     saveMetaList(metaList);

@@ -207,6 +207,11 @@
     color: #1a73e8;
 }
 
+/* 共有ON＋共同編集ONのマップはオレンジ表示（青=閲覧専用共有との区別） */
+.map-item-name--collab {
+    color: #d9730d;
+}
+
 .map-item-name[contenteditable="true"] {
     background: #fff;
     border: 1px solid var(--primary-color);

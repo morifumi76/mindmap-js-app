@@ -341,7 +341,11 @@ function createPageElement(page, isActive, isDndEnabled, depth, inFavSection) {
     }
 
     var name = document.createElement('span');
-    name.className = 'map-item-name' + (page.isPublic ? ' map-item-name--shared' : '');
+    // 色ルール: 黒=非公開 / 青=共有ON（閲覧専用） / オレンジ=共有ON＋共同編集ON
+    var shareClass = '';
+    if (page.isPublic && page.allowCollab) shareClass = ' map-item-name--collab';
+    else if (page.isPublic) shareClass = ' map-item-name--shared';
+    name.className = 'map-item-name' + shareClass;
     name.title = page.name;
     // Name text + inline pin with half-width space
     name.textContent = page.name;
