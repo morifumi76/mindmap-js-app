@@ -127,13 +127,18 @@ localHtml = localHtml.replace(/ {4}<!-- Migration Dialog -->[\s\S]*?\n {4}<\/div
 localHtml = localHtml.replace(/ {4}<!-- Share Dialog -->[\s\S]*?\n {4}<\/div>\n/, '');
 localHtml = localHtml.replace(/ *<div id="readonlyBanner">[^\n]*<\/div>\n/, '');
 localHtml = localHtml.replace(/ *<div class="ctx-menu-item" data-action="share"[^\n]*<\/div>\n/, '');
+//   6) 共同編集用UI（お守りバックアップ確認・ニックネーム入力）も削除。
+//      Realtime通信コードはアダプター（storage-supabase.js）側にあり、ローカル版には元から含まれない
+localHtml = localHtml.replace(/ {4}<!-- お守りバックアップ確認[\s\S]*?\n {4}<\/div>\n/, '');
+localHtml = localHtml.replace(/ {4}<!-- ゲストのニックネーム入力[\s\S]*?\n {4}<\/div>\n/, '');
 
 // ローカル版のゴミ取りが効いていることをビルド時に検証する（置換漏れの検知）。
 // 要素IDはバンドル済みJS（動作しない死にコード）内にも文字列として残るため、
 // HTMLタグにしか現れない `id="..."` の形で照合する
 const forbiddenInLocal = ['og:image', 'twitter:card', 'rel="canonical"', 'notion.site',
     'mindmap.johosauce.com', 'id="setPasswordOverlay"', 'id="authOverlay"',
-    'id="migrationOverlay"', 'id="shareOverlay"', 'id="readonlyBanner"'];
+    'id="migrationOverlay"', 'id="shareOverlay"', 'id="readonlyBanner"',
+    'id="backupConfirmOverlay"', 'id="nicknameOverlay"'];
 for (const word of forbiddenInLocal) {
     if (localHtml.includes(word)) {
         throw new Error(`local.html に不要な文字列が残っています: ${word}`);

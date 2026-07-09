@@ -42,6 +42,11 @@ export function saveState() {
     } else {
         setUndoIndex(undoIndex + 1);
     }
+    // 共同編集中: 直前の同期ツリーとの差分を操作イベントとして送信する
+    // （クラウド版の collab-engine が window 経由で登録。ローカル版では未定義のため何もしない）
+    if (window._collabEngine && window._collabEngine.isActive()) {
+        window._collabEngine.onLocalSave();
+    }
 }
 
 // スナップショットの内容を現在の状態へ書き戻す（undo / redo 共通）
@@ -59,6 +64,12 @@ function restoreSnapshot(snapshot) {
 }
 
 export function undo() {
+    // 共同編集中: スナップショット復元だと相手の操作まで巻き戻してしまうため、
+    // 「自分の操作ログ＋逆操作」方式（collab-engine 側）に委譲する
+    if (window._collabEngine && window._collabEngine.isActive()) {
+        window._collabEngine.undo();
+        return;
+    }
     if (undoIndex > 0) {
         setUndoIndex(undoIndex - 1);
         restoreSnapshot(undoHistory[undoIndex]);
@@ -67,6 +78,10 @@ export function undo() {
 }
 
 export function redo() {
+    if (window._collabEngine && window._collabEngine.isActive()) {
+        window._collabEngine.redo();
+        return;
+    }
     if (undoIndex < undoHistory.length - 1) {
         setUndoIndex(undoIndex + 1);
         restoreSnapshot(undoHistory[undoIndex]);

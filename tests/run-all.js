@@ -25,6 +25,8 @@ const TEST_FILES = [
     'vertical-layout.test.js',
     'link.test.js',
     'cloud.test.js',
+    'collab.test.js',
+    'collab-ui.test.js',
 ];
 
 function waitForServer(port, retries, done) {

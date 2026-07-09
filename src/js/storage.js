@@ -9,9 +9,11 @@ var ID_COUNTER_KEY = 'mindmap-id-counter';
 var LAST_ACTIVE_KEY = 'mindmap-last-active-id';
 var OLD_STORAGE_KEY = 'mindmap_data_v2'; // legacy key for migration
 
-// 共有URL閲覧モードのときは true。localStorage を一切汚さないようガードに使う
+// 共有URL閲覧モード、または共同編集のゲスト参加中は true。
+// どちらも「閲覧者・ゲストの localStorage を一切汚さない」ためのガードに使う
+// （ゲストの編集はメモリ上の mindMapData と Realtime 同期だけで完結する）
 export function isSharedReadonly() {
-    return !!(window._isReadOnly && window._sharedMeta);
+    return !!((window._isReadOnly || window._collabGuest) && window._sharedMeta);
 }
 
 export function getMapDataKey(mapId) {
@@ -386,7 +388,7 @@ export function toggleFavorite(mapId) {
             }
             saveMetaList(metaList);
             // Supabaseにもstarred状態を同期
-            if (typeof window._supaQueueSync === 'function' && !window._isReadOnly) {
+            if (typeof window._supaQueueSync === 'function' && !window._isReadOnly && !window._collabGuest) {
                 window._supaQueueSync(mapId);
             }
             return metaList[i].starred;
@@ -413,7 +415,7 @@ export function saveToLocalStorage() {
     }
     saveMetaList(metaList);
     // Supabase debounced sync
-    if (typeof window._supaQueueSync === 'function' && !window._isReadOnly) {
+    if (typeof window._supaQueueSync === 'function' && !window._isReadOnly && !window._collabGuest) {
         window._supaQueueSync(currentMapId);
     }
 }

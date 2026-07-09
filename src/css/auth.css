@@ -553,3 +553,117 @@ body.readonly-mode .canvas-float-btns {
     text-align: center;
     user-select: none;
 }
+
+/* ========================================
+   共同編集: 共有ダイアログのトグル行
+   ======================================== */
+.share-actions-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.share-collab-toggle {
+    display: none; /* 共有ONのときだけ表示（JSで .show を付与） */
+    align-items: center;
+    gap: 8px;
+}
+.share-collab-toggle.show {
+    display: flex;
+}
+.share-collab-label {
+    font-size: 13px;
+    color: #37352f;
+    font-family: 'Meiryo UI', Meiryo, sans-serif;
+    white-space: nowrap;
+}
+/* 共同編集トグルのON色はアクセントのオレンジ */
+.share-toggle-switch input:checked + .share-toggle-slider--collab {
+    background: #d9730d;
+}
+
+/* ========================================
+   共同編集: 確認モーダル（お守りバックアップ・ニックネーム入力）
+   既存の共有ダイアログとテイストを揃えたNotionライクなデザイン
+   ======================================== */
+.collab-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 15, 15, 0.4);
+    z-index: 10000; /* 共有ダイアログ（9998）より前面に出す */
+    align-items: center;
+    justify-content: center;
+    font-family: 'Meiryo UI', Meiryo, sans-serif;
+}
+.collab-modal-overlay.show {
+    display: flex;
+}
+.collab-modal-card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+    padding: 24px 28px;
+    width: 340px;
+    box-sizing: border-box;
+    text-align: center;
+}
+.collab-modal-title {
+    margin: 0 0 12px;
+    font-size: 16px;
+    color: #37352f;
+}
+.collab-modal-desc {
+    margin: 0 0 16px;
+    font-size: 13px;
+    color: #6b6b6b;
+    line-height: 1.7;
+}
+.collab-nickname-input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    font-family: 'Meiryo UI', Meiryo, sans-serif;
+    color: #37352f;
+    border: 1px solid #e8e8e8;
+    border-radius: 6px;
+    outline: none;
+}
+.collab-nickname-input:focus {
+    border-color: #37352f;
+}
+.collab-modal-btns {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+.collab-modal-btn-primary,
+.collab-modal-btn-secondary {
+    padding: 8px 22px;
+    font-size: 13px;
+    font-family: 'Meiryo UI', Meiryo, sans-serif;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.12s;
+}
+.collab-modal-btn-primary {
+    background: #37352f;
+    color: #fff;
+    border: none;
+}
+.collab-modal-btn-primary:hover {
+    background: #55534c;
+}
+.collab-modal-btn-secondary {
+    background: none;
+    color: #37352f;
+    border: 1px solid #e8e8e8;
+}
+.collab-modal-btn-secondary:hover {
+    background: #f7f7f5;
+}

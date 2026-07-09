@@ -551,3 +551,61 @@
 .expand-collapse-btn + .expand-collapse-btn {
     border-left: 1px solid rgba(0,0,0,0.06);
 }
+
+/* ========================================
+   共同編集（Collaboration）
+   ======================================== */
+
+/* 参加者アバター（キャンバス右上・色付きの丸＋頭文字） */
+.collab-avatars {
+    position: fixed;
+    top: 12px;
+    right: 60px;
+    display: flex;
+    gap: 6px;
+    z-index: 650;
+}
+.collab-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+    font-family: 'Meiryo UI', Meiryo, sans-serif;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2), 0 0 0 2px #fff;
+    user-select: none;
+}
+
+/* 編集中ノードの名前ラベル（枠線色は collab-engine がインラインで参加者色を指定） */
+.collab-editing-label {
+    position: absolute;
+    top: -22px;
+    left: 0;
+    color: #fff;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 5;
+    font-family: 'Meiryo UI', Meiryo, sans-serif;
+}
+
+/* 接続断バナー */
+.collab-reconnect-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: #e03e3e;
+    color: #fff;
+    text-align: center;
+    padding: 6px;
+    z-index: 9999;
+    font-size: 13px;
+    font-family: 'Meiryo UI', Meiryo, sans-serif;
+}

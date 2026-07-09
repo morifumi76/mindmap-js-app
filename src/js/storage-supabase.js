@@ -258,6 +258,7 @@ async function loadUserData() {
             updatedAt: m.updated_at,
             isPublic: m.is_public,
             shareId: m.share_id,
+            allowCollab: !!m.allow_collab,
             starred: !!(m.data && m.data._starred),
             starOrder: (m.data && m.data._starOrder) || 0
         });
@@ -409,7 +410,7 @@ async function disableShare(localId) {
 async function getShareInfo(localId) {
     const uuid = getSupabaseMapId(localId);
     if (!uuid) return null;
-    const { data, error } = await supabase.from('maps').select('is_public, share_id').eq('id', uuid).single();
+    const { data, error } = await supabase.from('maps').select('is_public, share_id, allow_collab').eq('id', uuid).single();
     if (error) return null;
     return data;
 }
@@ -417,12 +418,63 @@ async function getShareInfo(localId) {
 async function fetchSharedMap(shareId) {
     const { data, error } = await supabase
         .from('maps')
-        .select('name, data, is_public')
+        .select('name, data, is_public, allow_collab')
         .eq('share_id', shareId)
         .eq('is_public', true)
         .single();
     if (error || !data) return null;
     return data;
+}
+
+// ---- Collaboration（共同編集）----
+
+// 共同編集フラグの切り替え（オーナーのみ。RLS上ゲストからは変更不可）
+async function setCollabEnabled(localId, on) {
+    const uuid = getSupabaseMapId(localId);
+    if (!uuid) throw new Error('Map not synced to Supabase yet');
+    const { error } = await supabase.from('maps').update({ allow_collab: !!on }).eq('id', uuid);
+    if (error) throw error;
+}
+
+// ゲスト用のデータ保存（share_id 経由・ログイン不要）。
+// RLSの maps_update_collab ポリシーと保護トリガーにより、
+// 共同編集ONのマップの data 列だけが更新できる
+async function updateSharedMapData(shareId, data) {
+    const { error } = await supabase.from('maps').update({ data }).eq('share_id', shareId);
+    if (error) throw error;
+}
+
+// Realtimeチャンネル（部屋）に参加する。1マップ = 1チャンネル（map:{share_id}）。
+// Broadcast でノード操作イベントを送受信し、Presence で参加者リストを共有する。
+// 戻り値のハンドルで送信・プレゼンス更新・退室を行う
+function collabJoin(shareId, opts) {
+    const channel = supabase.channel('map:' + shareId, {
+        config: {
+            broadcast: { self: false },
+            presence: { key: opts.clientId }
+        }
+    });
+    channel.on('broadcast', { event: 'op' }, (msg) => {
+        if (opts.onOp) opts.onOp(msg.payload);
+    });
+    channel.on('broadcast', { event: 'end' }, () => {
+        if (opts.onEnd) opts.onEnd();
+    });
+    channel.on('presence', { event: 'sync' }, () => {
+        if (opts.onPresence) opts.onPresence(channel.presenceState());
+    });
+    channel.subscribe((status) => {
+        if (opts.onStatus) opts.onStatus(status);
+        if (status === 'SUBSCRIBED' && opts.presence) {
+            channel.track(opts.presence);
+        }
+    });
+    return {
+        sendOp: (op) => channel.send({ type: 'broadcast', event: 'op', payload: op }),
+        sendEnd: () => channel.send({ type: 'broadcast', event: 'end', payload: {} }),
+        updatePresence: (p) => channel.track(p),
+        leave: () => supabase.removeChannel(channel)
+    };
 }
 
 // ---- Migration from localStorage to Supabase ----
@@ -494,6 +546,9 @@ window._supa = {
     disableShare,
     getShareInfo,
     fetchSharedMap,
+    setCollabEnabled,
+    updateSharedMapData,
+    collabJoin,
     migrateFromLocalStorage,
     getSupabaseMapId,
     isMigrated: () => !!localStorage.getItem(MIGRATED_KEY)
