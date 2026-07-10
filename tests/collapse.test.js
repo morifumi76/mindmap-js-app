@@ -18,6 +18,20 @@ const { BASE_URL } = require('./helpers');
         else { failed++; console.log('  ❌ FAIL: ' + msg); }
     }
 
+    // ノード数が期待値になるまで待つ。
+    // 固定の waitForTimeout だとスイート先頭（ビルド・サーバー起動直後）の遅い環境で
+    // 描画完了前に数えてしまい不安定になるため、条件成立をポーリングで待つ。
+    // タイムアウトしてもここでは落とさず、直後の assert が実数を表示して失敗を報告する。
+    async function waitForNodeCount(expected) {
+        try {
+            await page.waitForFunction(
+                (n) => document.querySelectorAll('.node').length === n,
+                expected,
+                { timeout: 5000 }
+            );
+        } catch (e) { /* assert 側で失敗として報告される */ }
+    }
+
     // Build test tree with multiple levels
     console.log('\n=== Building test tree ===');
     await page.evaluate(() => {
@@ -39,7 +53,7 @@ const { BASE_URL } = require('./helpers');
     });
     await page.reload();
     await page.waitForSelector('.node', { state: 'attached', timeout: 10000 });
-    await page.waitForTimeout(800);
+    await waitForNodeCount(7);
     await page.keyboard.press('Escape');
     await page.waitForTimeout(200);
 
@@ -82,6 +96,7 @@ const { BASE_URL } = require('./helpers');
     // Test 3: Initial state - all nodes visible
     // ========================================
     console.log('\n=== Test 3: Initial state - all visible ===');
+    await waitForNodeCount(7);
     let nodeCount = await page.$$eval('.node', els => els.length);
     assert(nodeCount === 7, 'All 7 nodes visible initially: ' + nodeCount);
 
@@ -94,7 +109,7 @@ const { BASE_URL } = require('./helpers');
     // ========================================
     console.log('\n=== Test 4: Collapse ParentA ===');
     await page.evaluate(() => { window.toggleNodeCollapse('pa'); });
-    await page.waitForTimeout(300);
+    await waitForNodeCount(4);
 
     nodeCount = await page.$$eval('.node', els => els.length);
     assert(nodeCount === 4, 'After collapsing ParentA: 4 nodes visible (root, ParentA, ParentB, ChildB1): ' + nodeCount);
@@ -128,7 +143,7 @@ const { BASE_URL } = require('./helpers');
     console.log('\n=== Test 6: Collapse persists after reload ===');
     await page.reload();
     await page.waitForSelector('.node', { state: 'attached', timeout: 10000 });
-    await page.waitForTimeout(800);
+    await waitForNodeCount(4);
 
     nodeCount = await page.$$eval('.node', els => els.length);
     assert(nodeCount === 4, 'After reload: still 4 nodes visible: ' + nodeCount);
@@ -141,7 +156,7 @@ const { BASE_URL } = require('./helpers');
     // ========================================
     console.log('\n=== Test 7: Expand via indicator click ===');
     await page.click('.node-collapse-indicator');
-    await page.waitForTimeout(300);
+    await waitForNodeCount(7);
 
     nodeCount = await page.$$eval('.node', els => els.length);
     assert(nodeCount === 7, 'After clicking indicator: all 7 nodes visible: ' + nodeCount);
@@ -169,7 +184,7 @@ const { BASE_URL } = require('./helpers');
 
     // Simulate Cmd+. via evaluate since Meta+. doesn't always work in headless
     await page.evaluate(() => { window.toggleNodeCollapse('pa'); });
-    await page.waitForTimeout(300);
+    await waitForNodeCount(4);
 
     nodeCount = await page.$$eval('.node', els => els.length);
     assert(nodeCount === 4, 'After collapse: ParentA collapsed, 4 visible: ' + nodeCount);
@@ -179,7 +194,7 @@ const { BASE_URL } = require('./helpers');
     // ========================================
     console.log('\n=== Test 9: Expand via toggle ===');
     await page.evaluate(() => { window.toggleNodeCollapse('pa'); });
-    await page.waitForTimeout(300);
+    await waitForNodeCount(7);
 
     nodeCount = await page.$$eval('.node', els => els.length);
     assert(nodeCount === 7, 'After toggle again: expanded, 7 visible: ' + nodeCount);
@@ -193,14 +208,14 @@ const { BASE_URL } = require('./helpers');
         window.toggleNodeCollapse('pa');
         window.toggleNodeCollapse('pb');
     });
-    await page.waitForTimeout(300);
+    await waitForNodeCount(3);
 
     nodeCount = await page.$$eval('.node', els => els.length);
     assert(nodeCount === 3, 'After collapsing PA and PB: 3 visible (root, PA, PB): ' + nodeCount);
 
     // Click expand all via evaluate (button may be out of viewport in headless)
     await page.evaluate(() => { window.expandAllNodes(); });
-    await page.waitForTimeout(300);
+    await waitForNodeCount(7);
 
     nodeCount = await page.$$eval('.node', els => els.length);
     assert(nodeCount === 7, 'After Expand All: all 7 visible: ' + nodeCount);
