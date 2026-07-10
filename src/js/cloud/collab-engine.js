@@ -645,12 +645,6 @@ function persistAfterOwnEditImmediateSafe() {
 // セッションの開始・終了
 // ========================================
 
-// ゲストの自動採番（「ゲスト1」「ゲスト2」…）: 現在の参加者数から次の番号を割り当てる
-export function nextGuestName() {
-    var count = Object.keys(presencePeers).length;
-    return 'ゲスト' + (count + 1);
-}
-
 export function startCollabSession(opts) {
     // opts: { shareId, isOwner, nickname, mapLocalId }
     // nickname が空のゲストは presence 同期後に「ゲストN」で自動採番される

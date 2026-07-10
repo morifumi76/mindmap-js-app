@@ -48,11 +48,6 @@
     min-width: 0;
 }
 
-/* Hidden – backward compat selects */
-.sidebar-controls select {
-    display: none;
-}
-
 /* ---- Bottom panel (toggles + buttons) ---- */
 .sidebar-bottom-panel {
     flex-shrink: 0;
