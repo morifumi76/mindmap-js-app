@@ -41,54 +41,82 @@ export let undoIndex = -1;
 export const MAX_HISTORY = 50;
 
 
-// Node collapse state: { [nodeId]: true/false } - per map, saved in localStorage
-var NODE_COLLAPSE_KEY_PREFIX = 'mindmap-node-collapse-';
-
-// Node grey-out state: { [nodeId]: true/false } - per map, saved in localStorage
-var NODE_GRAYOUT_KEY_PREFIX = 'mindmap-node-grayout-';
-export function getNodeGrayoutState() {
-    if (!currentMapId) return {};
-    // 共有モード: 埋め込まれた _grayout から取得（localStorage は触らない）
-    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) {
-        return (window._sharedData && window._sharedData._grayout) || {};
-    }
-    try {
-        var raw = localStorage.getItem(NODE_GRAYOUT_KEY_PREFIX + currentMapId);
-        if (raw) return JSON.parse(raw);
-    } catch(e) {}
-    return {};
-}
-export function setNodeGrayoutState(state) {
-    if (!currentMapId) return;
-    // 共同編集ゲスト: メモリ上の共有データにだけ書く（localStorageを汚さない・同期はcollab-engine経由）
-    if (window._collabGuest && window._sharedData) { window._sharedData._grayout = state; return; }
-    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
-    try { localStorage.setItem(NODE_GRAYOUT_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
-}
-export function isNodeGrayedOut(nodeId) {
-    var state = getNodeGrayoutState();
-    return state[nodeId] === true;
-}
-export function toggleNodeGrayout(nodeId) {
-    if (!nodeId) return;
-    var grayState = getNodeGrayoutState();
-    if (grayState[nodeId]) {
-        // Already grayed out → remove grayout
-        delete grayState[nodeId];
-        setNodeGrayoutState(grayState);
-        showToast('グレーアウトを解除しました');
-    } else {
-        // Applying grayout → remove highlight if present (mutual exclusion)
-        var hlState = getNodeHighlightState();
-        if (hlState[nodeId]) {
-            delete hlState[nodeId];
-            setNodeHighlightState(hlState);
+// ========================================
+// ノード装飾状態の共通ストア
+// グレーアウト／ハイライト／水色／緑／赤文字／折りたたみは、いずれも
+// 「{ ノードID: true } の辞書をマップ単位で localStorage に保存する」仕組み。
+// 共有・共同編集モードでは localStorage を汚さず、メモリ上の共有データ
+// (window._sharedData) を使う。その読み書きロジックをここに1本化する。
+// ========================================
+// opts.guestReadsShared:
+//   true  … 読み取りは共同編集ゲストのときだけ共有データを使う（折りたたみ用。
+//            閲覧専用の共有ビューでは見る人ごとの localStorage を使い、各自で開閉できる）
+//   false … 読み取りは共有モード全般（閲覧専用・ゲスト共通）で共有データを使う
+function makeDecorationStore(keyPrefix, sharedField, opts) {
+    opts = opts || {};
+    function get() {
+        if (!currentMapId) return {};
+        if (opts.guestReadsShared) {
+            if (window._collabGuest && window._sharedData) {
+                return window._sharedData[sharedField] || {};
+            }
+        } else if (typeof isSharedReadonly === 'function' && isSharedReadonly()) {
+            return (window._sharedData && window._sharedData[sharedField]) || {};
         }
-        grayState[nodeId] = true;
-        setNodeGrayoutState(grayState);
-        showToast('グレーアウトしました');
+        try {
+            var raw = localStorage.getItem(keyPrefix + currentMapId);
+            if (raw) return JSON.parse(raw);
+        } catch(e) {}
+        return {};
+    }
+    function set(state) {
+        if (!currentMapId) return;
+        // 共同編集ゲスト: メモリ上の共有データにだけ書く（localStorageを汚さない・同期はcollab-engine経由）
+        if (window._collabGuest && window._sharedData) { window._sharedData[sharedField] = state; return; }
+        if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
+        try { localStorage.setItem(keyPrefix + currentMapId, JSON.stringify(state)); } catch(e) {}
+    }
+    function is(nodeId) {
+        return get()[nodeId] === true;
+    }
+    return { get: get, set: set, is: is };
+}
+
+var grayoutStore   = makeDecorationStore('mindmap-node-grayout-', '_grayout');
+var highlightStore = makeDecorationStore('mindmap-node-highlight-', '_highlight');
+var cyanStore      = makeDecorationStore('mindmap-node-cyan-', '_cyan');
+var greenStore     = makeDecorationStore('mindmap-node-green-', '_green');
+var redTextStore   = makeDecorationStore('mindmap-node-redtext-', '_redtext');
+var collapseStore  = makeDecorationStore('mindmap-node-collapse-', '_collapse', { guestReadsShared: true });
+
+// グレーアウトとハイライトは相互排他（片方を付けるともう片方は外れる）
+function toggleExclusiveDecoration(store, otherStore, nodeId, onMsg, offMsg) {
+    if (!nodeId) return;
+    var state = store.get();
+    if (state[nodeId]) {
+        delete state[nodeId];
+        store.set(state);
+        showToast(offMsg);
+    } else {
+        var other = otherStore.get();
+        if (other[nodeId]) {
+            delete other[nodeId];
+            otherStore.set(other);
+        }
+        state[nodeId] = true;
+        store.set(state);
+        showToast(onMsg);
     }
     render();
+}
+
+// Node grey-out state: { [nodeId]: true } - per map, saved in localStorage
+export function getNodeGrayoutState() { return grayoutStore.get(); }
+export function setNodeGrayoutState(state) { grayoutStore.set(state); }
+export function isNodeGrayedOut(nodeId) { return grayoutStore.is(nodeId); }
+export function toggleNodeGrayout(nodeId) {
+    toggleExclusiveDecoration(grayoutStore, highlightStore, nodeId,
+        'グレーアウトしました', 'グレーアウトを解除しました');
 }
 // Check if a node is a descendant of any grayed-out node
 export function isDescendantOfGrayedOut(nodeId) {
@@ -108,125 +136,29 @@ export function isNodeOrAncestorGrayedOut(nodeId) {
     return isNodeGrayedOut(nodeId) || isDescendantOfGrayedOut(nodeId);
 }
 
-// Node highlight state: { [nodeId]: true/false } - per map, saved in localStorage
-var NODE_HIGHLIGHT_KEY_PREFIX = 'mindmap-node-highlight-';
-export function getNodeHighlightState() {
-    if (!currentMapId) return {};
-    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) {
-        return (window._sharedData && window._sharedData._highlight) || {};
-    }
-    try {
-        var raw = localStorage.getItem(NODE_HIGHLIGHT_KEY_PREFIX + currentMapId);
-        if (raw) return JSON.parse(raw);
-    } catch(e) {}
-    return {};
-}
-export function setNodeHighlightState(state) {
-    if (!currentMapId) return;
-    // 共同編集ゲスト: メモリ上の共有データにだけ書く（localStorageを汚さない・同期はcollab-engine経由）
-    if (window._collabGuest && window._sharedData) { window._sharedData._highlight = state; return; }
-    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
-    try { localStorage.setItem(NODE_HIGHLIGHT_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
-}
-export function isNodeHighlighted(nodeId) {
-    var state = getNodeHighlightState();
-    return state[nodeId] === true;
-}
+// Node highlight state: { [nodeId]: true } - per map, saved in localStorage
+export function getNodeHighlightState() { return highlightStore.get(); }
+export function setNodeHighlightState(state) { highlightStore.set(state); }
+export function isNodeHighlighted(nodeId) { return highlightStore.is(nodeId); }
 export function toggleNodeHighlight(nodeId) {
-    if (!nodeId) return;
-    var hlState = getNodeHighlightState();
-    if (hlState[nodeId]) {
-        // Already highlighted → remove highlight
-        delete hlState[nodeId];
-        setNodeHighlightState(hlState);
-        showToast('ハイライトを解除しました');
-    } else {
-        // Applying highlight → remove grayout if present (mutual exclusion)
-        var grayState = getNodeGrayoutState();
-        if (grayState[nodeId]) {
-            delete grayState[nodeId];
-            setNodeGrayoutState(grayState);
-        }
-        hlState[nodeId] = true;
-        setNodeHighlightState(hlState);
-        showToast('ハイライトしました');
-    }
-    render();
+    toggleExclusiveDecoration(highlightStore, grayoutStore, nodeId,
+        'ハイライトしました', 'ハイライトを解除しました');
 }
+
 // Node cyan state: { [nodeId]: true } - per map, saved in localStorage
-var NODE_CYAN_KEY_PREFIX = 'mindmap-node-cyan-';
-export function getNodeCyanState() {
-    if (!currentMapId) return {};
-    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) {
-        return (window._sharedData && window._sharedData._cyan) || {};
-    }
-    try {
-        var raw = localStorage.getItem(NODE_CYAN_KEY_PREFIX + currentMapId);
-        if (raw) return JSON.parse(raw);
-    } catch(e) {}
-    return {};
-}
-export function setNodeCyanState(state) {
-    if (!currentMapId) return;
-    // 共同編集ゲスト: メモリ上の共有データにだけ書く（localStorageを汚さない・同期はcollab-engine経由）
-    if (window._collabGuest && window._sharedData) { window._sharedData._cyan = state; return; }
-    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
-    try { localStorage.setItem(NODE_CYAN_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
-}
-export function isNodeCyan(nodeId) {
-    var state = getNodeCyanState();
-    return state[nodeId] === true;
-}
+export function getNodeCyanState() { return cyanStore.get(); }
+export function setNodeCyanState(state) { cyanStore.set(state); }
+export function isNodeCyan(nodeId) { return cyanStore.is(nodeId); }
 
 // Node green state: { [nodeId]: true } - per map, saved in localStorage
-var NODE_GREEN_KEY_PREFIX = 'mindmap-node-green-';
-export function getNodeGreenState() {
-    if (!currentMapId) return {};
-    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) {
-        return (window._sharedData && window._sharedData._green) || {};
-    }
-    try {
-        var raw = localStorage.getItem(NODE_GREEN_KEY_PREFIX + currentMapId);
-        if (raw) return JSON.parse(raw);
-    } catch(e) {}
-    return {};
-}
-export function setNodeGreenState(state) {
-    if (!currentMapId) return;
-    // 共同編集ゲスト: メモリ上の共有データにだけ書く（localStorageを汚さない・同期はcollab-engine経由）
-    if (window._collabGuest && window._sharedData) { window._sharedData._green = state; return; }
-    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
-    try { localStorage.setItem(NODE_GREEN_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
-}
-export function isNodeGreen(nodeId) {
-    var state = getNodeGreenState();
-    return state[nodeId] === true;
-}
+export function getNodeGreenState() { return greenStore.get(); }
+export function setNodeGreenState(state) { greenStore.set(state); }
+export function isNodeGreen(nodeId) { return greenStore.is(nodeId); }
 
 // Node red-text state: { [nodeId]: true } - per map, saved in localStorage
-var NODE_REDTEXT_KEY_PREFIX = 'mindmap-node-redtext-';
-export function getNodeRedTextState() {
-    if (!currentMapId) return {};
-    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) {
-        return (window._sharedData && window._sharedData._redtext) || {};
-    }
-    try {
-        var raw = localStorage.getItem(NODE_REDTEXT_KEY_PREFIX + currentMapId);
-        if (raw) return JSON.parse(raw);
-    } catch(e) {}
-    return {};
-}
-export function setNodeRedTextState(state) {
-    if (!currentMapId) return;
-    // 共同編集ゲスト: メモリ上の共有データにだけ書く（localStorageを汚さない・同期はcollab-engine経由）
-    if (window._collabGuest && window._sharedData) { window._sharedData._redtext = state; return; }
-    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
-    try { localStorage.setItem(NODE_REDTEXT_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
-}
-export function isNodeRedText(nodeId) {
-    var state = getNodeRedTextState();
-    return state[nodeId] === true;
-}
+export function getNodeRedTextState() { return redTextStore.get(); }
+export function setNodeRedTextState(state) { redTextStore.set(state); }
+export function isNodeRedText(nodeId) { return redTextStore.is(nodeId); }
 
 // ノードのハイパーリンク情報は node.hyperlink として mindMapData に保存される（Supabase/localStorageに自動同期）
 function getNodeHyperlink(nodeId) {
@@ -238,28 +170,11 @@ export function isNodeLinked(nodeId) {
     return !!getNodeHyperlink(nodeId);
 }
 
-export function getNodeCollapseState() {
-    if (!currentMapId) return {};
-    // 共同編集ゲスト: メモリ上の状態を使う（折りたたみは各自ローカル・同期対象外）
-    if (window._collabGuest && window._sharedData) {
-        return window._sharedData._collapse || {};
-    }
-    try {
-        var raw = localStorage.getItem(NODE_COLLAPSE_KEY_PREFIX + currentMapId);
-        if (raw) return JSON.parse(raw);
-    } catch(e) {}
-    return {};
-}
-export function setNodeCollapseState(state) {
-    if (!currentMapId) return;
-    if (window._collabGuest && window._sharedData) { window._sharedData._collapse = state; return; }
-    if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
-    try { localStorage.setItem(NODE_COLLAPSE_KEY_PREFIX + currentMapId, JSON.stringify(state)); } catch(e) {}
-}
-export function isNodeCollapsed(nodeId) {
-    var state = getNodeCollapseState();
-    return state[nodeId] === true;
-}
+// Node collapse state: { [nodeId]: true } - per map, saved in localStorage
+// （折りたたみは各自ローカル・同期対象外。ゲストのみメモリ上の共有データを使う）
+export function getNodeCollapseState() { return collapseStore.get(); }
+export function setNodeCollapseState(state) { collapseStore.set(state); }
+export function isNodeCollapsed(nodeId) { return collapseStore.is(nodeId); }
 export function toggleNodeCollapse(nodeId) {
     if (nodeId === 'root') return; // root cannot be collapsed
     var node = findNode(nodeId);
