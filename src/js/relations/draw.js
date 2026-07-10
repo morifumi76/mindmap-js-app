@@ -1,7 +1,7 @@
 // 関連線: SVG 描画
 import { connectionMode, mindMapData, selectedRelationId } from '../state.js';
 import {
-    RELATION_SVG_OFFSET,
+    SVG_OFFSET,
     buildRelationPathD,
     computeRelationGeometry,
     getEdgePointTowards,
@@ -44,8 +44,8 @@ export function renderRelations(svg, positions) {
         // data-side でどちら側の端点（fromNodeId 側 / toNodeId 側）かを識別
         if (endpointsSvg) {
             var endA = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            endA.setAttribute('cx', String(geom.p1.x + RELATION_SVG_OFFSET));
-            endA.setAttribute('cy', String(geom.p1.y + RELATION_SVG_OFFSET));
+            endA.setAttribute('cx', String(geom.p1.x + SVG_OFFSET));
+            endA.setAttribute('cy', String(geom.p1.y + SVG_OFFSET));
             endA.setAttribute('r', '3.5');
             endA.setAttribute('class', 'relation-endpoint' + (isSelected ? ' selected' : ''));
             endA.setAttribute('data-rel-id', rel.id);
@@ -53,8 +53,8 @@ export function renderRelations(svg, positions) {
             endpointsSvg.appendChild(endA);
 
             var endB = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            endB.setAttribute('cx', String(geom.p2.x + RELATION_SVG_OFFSET));
-            endB.setAttribute('cy', String(geom.p2.y + RELATION_SVG_OFFSET));
+            endB.setAttribute('cx', String(geom.p2.x + SVG_OFFSET));
+            endB.setAttribute('cy', String(geom.p2.y + SVG_OFFSET));
             endB.setAttribute('r', '3.5');
             endB.setAttribute('class', 'relation-endpoint' + (isSelected ? ' selected' : ''));
             endB.setAttribute('data-rel-id', rel.id);
@@ -79,7 +79,7 @@ export function renderConnectionPreview(svg, positions) {
     var mx = connectionMode.mouseCanvasX;
     var my = connectionMode.mouseCanvasY;
     var p1 = getEdgePointTowards(fromRect.left, fromRect.top, fromRect.right, fromRect.bottom, mx, my);
-    var off = RELATION_SVG_OFFSET;
+    var off = SVG_OFFSET;
     var d = 'M ' + (p1.x + off) + ' ' + (p1.y + off) + ' L ' + (mx + off) + ' ' + (my + off);
     var preview = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     preview.setAttribute('d', d);

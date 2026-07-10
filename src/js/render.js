@@ -18,11 +18,13 @@ import {
     viewState
 } from './state.js';
 import { saveToLocalStorage } from './storage.js';
+import { escapeHtmlWithBreaks } from './utils.js';
 import { getAllNodesInOrder } from './nodes.js';
 import { rangeSelectNode, selectNode, toggleSelectNode, updateSelectionDisplay } from './selection.js';
 import { finishEditing, startEditing } from './editing.js';
 import { startNodeDrag } from './drag.js';
 import { completeConnection, isConnectionModeActive, renderRelations } from './relations/index.js';
+import { SVG_OFFSET } from './relations/geometry.js';
 import { updateZoomDisplay } from './canvas-interaction.js';
 import { renderSidebarTree } from './sidebar-right.js';
 
@@ -90,7 +92,7 @@ function measureNodeDimensions(rootNode, container) {
     function measure(node) {
         // Render \n as <br> for accurate measurement
         if (node.text.indexOf('\n') >= 0) {
-            measurerText.innerHTML = node.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+            measurerText.innerHTML = escapeHtmlWithBreaks(node.text);
         } else {
             measurerText.textContent = node.text;
         }
@@ -242,7 +244,7 @@ function renderNodes(node, container, positions) {
     textEl.className = 'node-text';
     // Render \n as <br> for display
     if (node.text.indexOf('\n') >= 0) {
-        textEl.innerHTML = node.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+        textEl.innerHTML = escapeHtmlWithBreaks(node.text);
     } else {
         textEl.textContent = node.text;
     }
@@ -373,7 +375,7 @@ function renderNodes(node, container, positions) {
 function renderLines(node, svg, positions) {
     var pp = positions[node.id];
     if (!pp) return;
-    var off = 5000;
+    var off = SVG_OFFSET;
     var vertical = isVerticalLayout();
     var collapsed = isNodeCollapsed(node.id);
     var visibleChildren = collapsed ? [] : node.children;

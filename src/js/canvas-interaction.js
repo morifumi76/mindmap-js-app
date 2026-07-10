@@ -181,22 +181,8 @@ var ZOOM_MIN = 0.1;
 var ZOOM_MAX = 2.0;
 var ZOOM_STEP = 0.05;
 
-function applyZoom(mouseX, mouseY, zoomDelta) {
-    var oldZoom = viewState.zoom;
-    var newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, oldZoom + zoomDelta));
-    var scale = newZoom / oldZoom;
-    viewState.panX = mouseX - scale * (mouseX - viewState.panX);
-    viewState.panY = mouseY - scale * (mouseY - viewState.panY);
-    viewState.zoom = newZoom;
-    updateView();
-    updateZoomDisplay();
-}
-
-function zoomToCenter(newZoom) {
-    var container = document.getElementById('canvasContainer');
-    var rect = container.getBoundingClientRect();
-    var cx = rect.width / 2;
-    var cy = rect.height / 2;
+// 指定した点 (cx, cy) が画面上で動かないようにズーム値を設定する共通処理
+function setZoomAt(cx, cy, newZoom) {
     var oldZoom = viewState.zoom;
     newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, newZoom));
     var scale = newZoom / oldZoom;
@@ -205,6 +191,16 @@ function zoomToCenter(newZoom) {
     viewState.zoom = newZoom;
     updateView();
     updateZoomDisplay();
+}
+
+function applyZoom(mouseX, mouseY, zoomDelta) {
+    setZoomAt(mouseX, mouseY, viewState.zoom + zoomDelta);
+}
+
+function zoomToCenter(newZoom) {
+    var container = document.getElementById('canvasContainer');
+    var rect = container.getBoundingClientRect();
+    setZoomAt(rect.width / 2, rect.height / 2, newZoom);
 }
 
 export function updateZoomDisplay() {
