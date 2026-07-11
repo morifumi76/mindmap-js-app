@@ -4,6 +4,7 @@ import {
     getNodeGrayoutState,
     getNodeGreenState,
     getNodeHighlightState,
+    getNodePinkState,
     getNodeRedTextState,
     nodeDragState,
     selectedNodeIds,
@@ -13,6 +14,7 @@ import {
     setNodeGrayoutState,
     setNodeGreenState,
     setNodeHighlightState,
+    setNodePinkState,
     setNodeRedTextState
 } from './state.js';
 import { deepClone, generateId, showToast } from './utils.js';
@@ -283,13 +285,14 @@ function duplicateNodes(nodeIds, targetId, position) {
     }
     setNodeCollapseState(newColState);
 
-    // 色状態（グレーアウト/黄ハイライト/青/緑/赤文字）も複製元から引き継ぐ
+    // 色状態（グレーアウト/黄ハイライト/青/緑/ピンク/赤文字）も複製元から引き継ぐ
     // 色はツリー本体ではなく localStorage にノードID単位で保存されているため、新IDへ写す
     [
         [getNodeGrayoutState, setNodeGrayoutState],
         [getNodeHighlightState, setNodeHighlightState],
         [getNodeCyanState, setNodeCyanState],
         [getNodeGreenState, setNodeGreenState],
+        [getNodePinkState, setNodePinkState],
         [getNodeRedTextState, setNodeRedTextState]
     ].forEach(function(pair) {
         var st = pair[0]();

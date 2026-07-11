@@ -113,6 +113,7 @@ var grayoutStore   = makeDecorationStore('mindmap-node-grayout-', '_grayout');
 var highlightStore = makeDecorationStore('mindmap-node-highlight-', '_highlight');
 var cyanStore      = makeDecorationStore('mindmap-node-cyan-', '_cyan');
 var greenStore     = makeDecorationStore('mindmap-node-green-', '_green');
+var pinkStore      = makeDecorationStore('mindmap-node-pink-', '_pink');
 var redTextStore   = makeDecorationStore('mindmap-node-redtext-', '_redtext');
 var collapseStore  = makeDecorationStore('mindmap-node-collapse-', '_collapse', { guestReadsShared: true });
 
@@ -176,6 +177,11 @@ export function toggleNodeHighlight(nodeId) {
 export function getNodeCyanState() { return cyanStore.get(); }
 export function setNodeCyanState(state) { cyanStore.set(state); }
 export function isNodeCyan(nodeId) { return cyanStore.is(nodeId); }
+
+// Node pink state: { [nodeId]: true } - per map, saved in localStorage
+export function getNodePinkState() { return pinkStore.get(); }
+export function setNodePinkState(state) { pinkStore.set(state); }
+export function isNodePink(nodeId) { return pinkStore.is(nodeId); }
 
 // Node green state: { [nodeId]: true } - per map, saved in localStorage
 export function getNodeGreenState() { return greenStore.get(); }

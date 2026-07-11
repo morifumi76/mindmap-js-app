@@ -92,7 +92,7 @@
 .node.highlighted.selected {
     background: var(--node-yellow-bg-sel) !important;
     border-color: var(--node-yellow-bg-sel) !important;
-    box-shadow: 0 0 0 3px rgba(242, 201, 76, 0.4) !important;
+    box-shadow: 0 0 0 3px rgba(241, 201, 59, 0.4) !important;
 }
 
 /* ========================================
@@ -112,7 +112,7 @@
 .node.green-hl.selected {
     background: var(--node-green-bg-sel) !important;
     border-color: var(--node-green-bg-sel) !important;
-    box-shadow: 0 0 0 3px rgba(111, 207, 151, 0.4) !important;
+    box-shadow: 0 0 0 3px rgba(138, 203, 157, 0.45) !important;
 }
 
 /* ========================================
@@ -132,7 +132,27 @@
 .node.cyan-hl.selected {
     background: var(--node-blue-bg-sel) !important;
     border-color: var(--node-blue-bg-sel) !important;
-    box-shadow: 0 0 0 3px rgba(86, 204, 242, 0.4) !important;
+    box-shadow: 0 0 0 3px rgba(130, 191, 239, 0.45) !important;
+}
+
+/* ========================================
+   Pink Highlight Node Styles
+   ======================================== */
+.node.pink-hl {
+    background: var(--node-pink-bg) !important;
+    border-color: var(--node-pink-bg) !important;
+    color: var(--node-text) !important;
+    box-shadow: none !important;
+}
+
+.node.pink-hl .node-text {
+    color: var(--node-text) !important;
+}
+
+.node.pink-hl.selected {
+    background: var(--node-pink-bg-sel) !important;
+    border-color: var(--node-pink-bg-sel) !important;
+    box-shadow: 0 0 0 3px rgba(233, 156, 194, 0.45) !important;
 }
 
 /* ========================================
@@ -228,6 +248,10 @@
 
 .canvas-float-btns .float-dot-cyan::after {
     background: var(--node-blue-bg);
+}
+
+.canvas-float-btns .float-dot-pink::after {
+    background: var(--node-pink-bg);
 }
 
 /* ドットボタン間の区切り線 */

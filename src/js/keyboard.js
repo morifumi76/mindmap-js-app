@@ -5,11 +5,13 @@ import {
     getNodeGrayoutState,
     getNodeGreenState,
     getNodeHighlightState,
+    getNodePinkState,
     getNodeRedTextState,
     isNodeCyan,
     isNodeGrayedOut,
     isNodeGreen,
     isNodeHighlighted,
+    isNodePink,
     isNodeRedText,
     isVerticalLayout,
     selectedNodeIds,
@@ -19,6 +21,7 @@ import {
     setNodeGrayoutState,
     setNodeGreenState,
     setNodeHighlightState,
+    setNodePinkState,
     setNodeRedTextState,
     toggleNodeCollapse
 } from './state.js';
@@ -57,123 +60,55 @@ import { isLinkModalOpen, openLinkModal } from './link-modal.js';
 // Keyboard Handler
 // ========================================
 
-// 選択中の全ノードにグレーアウトを適用（ボタンと同じ複数選択対応ロジック）
-function applyGrayoutToSelection() {
+// 背景色系の装飾（グレーアウト・ハイライト・緑・水色・ピンク）の対応表。
+// 1ノード1色の相互排他：どれかをONにすると他の背景色は自動で外れる。
+// ツールバーのドットボタン（init.js）とキーボードショートカットの両方から使う
+var BG_COLOR_KINDS = {
+    grayout:   { get: getNodeGrayoutState,   set: setNodeGrayoutState,   is: isNodeGrayedOut,   onMsg: 'グレーアウトしました', offMsg: 'グレーアウトを解除しました' },
+    highlight: { get: getNodeHighlightState, set: setNodeHighlightState, is: isNodeHighlighted, onMsg: 'ハイライトしました',   offMsg: 'ハイライトを解除しました' },
+    green:     { get: getNodeGreenState,     set: setNodeGreenState,     is: isNodeGreen,       onMsg: '緑にしました',         offMsg: '緑を解除しました' },
+    cyan:      { get: getNodeCyanState,      set: setNodeCyanState,      is: isNodeCyan,        onMsg: '水色にしました',       offMsg: '水色を解除しました' },
+    pink:      { get: getNodePinkState,      set: setNodePinkState,      is: isNodePink,        onMsg: 'ピンクにしました',     offMsg: 'ピンクを解除しました' }
+};
+
+// 選択中の全ノードに指定の背景色を適用する共通処理。
+// 全ノードがON済みなら解除、そうでなければON（他の背景色は相互排他で外す）。
+// 戻り値: ノード未選択で何もしなかったとき false（ボタン側の案内トースト用）
+function applyBgColorToSelection(kind) {
     var nodes = getSelectedNodes();
-    if (nodes.length === 0) return;
-    var allOn = nodes.every(function(node) { return isNodeGrayedOut(node.id); });
-    var grayState = getNodeGrayoutState();
-    var hlState   = getNodeHighlightState();
-    var cyanState = getNodeCyanState();
-    var greenState = getNodeGreenState();
+    if (nodes.length === 0) return false;
+    var target = BG_COLOR_KINDS[kind];
+    var allOn = nodes.every(function(node) { return target.is(node.id); });
+    var states = {};
+    var k;
+    for (k in BG_COLOR_KINDS) states[k] = BG_COLOR_KINDS[k].get();
     nodes.forEach(function(node) {
         if (allOn) {
-            delete grayState[node.id];
+            delete states[kind][node.id];
         } else {
-            delete hlState[node.id];
-            delete cyanState[node.id];
-            delete greenState[node.id];
-            grayState[node.id] = true;
+            for (var other in BG_COLOR_KINDS) delete states[other][node.id];
+            states[kind][node.id] = true;
         }
     });
-    setNodeGrayoutState(grayState);
-    setNodeHighlightState(hlState);
-    setNodeCyanState(cyanState);
-    setNodeGreenState(greenState);
+    for (k in BG_COLOR_KINDS) BG_COLOR_KINDS[k].set(states[k]);
     render();
     saveState();
-    showToast(allOn ? 'グレーアウトを解除しました' : 'グレーアウトしました');
+    showToast(allOn ? target.offMsg : target.onMsg);
+    return true;
 }
 
-// 選択中の全ノードにハイライトを適用（ボタンと同じ複数選択対応ロジック）
-function applyHighlightToSelection() {
-    var nodes = getSelectedNodes();
-    if (nodes.length === 0) return;
-    var allOn = nodes.every(function(node) { return isNodeHighlighted(node.id); });
-    var hlState   = getNodeHighlightState();
-    var grayState = getNodeGrayoutState();
-    var cyanState = getNodeCyanState();
-    var greenState = getNodeGreenState();
-    nodes.forEach(function(node) {
-        if (allOn) {
-            delete hlState[node.id];
-        } else {
-            delete grayState[node.id];
-            delete cyanState[node.id];
-            delete greenState[node.id];
-            hlState[node.id] = true;
-        }
-    });
-    setNodeHighlightState(hlState);
-    setNodeGrayoutState(grayState);
-    setNodeCyanState(cyanState);
-    setNodeGreenState(greenState);
-    render();
-    saveState();
-    showToast(allOn ? 'ハイライトを解除しました' : 'ハイライトしました');
-}
+// 各色のショートカット／ボタン用ラッパー（init.js のドットボタンからも使う）
+export function applyGrayoutToSelection()   { return applyBgColorToSelection('grayout'); }
+export function applyHighlightToSelection() { return applyBgColorToSelection('highlight'); }
+export function applyGreenToSelection()     { return applyBgColorToSelection('green'); }
+export function applyCyanToSelection()      { return applyBgColorToSelection('cyan'); }
+export function applyPinkToSelection()      { return applyBgColorToSelection('pink'); }
 
-// 選択中の全ノードに水色ハイライトを適用（Cmd+Opt+B）
-function applyCyanToSelection() {
+// 選択中の全ノードに赤文字を適用（Cmd+Opt+A）。
+// 赤文字は文字色なので背景色とは独立（相互排他の対象外）
+export function applyRedTextToSelection() {
     var nodes = getSelectedNodes();
-    if (nodes.length === 0) return;
-    var allOn = nodes.every(function(node) { return isNodeCyan(node.id); });
-    var cyanState = getNodeCyanState();
-    var grayState = getNodeGrayoutState();
-    var hlState   = getNodeHighlightState();
-    var greenState = getNodeGreenState();
-    nodes.forEach(function(node) {
-        if (allOn) {
-            delete cyanState[node.id];
-        } else {
-            delete grayState[node.id];
-            delete hlState[node.id];
-            delete greenState[node.id];
-            cyanState[node.id] = true;
-        }
-    });
-    setNodeCyanState(cyanState);
-    setNodeGrayoutState(grayState);
-    setNodeHighlightState(hlState);
-    setNodeGreenState(greenState);
-    render();
-    saveState();
-    showToast(allOn ? '水色を解除しました' : '水色にしました');
-}
-
-// 選択中の全ノードに緑ハイライトを適用（Cmd+Opt+M）
-function applyGreenToSelection() {
-    var nodes = getSelectedNodes();
-    if (nodes.length === 0) return;
-    var allOn = nodes.every(function(node) { return isNodeGreen(node.id); });
-    var greenState = getNodeGreenState();
-    var grayState  = getNodeGrayoutState();
-    var hlState    = getNodeHighlightState();
-    var cyanState  = getNodeCyanState();
-    nodes.forEach(function(node) {
-        if (allOn) {
-            delete greenState[node.id];
-        } else {
-            // 緑ON時はグレーアウト・ハイライト・水色を解除（相互排他）
-            delete grayState[node.id];
-            delete hlState[node.id];
-            delete cyanState[node.id];
-            greenState[node.id] = true;
-        }
-    });
-    setNodeGreenState(greenState);
-    setNodeGrayoutState(grayState);
-    setNodeHighlightState(hlState);
-    setNodeCyanState(cyanState);
-    render();
-    saveState();
-    showToast(allOn ? '緑を解除しました' : '緑にしました');
-}
-
-// 選択中の全ノードに赤文字を適用（Cmd+Opt+A）
-function applyRedTextToSelection() {
-    var nodes = getSelectedNodes();
-    if (nodes.length === 0) return;
+    if (nodes.length === 0) return false;
     var allOn = nodes.every(function(node) { return isNodeRedText(node.id); });
     var rtState = getNodeRedTextState();
     nodes.forEach(function(node) {
@@ -187,6 +122,7 @@ function applyRedTextToSelection() {
     render();
     saveState();
     showToast(allOn ? '赤文字を解除しました' : '赤文字にしました');
+    return true;
 }
 
 export function handleKeyDown(e) {
@@ -262,6 +198,7 @@ export function handleKeyDown(e) {
             if (e.code === 'KeyY') { e.preventDefault(); finishEditing(); applyHighlightToSelection(); return; }
             if (e.code === 'KeyB') { e.preventDefault(); finishEditing(); applyCyanToSelection();      return; }
             if (e.code === 'KeyM') { e.preventDefault(); finishEditing(); applyGreenToSelection();     return; }
+            if (e.code === 'KeyP') { e.preventDefault(); finishEditing(); applyPinkToSelection();      return; }
             if (e.code === 'KeyA') { e.preventDefault(); finishEditing(); applyRedTextToSelection();   return; }
         }
 

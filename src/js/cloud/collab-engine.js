@@ -19,6 +19,7 @@ import {
     getNodeGrayoutState,
     getNodeGreenState,
     getNodeHighlightState,
+    getNodePinkState,
     getNodeRedTextState,
     mindMapData,
     setEditingNodeId,
@@ -26,17 +27,19 @@ import {
     setNodeGrayoutState,
     setNodeGreenState,
     setNodeHighlightState,
+    setNodePinkState,
     setNodeRedTextState
 } from '../state.js';
 import { findMetaById, getMapDataKey, isSharedReadonly } from '../storage.js';
 import { render } from '../render.js';
 
-// 色状態（5種）の取得・設定関数の対応表。色の同期イベント（t:'color'）で使う
+// 色状態（6種）の取得・設定関数の対応表。色の同期イベント（t:'color'）で使う
 var COLOR_KINDS = {
     grayout:   { get: getNodeGrayoutState,   set: setNodeGrayoutState },
     highlight: { get: getNodeHighlightState, set: setNodeHighlightState },
     cyan:      { get: getNodeCyanState,      set: setNodeCyanState },
     green:     { get: getNodeGreenState,     set: setNodeGreenState },
+    pink:      { get: getNodePinkState,      set: setNodePinkState },
     redtext:   { get: getNodeRedTextState,   set: setNodeRedTextState }
 };
 
@@ -392,6 +395,7 @@ function persistAfterOwnEdit() {
         data._highlight = deepClone(getNodeHighlightState());
         data._cyan      = deepClone(getNodeCyanState());
         data._green     = deepClone(getNodeGreenState());
+        data._pink      = deepClone(getNodePinkState());
         data._redtext   = deepClone(getNodeRedTextState());
         delete data._collapse; // 折りたたみは各自ローカル（DBに保存しない）
         window._supa.updateSharedMapData(session.shareId, data).catch(function() {});
@@ -557,7 +561,7 @@ function scheduleReconnect() {
 // 取得した data の _grayout 等を現在の色状態ストアへ反映する
 // （ゲスト=メモリ上の _sharedData、オーナー=localStorage）
 function hydrateColorsFromData(data) {
-    var mapping = { grayout: '_grayout', highlight: '_highlight', cyan: '_cyan', green: '_green', redtext: '_redtext' };
+    var mapping = { grayout: '_grayout', highlight: '_highlight', cyan: '_cyan', green: '_green', pink: '_pink', redtext: '_redtext' };
     for (var kind in mapping) {
         if (data[mapping[kind]]) COLOR_KINDS[kind].set(deepClone(data[mapping[kind]]));
     }
