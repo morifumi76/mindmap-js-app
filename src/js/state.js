@@ -54,8 +54,34 @@ export const MAX_HISTORY = 50;
 //   false … 読み取りは共有モード全般（閲覧専用・ゲスト共通）で共有データを使う
 function makeDecorationStore(keyPrefix, sharedField, opts) {
     opts = opts || {};
+
+    // ---- 読み取りキャッシュ（同一イベントサイクル内のみ有効） ----
+    // render() は1回の描画で「ノード数 × 装飾数」回 get() を呼ぶため、そのたびに
+    // localStorage の読み出し + JSON解析をするとマップが大きいほど二乗で遅くなる。
+    // 解析結果を1イベントサイクルの間だけ保持し、サイクル終了時にマイクロタスクで
+    // 自動破棄する。外部からの直接書き込み（クラウド初回読み込み等）は必ず別サイクル
+    // で起きるため、古いキャッシュが残ることはない。同一サイクル内の set() は
+    // キャッシュも同時に更新するので不整合にならない。
+    var cached = null; // { mapId, data } または null
+    var clearScheduled = false;
+    function cacheAndScheduleClear(data) {
+        cached = { mapId: currentMapId, data: data };
+        if (clearScheduled) return;
+        clearScheduled = true;
+        Promise.resolve().then(function() {
+            cached = null;
+            clearScheduled = false;
+        });
+    }
+
     function get() {
         if (!currentMapId) return {};
+        if (cached && cached.mapId === currentMapId) return cached.data;
+        var data = readFresh();
+        cacheAndScheduleClear(data);
+        return data;
+    }
+    function readFresh() {
         if (opts.guestReadsShared) {
             if (window._collabGuest && window._sharedData) {
                 return window._sharedData[sharedField] || {};
@@ -71,6 +97,7 @@ function makeDecorationStore(keyPrefix, sharedField, opts) {
     }
     function set(state) {
         if (!currentMapId) return;
+        cacheAndScheduleClear(state);
         // 共同編集ゲスト: メモリ上の共有データにだけ書く（localStorageを汚さない・同期はcollab-engine経由）
         if (window._collabGuest && window._sharedData) { window._sharedData[sharedField] = state; return; }
         if (typeof isSharedReadonly === 'function' && isSharedReadonly()) return;
