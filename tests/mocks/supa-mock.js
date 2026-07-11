@@ -82,6 +82,14 @@
 
         saveMap: function(localId) {
             record('saveMap', arguments);
+            // 本物のアダプター（storage-supabase.js の saveMap）と同じく、保存成功時に
+            // 未同期マーカーを消す。消さないと未同期マップが2つ以上あるとき
+            // sync.js のチェーン処理が「保存→まだ未同期がある→保存→…」と永久ループする
+            try {
+                var p = JSON.parse(localStorage.getItem('mindmap-pending-sync') || '{}');
+                delete p[String(localId)];
+                localStorage.setItem('mindmap-pending-sync', JSON.stringify(p));
+            } catch (e) {}
             return Promise.resolve();
         },
         deleteMap: function(localId) {
