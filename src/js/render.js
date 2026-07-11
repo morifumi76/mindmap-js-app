@@ -18,11 +18,13 @@ import {
     viewState
 } from './state.js';
 import { saveToLocalStorage } from './storage.js';
+import { escapeHtmlWithBreaks } from './utils.js';
 import { getAllNodesInOrder } from './nodes.js';
 import { rangeSelectNode, selectNode, toggleSelectNode, updateSelectionDisplay } from './selection.js';
 import { finishEditing, startEditing } from './editing.js';
 import { startNodeDrag } from './drag.js';
 import { completeConnection, isConnectionModeActive, renderRelations } from './relations/index.js';
+import { SVG_OFFSET } from './relations/geometry.js';
 import { updateZoomDisplay } from './canvas-interaction.js';
 import { renderSidebarTree } from './sidebar-right.js';
 
@@ -72,6 +74,16 @@ export function render() {
     renderSidebarTree();
 }
 
+// ノード寸法のキャッシュ。「同じテキスト・同じ種類（ルートか否か）なら大きさは同じ」
+// なので、一度測った寸法を使い回してブラウザへの問い合わせ（強制レイアウト計算）を省く。
+// 装飾クラス（グレーアウト等）は色のみで寸法に影響しないことを確認済み。
+// Webフォントの読み込み完了で文字の実測幅が変わりうるため、その時点で全消しして測り直す。
+var nodeDimsCache = new Map();
+var NODE_DIMS_CACHE_MAX = 5000; // 念のための上限（超えたら全消しでリセット）
+if (document.fonts && document.fonts.ready && document.fonts.ready.then) {
+    document.fonts.ready.then(function() { nodeDimsCache.clear(); });
+}
+
 // Measure actual rendered width AND height of each node's text
 function measureNodeDimensions(rootNode, container) {
     var dims = {};
@@ -88,20 +100,31 @@ function measureNodeDimensions(rootNode, container) {
     container.appendChild(measurer);
 
     function measure(node) {
-        // Render \n as <br> for accurate measurement
-        if (node.text.indexOf('\n') >= 0) {
-            measurerText.innerHTML = node.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+        // キャッシュ照会（キー = ルートか否か + テキスト。\x00 は区切り文字）
+        var isRoot = (node.id === 'root');
+        var cacheKey = (isRoot ? 'R\x00' : 'N\x00') + node.text;
+        var cachedDims = nodeDimsCache.get(cacheKey);
+        if (cachedDims) {
+            dims[node.id] = cachedDims;
         } else {
-            measurerText.textContent = node.text;
+            // Render \n as <br> for accurate measurement
+            if (node.text.indexOf('\n') >= 0) {
+                measurerText.innerHTML = escapeHtmlWithBreaks(node.text);
+            } else {
+                measurerText.textContent = node.text;
+            }
+            // Root nodes have larger font
+            if (isRoot) {
+                measurer.classList.add('root');
+            } else {
+                measurer.classList.remove('root');
+            }
+            // Collapse indicator is now outside the node (absolute-positioned), no extra space needed
+            var measured = { width: measurer.offsetWidth, height: measurer.offsetHeight };
+            dims[node.id] = measured;
+            if (nodeDimsCache.size >= NODE_DIMS_CACHE_MAX) nodeDimsCache.clear();
+            nodeDimsCache.set(cacheKey, measured);
         }
-        // Root nodes have larger font
-        if (node.id === 'root') {
-            measurer.classList.add('root');
-        } else {
-            measurer.classList.remove('root');
-        }
-        // Collapse indicator is now outside the node (absolute-positioned), no extra space needed
-        dims[node.id] = { width: measurer.offsetWidth, height: measurer.offsetHeight };
         for (var i = 0; i < node.children.length; i++) {
             measure(node.children[i]);
         }
@@ -242,7 +265,7 @@ function renderNodes(node, container, positions) {
     textEl.className = 'node-text';
     // Render \n as <br> for display
     if (node.text.indexOf('\n') >= 0) {
-        textEl.innerHTML = node.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+        textEl.innerHTML = escapeHtmlWithBreaks(node.text);
     } else {
         textEl.textContent = node.text;
     }
@@ -373,7 +396,7 @@ function renderNodes(node, container, positions) {
 function renderLines(node, svg, positions) {
     var pp = positions[node.id];
     if (!pp) return;
-    var off = 5000;
+    var off = SVG_OFFSET;
     var vertical = isVerticalLayout();
     var collapsed = isNodeCollapsed(node.id);
     var visibleChildren = collapsed ? [] : node.children;

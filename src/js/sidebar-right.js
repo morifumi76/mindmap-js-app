@@ -10,7 +10,7 @@ import { selectNode } from './selection.js';
 import { updateView } from './render.js';
 import { getTreeTabText } from './clipboard.js';
 import { applyImportedTree, parseTabIndentedText } from './tree-import.js';
-import { showToast } from './utils.js';
+import { escapeHtml, showToast } from './utils.js';
 
 // ========================================
 // Right Sidebar: Resize, Tree Rendering, Focus
@@ -203,7 +203,7 @@ export function renderSidebarTree() {
         var line = displayLines[i];
         var isSelected = selectedNodeIds.has(line.nodeId);
         var cls = 'sidebar-preview-line' + (isSelected ? ' active' : '');
-        var escaped = line.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        var escaped = escapeHtml(line.text);
         html += '<span class="' + cls + '" data-sid="' + line.nodeId + '">' + escaped + '</span>';
     }
     html += '</pre>';
@@ -255,7 +255,7 @@ function showImportError(reasons) {
     }
     var html = '<strong>取り込めません</strong><ul>';
     for (var i = 0; i < reasons.length; i++) {
-        var safe = String(reasons[i]).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        var safe = escapeHtml(reasons[i]);
         html += '<li>' + safe + '</li>';
     }
     html += '</ul>';
@@ -369,11 +369,6 @@ function moveEditorLines(ed, dir) {
         var newFirst = r.first + nextLine.length + 1;
         ed.setSelectionRange(newFirst, newFirst + block.length);
     }
-}
-
-// HTMLエスケープ（飾り層に本文を流し込むときに使う）
-function escapeHtml(s) {
-    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 // 飾り層・ガター・警告をスクロール位置に合わせる（作り直しはしない軽い処理）

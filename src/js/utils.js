@@ -14,6 +14,16 @@ export function deepClone(obj) {
     return JSON.parse(JSON.stringify(obj));
 }
 
+// HTMLエスケープ（innerHTML に本文を流し込む前の無害化）
+export function escapeHtml(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// HTMLエスケープしつつ改行を <br> に変換（ノード本文の複数行表示用）
+export function escapeHtmlWithBreaks(s) {
+    return escapeHtml(s).replace(/\n/g, '<br>');
+}
+
 export function showToast(message, duration) {
     duration = duration || 2000;
     const toast = document.getElementById('toast');

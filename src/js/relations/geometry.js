@@ -10,8 +10,9 @@ import { viewState } from '../state.js';
 // controlPoint は「両端の中点からのオフセット (dx, dy)」を保持する（仕様8）。
 // 直線時は null（または微小値）で表現。
 
-// SVGの座標オフセット（既存の親子接続線と揃える）
-export var RELATION_SVG_OFFSET = 5000;
+// SVGの座標オフセット。線用SVGは中央が原点になるよう全座標に +5000 して描く。
+// 親子接続線（render.js）と関連線の両方でこの1定数を共有する
+export var SVG_OFFSET = 5000;
 
 // 制御点が「中点」とみなされる近さの閾値（ピクセル）
 var RELATION_STRAIGHT_THRESHOLD = 1.5;
@@ -123,7 +124,7 @@ export function computeRelationGeometry(rel, positions) {
 }
 
 export function buildRelationPathD(geom) {
-    var off = RELATION_SVG_OFFSET;
+    var off = SVG_OFFSET;
     if (geom.isStraight) {
         return 'M ' + (geom.p1.x + off) + ' ' + (geom.p1.y + off) +
                ' L ' + (geom.p2.x + off) + ' ' + (geom.p2.y + off);
