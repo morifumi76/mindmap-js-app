@@ -101,15 +101,24 @@ function assert(cond, msg) {
     assert(guestBanner.bg === 'rgb(217, 115, 13)' && guestBanner.bodyClass,
         'バナーはオレンジ（#d9730d）でレイアウトも調整される');
 
-    // オーナー側: アバターの下にオレンジで「共同編集中」ラベル
-    const ownerLabel = await owner.evaluate(() => {
-        var el = document.querySelector('.collab-status-label');
-        return { text: el ? el.textContent : null, color: el ? getComputedStyle(el).color : null };
+    // オーナー側: 画面上部にオレンジの共有状態バナー（旧: アバター下の文字ラベルは廃止）
+    const ownerBanner = await owner.evaluate(() => {
+        var b = document.getElementById('ownerShareBanner');
+        return {
+            exists: !!b,
+            text: b ? b.textContent : '',
+            bg: b ? getComputedStyle(b).backgroundColor : '',
+            bodyClass: document.body.classList.contains('owner-share-mode')
+        };
     });
-    assert(ownerLabel.text === '共同編集中' && ownerLabel.color === 'rgb(217, 115, 13)',
-        'オーナーのアバター下にオレンジで「共同編集中」ラベル: ' + JSON.stringify(ownerLabel));
-    const guestHasLabel = await guest.evaluate(() => !!document.querySelector('.collab-status-label'));
-    assert(!guestHasLabel, 'ゲスト側には「共同編集中」ラベルは出ない（バナーで表現）');
+    assert(ownerBanner.exists && ownerBanner.text.includes('共同編集モード'),
+        'オーナーに「共同編集モード」バナーが表示される: ' + ownerBanner.text);
+    assert(ownerBanner.bg === 'rgb(217, 115, 13)' && ownerBanner.bodyClass,
+        'オーナーのバナーはオレンジ（#d9730d）でレイアウトも調整される');
+    const oldLabelExists = await owner.evaluate(() => !!document.querySelector('.collab-status-label'));
+    assert(!oldLabelExists, '旧仕様のアバター下「共同編集中」ラベルは表示されない');
+    const guestHasOwnerBanner = await guest.evaluate(() => !!document.getElementById('ownerShareBanner'));
+    assert(!guestHasOwnerBanner, 'ゲスト側にはオーナー用バナーは出ない（ゲスト用バナーで表現）');
 
     // ========================================
     // Test 2: ノード追加の双方向同期
