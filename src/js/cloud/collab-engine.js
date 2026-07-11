@@ -455,13 +455,7 @@ function renderAvatars() {
         row.appendChild(av);
     }
     box.appendChild(row);
-    // オーナー画面: アバターの下に小さくオレンジで「共同編集中」を表示する
-    if (session.isOwner) {
-        var label = document.createElement('div');
-        label.className = 'collab-status-label';
-        label.textContent = '共同編集中';
-        box.appendChild(label);
-    }
+    // 共同編集ONの表示はオーナー画面上部の共有状態バナー（owner-banner.js）が担う
 }
 
 // 「誰がどのノードを編集中か」の色枠＋名前ラベルを描画する

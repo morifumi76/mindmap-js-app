@@ -146,6 +146,9 @@ export function renderMapList() {
     renderFolderChildren(null, 0);
     updateSidebarSelectionDisplay();
     updateCanvasStarBtn();
+    // オーナー画面の共有状態バナーを同期（クラウド版のみ登録される。マップ切替・
+    // 共有トグル・初期表示のすべてがここを通るため、この1箇所で網羅できる）
+    if (typeof window._updateOwnerShareBanner === 'function') window._updateOwnerShareBanner();
 }
 
 function createFolderElement(folder, hasPages, isCollapsed, isDndEnabled, depth, containsActive) {

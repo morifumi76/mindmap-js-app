@@ -591,6 +591,60 @@ body.collab-guest-mode .collab-avatars {
 }
 
 /* ========================================
+   オーナー画面: 共有状態バナー
+   開いているマップの共有がONの間ずっと表示し、「外部から見られる状態」を常に示す。
+   色は左サイドバーのマップ名の色分けと統一（青=閲覧専用共有 / オレンジ=共同編集ON）
+   ======================================== */
+.owner-share-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 32px;
+    background: #1a73e8;
+    color: #ffffff;
+    font-family: 'Meiryo UI', Meiryo, sans-serif;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+.owner-share-banner--collab {
+    background: #d9730d;
+}
+
+/* バナー表示中はバナーの高さぶん上部の固定要素を下げる
+   （閲覧専用モード・ゲスト参加中と同じレイアウト調整。
+   オーナー画面は左サイドバーやスターボタン等も表示されるため対象が多い） */
+body.owner-share-mode .canvas-container {
+    top: 32px;
+}
+body.owner-share-mode .sidebar {
+    top: 32px;
+    height: calc(100% - 32px);
+}
+body.owner-share-mode .left-sidebar {
+    top: 32px;
+    height: calc(100% - 32px);
+}
+body.owner-share-mode .left-sidebar-hover-zone {
+    top: 32px;
+}
+body.owner-share-mode .left-sidebar-float-toggle {
+    top: 44px;
+}
+body.owner-share-mode .canvas-float-btns {
+    top: 46px;
+}
+body.owner-share-mode .canvas-star-btn {
+    top: 44px;
+}
+body.owner-share-mode .collab-avatars {
+    top: 44px;
+}
+
+/* ========================================
    共同編集: 共有ダイアログのトグル行
    ======================================== */
 .share-actions-row {
