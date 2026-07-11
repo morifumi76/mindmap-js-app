@@ -4,6 +4,7 @@ import {
     getNodeGrayoutState,
     getNodeGreenState,
     getNodeHighlightState,
+    getNodePinkState,
     getNodeRedTextState,
     isVerticalLayout,
     mindMapData,
@@ -12,6 +13,7 @@ import {
     setNodeGrayoutState,
     setNodeGreenState,
     setNodeHighlightState,
+    setNodePinkState,
     setNodeRedTextState,
     setUndoHistory,
     setUndoIndex,
@@ -28,13 +30,14 @@ import { render } from './render.js';
 
 export function saveState() {
     setUndoHistory(undoHistory.slice(0, undoIndex + 1));
-    // 色状態は5色すべてを含める（漏れると Ctrl+Z でその色だけ戻らないバグになる）
+    // 色状態は6色すべてを含める（漏れると Ctrl+Z でその色だけ戻らないバグになる）
     undoHistory.push({
         data: deepClone(mindMapData),
         grayout: deepClone(getNodeGrayoutState()),
         highlight: deepClone(getNodeHighlightState()),
         cyan: deepClone(getNodeCyanState()),
         green: deepClone(getNodeGreenState()),
+        pink: deepClone(getNodePinkState()),
         redtext: deepClone(getNodeRedTextState())
     });
     if (undoHistory.length > MAX_HISTORY) {
@@ -59,6 +62,7 @@ function restoreSnapshot(snapshot) {
     setNodeHighlightState(deepClone(snapshot.highlight || {}));
     setNodeCyanState(deepClone(snapshot.cyan || {}));
     setNodeGreenState(deepClone(snapshot.green || {}));
+    setNodePinkState(deepClone(snapshot.pink || {}));
     setNodeRedTextState(deepClone(snapshot.redtext || {}));
     render();
 }

@@ -1,7 +1,7 @@
 const { chromium } = require('playwright');
 const { BASE_URL, CMD } = require('./helpers');
 
-// 装飾（5色・リンク・関連線）の Undo / Redo テスト
+// 装飾（6色・リンク・関連線）の Undo / Redo テスト
 // 履歴スナップショットが grayout / highlight しか持っておらず、
 // 青・緑・赤文字が Ctrl+Z で戻らなかったバグ（v2.4.4 で修正）の回帰防止
 (async () => {
@@ -33,7 +33,8 @@ const { BASE_URL, CMD } = require('./helpers');
             { id: 'n4', text: '青用', children: [] },
             { id: 'n5', text: '赤文字用', children: [] },
             { id: 'n6', text: '関連線元', children: [] },
-            { id: 'n7', text: '関連線先', children: [] }
+            { id: 'n7', text: '関連線先', children: [] },
+            { id: 'n8', text: 'ピンク用', children: [] }
         ];
         localStorage.setItem('mindmap-data-' + mapId, JSON.stringify(d));
     });
@@ -62,13 +63,14 @@ const { BASE_URL, CMD } = require('./helpers');
     }
 
     // ========================================
-    // Test 1: 5色それぞれの適用 → Undo → Redo
+    // Test 1: 6色それぞれの適用 → Undo → Redo
     // ========================================
     const colorCases = [
         { name: 'グレーアウト', node: 'n1', btn: '#grayoutFloatBtn', cls: 'grayed-out' },
         { name: '黄ハイライト', node: 'n2', btn: '#highlightFloatBtn', cls: 'highlighted' },
         { name: '緑ハイライト', node: 'n3', btn: '#greenFloatBtn', cls: 'green-hl' },
         { name: '青ハイライト', node: 'n4', btn: '#cyanFloatBtn', cls: 'cyan-hl' },
+        { name: 'ピンクハイライト', node: 'n8', btn: '#pinkFloatBtn', cls: 'pink-hl' },
         { name: '赤文字', node: 'n5', btn: '#redTextFloatBtn', cls: 'red-text' }
     ];
     for (const c of colorCases) {
@@ -88,21 +90,21 @@ const { BASE_URL, CMD } = require('./helpers');
     // ========================================
     // Test 2: 複数色をまたぐ連続 Undo（適用の逆順で1つずつ戻る）
     // ========================================
-    console.log('\n=== 連続 Undo（5色すべて） ===');
-    // Test 1 の Redo 済み状態から5回 Undo すると全色が消えるはず
+    console.log('\n=== 連続 Undo（6色すべて） ===');
+    // Test 1 の Redo 済み状態から6回 Undo すると全色が消えるはず
     for (let i = 0; i < colorCases.length; i++) await undoOnce();
     let anyColored = false;
     for (const c of colorCases) {
         if (await hasClass(c.node, c.cls)) anyColored = true;
     }
-    assert(!anyColored, '5回の Undo で5色すべてが解除される');
-    // 5回 Redo で全色復活
+    assert(!anyColored, '6回の Undo で6色すべてが解除される');
+    // 6回 Redo で全色復活
     for (let i = 0; i < colorCases.length; i++) await redoOnce();
     let allColored = true;
     for (const c of colorCases) {
         if (!(await hasClass(c.node, c.cls))) allColored = false;
     }
-    assert(allColored, '5回の Redo で5色すべてが復活する');
+    assert(allColored, '6回の Redo で6色すべてが復活する');
 
     // ========================================
     // Test 3: 関連線（接続線）の作成 → Undo → Redo

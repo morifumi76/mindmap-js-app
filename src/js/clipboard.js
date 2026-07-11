@@ -3,6 +3,7 @@ import {
     getNodeGrayoutState,
     getNodeGreenState,
     getNodeHighlightState,
+    getNodePinkState,
     getNodeRedTextState,
     isNodeCollapsed,
     isNodeGrayedOut,
@@ -14,6 +15,7 @@ import {
     setNodeGrayoutState,
     setNodeGreenState,
     setNodeHighlightState,
+    setNodePinkState,
     setNodeRedTextState
 } from './state.js';
 import { deepClone, generateId, showToast } from './utils.js';
@@ -41,6 +43,7 @@ function captureNodeColorsToClone(clonedNode) {
     var hlState = getNodeHighlightState();
     var cyanState = getNodeCyanState();
     var greenState = getNodeGreenState();
+    var pinkState = getNodePinkState();
     var rtState = getNodeRedTextState();
     function walk(n) {
         var captured = {};
@@ -48,6 +51,7 @@ function captureNodeColorsToClone(clonedNode) {
         if (hlState[n.id]) captured.highlight = true;
         if (cyanState[n.id]) captured.cyan = true;
         if (greenState[n.id]) captured.green = true;
+        if (pinkState[n.id]) captured.pink = true;
         if (rtState[n.id]) captured.redtext = true;
         if (Object.keys(captured).length > 0) n._capturedColors = captured;
         if (n.children) {
@@ -184,8 +188,9 @@ function applyPendingColorsToCurrentMap(list) {
     var hlState = getNodeHighlightState();
     var cyanState = getNodeCyanState();
     var greenState = getNodeGreenState();
+    var pinkState = getNodePinkState();
     var rtState = getNodeRedTextState();
-    var changedG = false, changedH = false, changedC = false, changedGr = false, changedR = false;
+    var changedG = false, changedH = false, changedC = false, changedGr = false, changedP = false, changedR = false;
     for (var i = 0; i < list.length; i++) {
         var nid = list[i].id;
         var c = list[i].colors || {};
@@ -193,12 +198,14 @@ function applyPendingColorsToCurrentMap(list) {
         if (c.highlight) { hlState[nid] = true;    changedH = true; }
         if (c.cyan)      { cyanState[nid] = true;  changedC = true; }
         if (c.green)     { greenState[nid] = true; changedGr = true; }
+        if (c.pink)      { pinkState[nid] = true;  changedP = true; }
         if (c.redtext)   { rtState[nid] = true;    changedR = true; }
     }
     if (changedG) setNodeGrayoutState(grayState);
     if (changedH) setNodeHighlightState(hlState);
     if (changedC) setNodeCyanState(cyanState);
     if (changedGr) setNodeGreenState(greenState);
+    if (changedP) setNodePinkState(pinkState);
     if (changedR) setNodeRedTextState(rtState);
 }
 

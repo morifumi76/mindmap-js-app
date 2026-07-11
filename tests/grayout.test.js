@@ -160,16 +160,16 @@ const { BASE_URL, CMD } = require('./helpers');
     await page.waitForTimeout(200);
 
     // ========================================
-    // 6. Highlight styling (#FFD43B)
+    // 6. Highlight styling (#FBD960)
     // ========================================
-    console.log('\n--- 6. Highlight styling (#FFD43B) ---');
+    console.log('\n--- 6. Highlight styling (#FBD960) ---');
 
     await page.evaluate(() => window.toggleNodeHighlight('pa'));
     await page.waitForTimeout(300);
 
     const hlBg = await page.$eval('[data-id="pa"]', el => getComputedStyle(el).backgroundColor);
-    // #FFD43B = rgb(255, 212, 59)（WCAG AA: 黒文字と約13.6:1）
-    check('Highlighted bg is rgb(255, 212, 59)', hlBg === 'rgb(255, 212, 59)');
+    // #FBD960 = rgb(251, 217, 96)（WCAG AA: 黒文字と約13.5:1）
+    check('Highlighted bg is rgb(251, 217, 96)', hlBg === 'rgb(251, 217, 96)');
 
     const hlTextColor = await page.$eval('[data-id="pa"] .node-text', el => getComputedStyle(el).color);
     // #1A1A1A = rgb(26, 26, 26)（全ノード共通の文字色）
