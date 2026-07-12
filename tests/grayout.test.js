@@ -205,7 +205,7 @@ const { BASE_URL, CMD } = require('./helpers');
     check('ParentA unhighlighted via button', !await page.evaluate(() => window.isNodeHighlighted('pa')));
 
     // ========================================
-    // 8. Highlight shortcut (Alt+Ctrl+Y on Linux)
+    // 8. Highlight shortcut (Option/Alt+Y 単独)
     // ========================================
     console.log('\n--- 8. Highlight via keyboard shortcut ---');
 
@@ -213,27 +213,19 @@ const { BASE_URL, CMD } = require('./helpers');
     await page.waitForTimeout(100);
     await page.evaluate(() => { var ids = window.getSelectedNodeIds(); ids.clear(); ids.add('pb'); });
 
-    await page.keyboard.down('Alt');
-    await page.keyboard.down(CMD);
-    await page.keyboard.press('y');
-    await page.keyboard.up(CMD);
-    await page.keyboard.up('Alt');
+    await page.keyboard.press('Alt+KeyY');
     await page.waitForTimeout(300);
 
-    check('ParentB highlighted via Alt+Ctrl+Y', await page.evaluate(() => window.isNodeHighlighted('pb')));
+    check('ParentB highlighted via Alt+Y', await page.evaluate(() => window.isNodeHighlighted('pb')));
 
     // Toggle off
     await page.evaluate(() => { var ids = window.getSelectedNodeIds(); ids.clear(); ids.add('pb'); });
-    await page.keyboard.down('Alt');
-    await page.keyboard.down(CMD);
-    await page.keyboard.press('y');
-    await page.keyboard.up(CMD);
-    await page.keyboard.up('Alt');
+    await page.keyboard.press('Alt+KeyY');
     await page.waitForTimeout(300);
     check('ParentB unhighlighted via shortcut', !await page.evaluate(() => window.isNodeHighlighted('pb')));
 
     // ========================================
-    // 9. Grayout shortcut (Alt+Ctrl+G on Linux)
+    // 9. Grayout shortcut (Option/Alt+G 単独)
     // ========================================
     console.log('\n--- 9. Grayout via keyboard shortcut ---');
 
@@ -241,24 +233,22 @@ const { BASE_URL, CMD } = require('./helpers');
     await page.waitForTimeout(100);
     await page.evaluate(() => { var ids = window.getSelectedNodeIds(); ids.clear(); ids.add('pa'); });
 
-    await page.keyboard.down('Alt');
-    await page.keyboard.down(CMD);
-    await page.keyboard.press('g');
-    await page.keyboard.up(CMD);
-    await page.keyboard.up('Alt');
+    await page.keyboard.press('Alt+KeyG');
     await page.waitForTimeout(300);
 
-    check('ParentA grayed out via Alt+Ctrl+G', await page.evaluate(() => window.isNodeGrayedOut('pa')));
+    check('ParentA grayed out via Alt+G', await page.evaluate(() => window.isNodeGrayedOut('pa')));
 
     // Toggle off
     await page.evaluate(() => { var ids = window.getSelectedNodeIds(); ids.clear(); ids.add('pa'); });
-    await page.keyboard.down('Alt');
-    await page.keyboard.down(CMD);
-    await page.keyboard.press('g');
-    await page.keyboard.up(CMD);
-    await page.keyboard.up('Alt');
+    await page.keyboard.press('Alt+KeyG');
     await page.waitForTimeout(300);
     check('ParentA ungrayed via shortcut', !await page.evaluate(() => window.isNodeGrayedOut('pa')));
+
+    // 旧ショートカット（Cmd/Ctrl+Option+G）は廃止されて反応しない
+    await page.evaluate(() => { var ids = window.getSelectedNodeIds(); ids.clear(); ids.add('pa'); });
+    await page.keyboard.press(CMD + '+Alt+KeyG');
+    await page.waitForTimeout(300);
+    check('旧 Cmd/Ctrl+Option+G は無効（廃止済み）', !await page.evaluate(() => window.isNodeGrayedOut('pa')));
 
     // ========================================
     // 10. Mutual exclusion: grayout → highlight

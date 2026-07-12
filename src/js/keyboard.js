@@ -190,10 +190,18 @@ export function handleKeyDown(e) {
         // IME入力中・変換確定直後のキーは無視する（ Safari 等での誤発火防止）
         if (isImeRelatedKey(e)) return;
 
-        // 色ショートカット：編集中でも編集を確定してから色を適用する
-        // 特に Option+Cmd+M は Mac のウィンドウ最小化と衝突するため、
-        // 編集中でも先に preventDefault を呼んで OS の動作を抑える。
-        if (e.altKey && cmdKey) {
+        // 色ショートカット：Option+キー単独（G=グレー / Y=黄 / B=青 / M=緑 / P=ピンク / A=赤文字）。
+        // 旧仕様の Cmd+Option+キーは廃止（Cmd+Option+P が Chrome の印刷と衝突するため全色を統一変更）。
+        // ノードをクリックすると即編集モードに入る仕様のため、ノード編集中は
+        // 従来どおり編集を確定してから色を適用する。ただし Option+英字は特殊文字の
+        // 入力にも使われるため、サイドバー等の入力欄にフォーカスがある間は発動しない
+        var colorKeyTarget = e.target;
+        var inOtherTextInput = colorKeyTarget && (
+            colorKeyTarget.tagName === 'INPUT' ||
+            colorKeyTarget.tagName === 'TEXTAREA' ||
+            (colorKeyTarget.isContentEditable && !editingNodeId)
+        );
+        if (e.altKey && !cmdKey && !e.shiftKey && !inOtherTextInput) {
             if (e.code === 'KeyG') { e.preventDefault(); finishEditing(); applyGrayoutToSelection();   return; }
             if (e.code === 'KeyY') { e.preventDefault(); finishEditing(); applyHighlightToSelection(); return; }
             if (e.code === 'KeyB') { e.preventDefault(); finishEditing(); applyCyanToSelection();      return; }
@@ -294,34 +302,25 @@ export function handleKeyDown(e) {
 
     var currentId = getSelectedNodeId();
 
-    // Mac では Option+G/Y を押すと e.key が特殊文字になるため、
-    // e.code で物理キーを判定してグレーアウト・ハイライトを処理する
+    // 色ショートカット：Option+キー単独（通常モード用。編集モード中は上の分岐で処理済み）。
+    // Mac では Option+英字 を押すと e.key が特殊文字になるため e.code で物理キーを判定する。
+    // Option+英字は特殊文字の入力にも使われるため、入力欄フォーカス中は発動しない
+    var colorTarget = e.target;
+    var inTextInput = colorTarget && (
+        colorTarget.tagName === 'INPUT' ||
+        colorTarget.tagName === 'TEXTAREA' ||
+        colorTarget.isContentEditable
+    );
+    if (e.altKey && !cmdKey && !e.shiftKey && !inTextInput) {
+        if (e.code === 'KeyG') { e.preventDefault(); applyGrayoutToSelection();   return; }
+        if (e.code === 'KeyY') { e.preventDefault(); applyHighlightToSelection(); return; }
+        if (e.code === 'KeyB') { e.preventDefault(); applyCyanToSelection();      return; }
+        if (e.code === 'KeyM') { e.preventDefault(); applyGreenToSelection();     return; }
+        if (e.code === 'KeyP') { e.preventDefault(); applyPinkToSelection();      return; }
+        if (e.code === 'KeyA') { e.preventDefault(); applyRedTextToSelection();   return; }
+    }
+
     if (e.altKey && cmdKey) {
-        if (e.code === 'KeyG') {
-            e.preventDefault();
-            applyGrayoutToSelection();
-            return;
-        }
-        if (e.code === 'KeyY') {
-            e.preventDefault();
-            applyHighlightToSelection();
-            return;
-        }
-        if (e.code === 'KeyB') {
-            e.preventDefault();
-            applyCyanToSelection();
-            return;
-        }
-        if (e.code === 'KeyM') {
-            e.preventDefault();
-            applyGreenToSelection();
-            return;
-        }
-        if (e.code === 'KeyA') {
-            e.preventDefault();
-            applyRedTextToSelection();
-            return;
-        }
         if (e.code === 'KeyK') {
             // Option+Cmd+K – open hyperlink modal for selected node
             e.preventDefault();
@@ -414,20 +413,12 @@ export function handleKeyDown(e) {
             if (cmdKey) { e.preventDefault(); undo(); }
             break;
         case 'y': case 'Y':
-            if (e.altKey && cmdKey) {
-                // Option+Cmd+Y (Mac) or Alt+Ctrl+Y (Windows) – toggle highlight
-                e.preventDefault();
-                applyHighlightToSelection();
-            } else if (cmdKey) {
+            if (cmdKey && !e.altKey) {
                 e.preventDefault(); redo();
             }
             break;
         case 'a': case 'A':
-            if (e.altKey && cmdKey) {
-                // Option+Cmd+A – toggle red text（e.code で処理済みのためここには到達しないが念のため）
-                e.preventDefault();
-                applyRedTextToSelection();
-            } else if (cmdKey) {
+            if (cmdKey && !e.altKey) {
                 e.preventDefault(); selectAll();
             }
             break;
@@ -444,13 +435,6 @@ export function handleKeyDown(e) {
             if (cmdKey) {
                 e.preventDefault();
                 if (currentId) toggleNodeCollapse(currentId);
-            }
-            break;
-        case 'g': case 'G':
-            // Option+Cmd+G (Mac) or Alt+Ctrl+G (Windows) – toggle grayout
-            if (e.altKey && cmdKey) {
-                e.preventDefault();
-                applyGrayoutToSelection();
             }
             break;
         case 'Escape':
