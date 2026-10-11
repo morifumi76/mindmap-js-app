@@ -132,13 +132,19 @@ localHtml = localHtml.replace(/ *<div class="ctx-menu-item" data-action="share"[
 localHtml = localHtml.replace(/ {4}<!-- お守りバックアップ確認[\s\S]*?\n {4}<\/div>\n/, '');
 localHtml = localHtml.replace(/ {4}<!-- ゲストのニックネーム入力[\s\S]*?\n {4}<\/div>\n/, '');
 
+//   7) スクリーンショット機能（📷ボタン・選択ダイアログ）は当面クラウド版のみ。
+//      JS側は要素が無ければ何もしない（initScreenshot の早期return）
+localHtml = localHtml.replace(/ *<!-- スクリーンショット：[^\n]*\n *<div class="screenshot-control"[^\n]*<\/div>\n/, '');
+localHtml = localHtml.replace(/ {4}<!-- Screenshot modal -->[\s\S]*?\n {4}<\/div>\n\n/, '');
+
 // ローカル版のゴミ取りが効いていることをビルド時に検証する（置換漏れの検知）。
 // 要素IDはバンドル済みJS（動作しない死にコード）内にも文字列として残るため、
 // HTMLタグにしか現れない `id="..."` の形で照合する
 const forbiddenInLocal = ['og:image', 'twitter:card', 'rel="canonical"', 'notion.site',
     'mindmap.johosauce.com', 'id="setPasswordOverlay"', 'id="authOverlay"',
     'id="migrationOverlay"', 'id="shareOverlay"', 'id="readonlyBanner"',
-    'id="backupConfirmOverlay"', 'id="nicknameOverlay"'];
+    'id="backupConfirmOverlay"', 'id="nicknameOverlay"',
+    'id="screenshotFloatBtn"', 'id="screenshotModalOverlay"'];
 for (const word of forbiddenInLocal) {
     if (localHtml.includes(word)) {
         throw new Error(`local.html に不要な文字列が残っています: ${word}`);

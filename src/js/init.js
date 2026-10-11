@@ -36,6 +36,7 @@ import { startEditing } from './editing.js';
 import { copyToClipboard } from './clipboard.js';
 import { render, resetView } from './render.js';
 import { initRelationsEvents } from './relations/index.js';
+import { initScreenshot } from './screenshot.js';
 import {
     applyCyanToSelection,
     applyGrayoutToSelection,
@@ -106,6 +107,7 @@ export function init() {
         document.getElementById('copyBtn').addEventListener('click', copyToClipboard);
         document.getElementById('expandAllBtn').addEventListener('click', expandAllNodes);
         document.getElementById('collapseAllBtn').addEventListener('click', collapseAllNodes);
+        initScreenshot();
 
         // 高速モードトグル：localStorageから初期状態を反映し、クリックで切り替え
         var fastToggle = document.getElementById('fastModeToggle');

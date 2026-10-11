@@ -639,3 +639,53 @@
     font-size: 13px;
     font-family: 'Meiryo UI', Meiryo, sans-serif;
 }
+
+/* スクリーンショットボタン（他のアイコン群と同じ白い箱） */
+.screenshot-control {
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+    overflow: hidden;
+}
+.canvas-float-btns .screenshot-float-btn {
+    font-size: 15px;
+    line-height: 1;
+}
+
+/* スクリーンショット選択ダイアログ（枠はリンク設定モーダルを共用） */
+.screenshot-modal-desc {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 16px;
+}
+.screenshot-modal-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.screenshot-modal-btns button {
+    padding: 10px 16px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    font-family: inherit;
+}
+.screenshot-modal-btns button:hover {
+    background: #f3f4f6;
+}
+.screenshot-modal-btns .screenshot-modal-primary {
+    background: #2563eb;
+    color: #fff;
+    border-color: #2563eb;
+}
+.screenshot-modal-btns .screenshot-modal-primary:hover {
+    background: #1d4ed8;
+}
+#screenshotCancelBtn {
+    border-color: transparent;
+    color: #666;
+}

@@ -189,6 +189,8 @@
 
     <!-- Floating action buttons (top-center of canvas) -->
     <div class="canvas-float-btns" id="canvasFloatBtns">
+        <!-- スクリーンショット：マップ全体を1枚の画像に（ローカル版では build.js が削除） -->
+        <div class="screenshot-control" id="screenshotControl"><button class="float-action-btn screenshot-float-btn" id="screenshotFloatBtn" title="マップ全体を画像にする" aria-label="スクリーンショット">📷</button></div>
         <!-- 縦書きモード：高速モードと同じトグルUI（スタイルは fast-mode-* を共用） -->
         <div class="fast-mode-control" id="verticalModeControl" title="ルートを上に置き、子ノードを下へ展開する縦書きモード。Enterで子・Tabで兄弟を追加（マップごとに保存）">
             <span class="fast-mode-label">縦書きモード</span>
@@ -236,6 +238,19 @@
                     <polyline points="20.5,10 22,12 20.5,14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </button>
+        </div>
+    </div>
+
+    <!-- Screenshot modal -->
+    <div class="link-modal-overlay" id="screenshotModalOverlay" style="display:none">
+        <div class="link-modal screenshot-modal" role="dialog" aria-labelledby="screenshotModalTitle">
+            <div class="link-modal-header" id="screenshotModalTitle">📷 マップ全体を画像にする</div>
+            <p class="screenshot-modal-desc">開いている階層をすべて含めた1枚の画像を作ります。</p>
+            <div class="screenshot-modal-btns">
+                <button type="button" class="screenshot-modal-primary" id="screenshotCopyBtn">クリップボードにコピー</button>
+                <button type="button" id="screenshotSaveBtn">ファイルとして保存</button>
+                <button type="button" id="screenshotCancelBtn">キャンセル</button>
+            </div>
         </div>
     </div>
 
