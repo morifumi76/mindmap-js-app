@@ -183,9 +183,14 @@ function showBackupConfirm(mapId, onProceed) {
     };
 }
 
-function setShareUrl(shareId, urlInput, urlBox) {
+// 共有URL（ゲストに送るURL）を組み立てる。上部バナーの「URLをコピー」からも使う
+export function buildShareUrl(shareId) {
     var base = window.location.origin + window.location.pathname.replace(/\/share\/.*$/, '');
-    urlInput.value = base.replace(/\/$/, '') + '/share/' + shareId;
+    return base.replace(/\/$/, '') + '/share/' + shareId;
+}
+
+function setShareUrl(shareId, urlInput, urlBox) {
+    urlInput.value = buildShareUrl(shareId);
     urlBox.classList.add('show');
 }
 
