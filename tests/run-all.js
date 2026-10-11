@@ -28,6 +28,7 @@ const TEST_FILES = [
     'collab.test.js',
     'collab-ui.test.js',
     'owner-banner.test.js',
+    'screenshot.test.js',
 ];
 
 function waitForServer(port, retries, done) {
