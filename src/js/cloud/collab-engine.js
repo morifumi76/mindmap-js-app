@@ -61,16 +61,28 @@ var tickTimer = null;
 var lastPresenceEditing = null;
 var reconnectBannerEl = null;
 
+// ---- 最新状態の受け渡し（参加直後・スリープ復帰・ずれ検知時） ----
+// 画面を開いてから部屋に入るまでの間や、スリープ中に届いた操作は受け取れない。
+// そのままだと古いツリーのまま編集・保存して他の人の変更を巻き戻してしまうため、
+// 参加済みの人から「最新のツリー全体」を受け取って追いつく（sync-req → sync-state）
+var SYNC_REPLY_WAIT_MS = 5000;  // 最新状態の返事を待つ時間（誰もいなければ返事は来ない）
+var HASH_INTERVAL_MS = 4000;    // ツリーの一致確認（指紋の送信）間隔
+var QUIET_MS = 1500;            // 直近にこの時間内の操作があれば一致確認しない（通信中の差を誤検知しないため）
+var MISMATCH_LIMIT = 2;         // 連続でこの回数ずれていたら最新状態を取り直す
+var syncRequest = null;         // { id, log: [{ op, own }], timer } 返事待ちの要求
+var lastOpAt = 0;               // 最後に操作を送受信した時刻（自分の時計）
+var mismatchCounts = {};        // 相手のclientId → 連続不一致回数
+var hashTimer = null;
+
 // 参加者の色パレット（重複しにくい順番で割り当て）
 var COLLAB_COLORS = ['#d9730d', '#0b6e99', '#0f7b6c', '#6940a5', '#ad1a72', '#e03e3e', '#dfab01', '#37352f'];
 
+// 参加者ID（自分が送った操作を自分で受け取らないための識別子）は、画面を開くたびに新しく作る。
+// 以前は sessionStorage に保存して使い回していたが、Chrome の「タブを複製」等では
+// sessionStorage ごとコピーされるため、2つのタブが同じIDになり、お互いの操作を
+// 「自分の操作」と誤認して無視 → 片方が古いツリーのまま保存して階層が巻き戻る事故が起きていた
 function makeClientId() {
-    var saved = null;
-    try { saved = sessionStorage.getItem('collab-client-id'); } catch (e) {}
-    if (saved) return saved;
-    var id = 'c' + Math.random().toString(36).slice(2, 10);
-    try { sessionStorage.setItem('collab-client-id', id); } catch (e) {}
-    return id;
+    return 'c' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 }
 
 export function isCollabActive() {
@@ -266,9 +278,13 @@ function collectExtras() {
 function renderPreservingEditing() {
     var editId = editingNodeId;
     var draftText = null;
+    var caret = null;
     if (editId) {
         var el = document.querySelector('[data-id="' + editId + '"] .node-text');
-        if (el) draftText = el.innerText;
+        if (el) {
+            draftText = el.innerText;
+            caret = getCaretOffsets(el);
+        }
     }
     render();
     if (editId && findInTree(mindMapData.root, editId)) {
@@ -280,18 +296,52 @@ function renderPreservingEditing() {
             nodeEl.style.width = 'auto';
             textEl.contentEditable = 'true';
             textEl.focus();
-            var range = document.createRange();
-            range.selectNodeContents(textEl);
-            range.collapse(false); // キャレットは末尾へ
-            var sel = window.getSelection();
-            sel.removeAllRanges();
-            sel.addRange(range);
+            // 選択範囲・キャレット位置を元に戻す（新規ノードの「新しいノード」全選択を保たないと、
+            // 相手の操作が届いた瞬間に打った文字が既定テキストの後ろに付け足されてしまう）
+            setCaretOffsets(textEl, caret);
         }
     } else if (editId) {
         // 編集中のノードが相手の操作で消えた → 編集状態を破棄
         setEditingNodeId(null);
     }
     decorateEditingOutlines();
+}
+
+// 要素内の選択範囲を「先頭からの文字数」で取り出す（選択が要素外なら null）
+function getCaretOffsets(el) {
+    var sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return null;
+    var r = sel.getRangeAt(0);
+    if (!el.contains(r.startContainer) || !el.contains(r.endContainer)) return null;
+    function offsetOf(container, offset) {
+        var pre = document.createRange();
+        pre.selectNodeContents(el);
+        pre.setEnd(container, offset);
+        return pre.toString().length;
+    }
+    return { start: offsetOf(r.startContainer, r.startOffset), end: offsetOf(r.endContainer, r.endOffset) };
+}
+
+// 文字数で表した選択範囲を要素内に復元する（不明なときはキャレットを末尾へ）
+function setCaretOffsets(el, caret) {
+    var range = document.createRange();
+    range.selectNodeContents(el);
+    if (caret) {
+        var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+        var pos = 0, node, startSet = false;
+        while ((node = walker.nextNode())) {
+            var len = node.textContent.length;
+            if (!startSet && caret.start <= pos + len) { range.setStart(node, caret.start - pos); startSet = true; }
+            if (startSet && caret.end <= pos + len) { range.setEnd(node, caret.end - pos); break; }
+            pos += len;
+        }
+        if (!startSet) range.collapse(false);
+    } else {
+        range.collapse(false);
+    }
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
 }
 
 // ========================================
@@ -304,6 +354,16 @@ function onLocalSave() {
         lastSyncedExtras = collectExtras();
         return;
     }
+    var d = sendPendingDiff();
+    if (!d) return;
+    undoStack.push({ ops: d.ops, inverses: d.inverses });
+    if (undoStack.length > MAX_OP_LOG) undoStack.shift();
+    redoStack = [];
+    persistAfterOwnEdit();
+}
+
+// 前回同期ツリーとの差分を操作イベントとして送り、同期基準を更新する。送ったものが無ければ null
+function sendPendingDiff() {
     var d = diffTrees(lastSyncedTree, mindMapData.root);
 
     // 色（5種）・関連線の変更も操作イベントとして拾う
@@ -319,19 +379,20 @@ function onLocalSave() {
         d.inverses.push({ t: 'rel', relations: JSON.parse(lastSyncedExtras.relations) });
     }
 
-    if (d.ops.length === 0) return;
-    for (var i = 0; i < d.ops.length; i++) {
-        var op = d.ops[i];
-        op.sender = session.clientId;
-        op.ts = Date.now();
-        session.handle.sendOp(op);
-    }
-    undoStack.push({ ops: d.ops, inverses: d.inverses });
-    if (undoStack.length > MAX_OP_LOG) undoStack.shift();
-    redoStack = [];
+    if (d.ops.length === 0) return null;
+    for (var i = 0; i < d.ops.length; i++) sendOwnOp(d.ops[i]);
     lastSyncedTree = deepClone(mindMapData.root);
     lastSyncedExtras = extras;
-    persistAfterOwnEdit();
+    return d;
+}
+
+// 自分の操作を送信する（最新状態の返事待ち中は、返事に含まれない可能性があるので控えておく）
+function sendOwnOp(op) {
+    op.sender = session.clientId;
+    op.ts = Date.now();
+    session.handle.sendOp(op);
+    lastOpAt = Date.now();
+    if (syncRequest) syncRequest.log.push({ op: deepClone(op), own: true });
 }
 
 // 入力中のテキストを300msデバウンスでライブ送信する（1文字ごとに送らない）。
@@ -351,6 +412,7 @@ function onEditingInput(e) {
         if (!el) return;
         var text = el.innerText.replace(/\u200B/g, '');
         session.handle.sendOp({ t: 'text', nodeId: nodeId, text: text, sender: session.clientId, ts: Date.now(), live: true });
+        lastOpAt = Date.now();
     }, TEXT_DEBOUNCE_MS);
 }
 
@@ -361,6 +423,12 @@ function onRemoteOp(op) {
     if (!session || !op || op.sender === session.clientId) return;
     // イベントが届いた＝接続は生きている。切断バナーが出ていたら復旧処理を行う
     noteConnectionAlive();
+    // 制御メッセージ（最新状態の受け渡し・一致確認）はツリーに適用しない
+    if (op.t === 'sync-req') { replyStateSync(op); return; }
+    if (op.t === 'sync-state') { adoptStateSync(op); return; }
+    if (op.t === 'hash') { onRemoteHash(op); return; }
+    lastOpAt = Date.now();
+    if (syncRequest) syncRequest.log.push({ op: deepClone(op), own: false });
     applyingRemote = true;
     try {
         // 自分が編集中のノードへのライブテキストは適用しない（後勝ち: 自分の確定が勝つ）
@@ -509,6 +577,11 @@ function tick() {
 function onStatusChange(status) {
     if (!session) return;
     if (status === 'SUBSCRIBED') {
+        // 初回参加: 読み込みから参加までの間に他の人が行った操作を取り戻す
+        if (!session.joinedOnce) {
+            session.joinedOnce = true;
+            requestStateSync(null);
+        }
         handleRecovered();
     } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
         session.hadDisconnect = true;
@@ -543,7 +616,141 @@ function handleRecovered() {
         } finally {
             applyingRemote = false;
         }
+        // DBは保存のデバウンス分だけ遅れることがあるため、参加中の人からも最新状態をもらう
+        requestStateSync(null);
     }).catch(function() {});
+}
+
+// ========================================
+// 最新状態の受け渡しと一致確認
+// ========================================
+
+// 参加中の誰か（to=null）または特定の相手に、最新のツリー全体を要求する
+function requestStateSync(target) {
+    if (!session) return;
+    if (syncRequest) clearTimeout(syncRequest.timer);
+    var id = session.clientId + '-' + Date.now().toString(36);
+    syncRequest = {
+        id: id,
+        log: [],
+        timer: setTimeout(function() { syncRequest = null; }, SYNC_REPLY_WAIT_MS)
+    };
+    session.handle.sendOp({ t: 'sync-req', reqId: id, to: target || null, sender: session.clientId, ts: Date.now() });
+}
+
+// 要求に応じて、自分が送受信済みのツリー（同期基準）を返す。
+// 編集中の未確定テキストなどは含めない（確定時に通常の差分で届く）
+function replyStateSync(req) {
+    if (req.to && req.to !== session.clientId) return;
+    if (!lastSyncedTree) return;
+    session.handle.sendOp({
+        t: 'sync-state', reqId: req.reqId, to: req.sender, sender: session.clientId, ts: Date.now(),
+        root: deepClone(lastSyncedTree),
+        extras: deepClone(lastSyncedExtras)
+    });
+}
+
+// 受け取った最新状態を採用する（複数人から返事が来ても最初の1通だけ）。
+// 要求後に送受信した操作は返事に含まれていない可能性があるため、上から適用し直す。
+// 自分の操作は相手に届いていない可能性もあるので、採用後に差分として送り直す（重複は相手側で無視される）
+function adoptStateSync(msg) {
+    if (!syncRequest || msg.reqId !== syncRequest.id || msg.to !== session.clientId || !msg.root) return;
+    var log = syncRequest.log;
+    clearTimeout(syncRequest.timer);
+    syncRequest = null;
+    applyingRemote = true;
+    try {
+        mindMapData.root = deepClone(msg.root);
+        lastSyncedTree = deepClone(msg.root);
+        if (msg.extras) {
+            for (var kind in COLOR_KINDS) {
+                if (msg.extras[kind] !== undefined) COLOR_KINDS[kind].set(JSON.parse(msg.extras[kind]));
+            }
+            if (msg.extras.relations !== undefined) mindMapData.relations = JSON.parse(msg.extras.relations);
+        }
+        lastSyncedExtras = collectExtras();
+        for (var i = 0; i < log.length; i++) {
+            if (log[i].own) applyOwnOpLocally(log[i].op);
+            else applyOpEverywhere(log[i].op);
+        }
+        renderPreservingEditing();
+        persistAfterRemoteOp();
+    } finally {
+        applyingRemote = false;
+    }
+    mismatchCounts = {};
+    sendPendingDiff();
+}
+
+// 自分の操作を、同期基準（lastSyncedTree）には入れずに手元のツリーだけへ適用する
+function applyOwnOpLocally(op) {
+    if (op.t === 'color') {
+        var kind = COLOR_KINDS[op.kind];
+        if (kind) kind.set(deepClone(op.state || {}));
+        return;
+    }
+    if (op.t === 'rel') { mindMapData.relations = deepClone(op.relations || []); return; }
+    applyOp(mindMapData.root, op);
+}
+
+// ---- 一致確認（安全網）----
+// 数秒ごとに「同期済みツリーの指紋」を送り合い、ずれが続いていたら、より古い側が最新状態を取り直す。
+// 古い側の判定は「最後に操作を送受信してからの経過時間」（各自の時計で測るのでPC間の時計のずれに強い）
+function stableStringify(v) {
+    if (v === null || typeof v !== 'object') return JSON.stringify(v);
+    if (Array.isArray(v)) return '[' + v.map(stableStringify).join(',') + ']';
+    return '{' + Object.keys(v).sort().map(function(k) {
+        return JSON.stringify(k) + ':' + stableStringify(v[k]);
+    }).join(',') + '}';
+}
+
+function treeFingerprint() {
+    var extras = {};
+    for (var k in lastSyncedExtras) extras[k] = JSON.parse(lastSyncedExtras[k]);
+    var str = stableStringify({ root: lastSyncedTree, extras: extras });
+    var h = 5381;
+    for (var i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0;
+    return h.toString(36) + ':' + str.length;
+}
+
+// 一致確認をしてよい「静かな」状態か。未確定の入力がある間（ライブ送信中の文字は同期基準に入らない）や
+// 直近に操作があった間は、一時的な差を誤検知しないよう確認しない
+function isQuiet() {
+    return !syncRequest && !hasUncommittedDraft() && Date.now() - lastOpAt > QUIET_MS;
+}
+
+// 編集中のノードに、まだ確定していない入力があるか（編集状態に入っただけなら false）
+function hasUncommittedDraft() {
+    if (!editingNodeId || !lastSyncedTree) return false;
+    var el = document.querySelector('[data-id="' + editingNodeId + '"] .node-text');
+    var synced = findInTree(lastSyncedTree, editingNodeId);
+    if (!el || !synced) return false;
+    return el.innerText.replace(/\u200B/g, '') !== synced.node.text;
+}
+
+function hashTick() {
+    // 裏に回っているタブは送らない（通信量の節約。表示に戻った時点で onWakeUp が最新状態をもらう）
+    if (!session || !lastSyncedTree || !isQuiet() || document.visibilityState === 'hidden') return;
+    session.handle.sendOp({ t: 'hash', h: treeFingerprint(), age: Date.now() - lastOpAt, sender: session.clientId, ts: Date.now() });
+}
+
+function onRemoteHash(msg) {
+    if (!lastSyncedTree || !isQuiet()) return;
+    if (msg.h === treeFingerprint()) { mismatchCounts[msg.sender] = 0; return; }
+    mismatchCounts[msg.sender] = (mismatchCounts[msg.sender] || 0) + 1;
+    if (mismatchCounts[msg.sender] < MISMATCH_LIMIT) return;
+    mismatchCounts[msg.sender] = 0;
+    var myAge = Date.now() - lastOpAt;
+    // 自分の方が長く操作を受け取っていない（＝取りこぼしの可能性が高い）なら相手から取り直す。
+    // 同程度なら clientId の大小で片側だけが動く（両者が同時に取り直し合わないように）
+    var iAmStaler = myAge > msg.age + QUIET_MS || (Math.abs(myAge - msg.age) <= QUIET_MS && session.clientId > msg.sender);
+    if (iAmStaler) requestStateSync(msg.sender);
+}
+
+// スリープ復帰・タブ復帰・ネット復帰時は、取りこぼしがあり得るので最新状態をもらう
+function onWakeUp() {
+    if (document.visibilityState === 'hidden') return;
+    if (session) requestStateSync(null);
 }
 
 // 3秒ごとにチャンネルへ入り直す（成功すれば onStatus の SUBSCRIBED → handleRecovered が走る）
@@ -590,11 +797,7 @@ export function collabUndo() {
         // 逆操作を逆順に適用（相手に消されたノード等は黙ってスキップ）
         for (var i = entry.inverses.length - 1; i >= 0; i--) {
             var inv = entry.inverses[i];
-            if (applyOpEverywhere(inv)) {
-                inv.sender = session.clientId;
-                inv.ts = Date.now();
-                session.handle.sendOp(inv);
-            }
+            if (applyOpEverywhere(inv)) sendOwnOp(inv);
         }
         renderPreservingEditing();
         persistAfterOwnEditImmediateSafe();
@@ -612,10 +815,7 @@ export function collabRedo() {
     try {
         for (var i = 0; i < entry.ops.length; i++) {
             var op = entry.ops[i];
-            if (applyOpEverywhere(op)) {
-                op.ts = Date.now();
-                session.handle.sendOp(op);
-            }
+            if (applyOpEverywhere(op)) sendOwnOp(op);
         }
         renderPreservingEditing();
         persistAfterOwnEditImmediateSafe();
@@ -658,6 +858,7 @@ export function startCollabSession(opts) {
         clientId: clientId,
         mapLocalId: opts.mapLocalId || null,
         hadDisconnect: false,
+        joinedOnce: false,
         handle: null
     };
     lastSyncedTree = (mindMapData && mindMapData.root) ? deepClone(mindMapData.root) : null;
@@ -668,6 +869,9 @@ export function startCollabSession(opts) {
     session.handle = joinChannel();
     document.addEventListener('input', onEditingInput, true);
     tickTimer = setInterval(tick, 400);
+    hashTimer = setInterval(hashTick, HASH_INTERVAL_MS);
+    document.addEventListener('visibilitychange', onWakeUp);
+    window.addEventListener('online', onWakeUp);
     renderAvatars();
 }
 
@@ -687,7 +891,14 @@ export function stopCollabSession() {
     if (!session) return;
     try { session.handle.leave(); } catch (e) {}
     document.removeEventListener('input', onEditingInput, true);
+    document.removeEventListener('visibilitychange', onWakeUp);
+    window.removeEventListener('online', onWakeUp);
     clearInterval(tickTimer);
+    clearInterval(hashTimer);
+    if (syncRequest) clearTimeout(syncRequest.timer);
+    syncRequest = null;
+    mismatchCounts = {};
+    lastOpAt = 0;
     clearTimeout(guestSaveTimer);
     clearTimeout(reconnectTimer);
     reconnectTimer = null;

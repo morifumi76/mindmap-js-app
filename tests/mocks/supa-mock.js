@@ -33,6 +33,35 @@
     var collabFlags = {}; // localId → allow_collab
     var shareCounter = 0; // 本物と同様「ONのたびに新しいIDを発行」を再現するための連番
 
+    // ---- サーバー再現モード用ヘルパー ----
+    function isCollabMapId(localId) {
+        try {
+            var meta = JSON.parse(localStorage.getItem('mindmap-meta') || '[]');
+            for (var i = 0; i < meta.length; i++) {
+                if (String(meta[i].id) === String(localId)) return meta[i].shareId === 'mockshare-collab';
+            }
+        } catch (e) {}
+        return false;
+    }
+    function serverModeLoad() {
+        try {
+            var meta = JSON.parse(localStorage.getItem('mindmap-meta') || '[]');
+            var pending = JSON.parse(localStorage.getItem('mindmap-pending-sync') || '{}');
+            for (var i = 0; i < meta.length; i++) {
+                if (meta[i].shareId !== 'mockshare-collab') continue;
+                var key = 'mindmap-data-' + meta[i].id;
+                if (pending[String(meta[i].id)]) {
+                    // 未同期分のリプレイ（本物の replayPendingSyncs 相当）
+                    localStorage.setItem('mock-collab-map-data', localStorage.getItem(key));
+                    delete pending[String(meta[i].id)];
+                    localStorage.setItem('mindmap-pending-sync', JSON.stringify(pending));
+                }
+                var server = localStorage.getItem('mock-collab-map-data');
+                if (server) localStorage.setItem(key, server);
+            }
+        } catch (e) {}
+    }
+
     window._supa = {
         login: function(email, password) {
             record('login', arguments);
@@ -74,9 +103,12 @@
             return hash.indexOf('type=invite') !== -1 || hash.indexOf('type=signup') !== -1;
         },
 
-        // 新規ユーザー扱い（クラウドにデータなし）。ローカルの初期化フローに任せる
+        // 新規ユーザー扱い（クラウドにデータなし）。ローカルの初期化フローに任せる。
+        // サーバー再現モード（localStorage 'mock-server-mode' = '1'、ストレステスト用）では
+        // 本物と同じく「未同期分をサーバーへリプレイ → サーバーの最新データで手元を上書き」を行う
         loadUserData: function() {
             record('loadUserData', arguments);
+            if (localStorage.getItem('mock-server-mode') === '1') serverModeLoad();
             return Promise.resolve(false);
         },
 
@@ -90,6 +122,10 @@
                 delete p[String(localId)];
                 localStorage.setItem('mindmap-pending-sync', JSON.stringify(p));
             } catch (e) {}
+            // サーバー再現モード: 共同編集マップの保存は共有側のDB行（mock-collab-map-data）と同じ行に書く
+            if (localStorage.getItem('mock-server-mode') === '1' && isCollabMapId(localId) && arguments[2]) {
+                try { localStorage.setItem('mock-collab-map-data', JSON.stringify(arguments[2])); } catch (e) {}
+            }
             return Promise.resolve();
         },
         deleteMap: function(localId) {
@@ -182,6 +218,8 @@
             }
 
             bc.onmessage = function(ev) {
+                // テスト用: PCスリープ等による「通知なしの受信停止」を再現（window._mockSleep = true）
+                if (window._mockSleep) return;
                 var msg = ev.data || {};
                 if (msg.kind === 'op') {
                     if (opts.onOp) opts.onOp(msg.payload);
@@ -209,7 +247,7 @@
             }, 0);
 
             return {
-                sendOp: function(op) { bc.postMessage({ kind: 'op', payload: op }); },
+                sendOp: function(op) { if (!window._mockSleep) bc.postMessage({ kind: 'op', payload: op }); },
                 sendEnd: function() { bc.postMessage({ kind: 'end' }); },
                 updatePresence: function(p) {
                     roster[myKey] = p;
