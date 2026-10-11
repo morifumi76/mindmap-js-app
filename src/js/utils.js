@@ -6,8 +6,10 @@
 export // state.js から移動（このファイルでしか使われないモジュール内部状態）
 let nodeIdCounter = 0;
 
+// 末尾に乱数を付ける。連番と時刻だけだと、共同編集中に別の画面（連番はページごとに1から）が
+// 同じミリ秒にノードを作ったとき ID が重なり、片方のノードが消える事故が起きていた
 export function generateId() {
-    return 'node_' + (++nodeIdCounter) + '_' + Date.now();
+    return 'node_' + (++nodeIdCounter) + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
 }
 
 export function deepClone(obj) {

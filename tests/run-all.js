@@ -29,6 +29,8 @@ const TEST_FILES = [
     'collab-ui.test.js',
     'owner-banner.test.js',
     'screenshot.test.js',
+    'collab-resync.test.js',
+    'collab-structure-fuzz.test.js',
 ];
 
 function waitForServer(port, retries, done) {
