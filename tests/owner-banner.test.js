@@ -13,6 +13,7 @@ function assert(cond, msg) {
 (async () => {
     const browser = await chromium.launch();
     const ctx = await browser.newContext({ viewport: { width: 1400, height: 900 } });
+    await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: new URL(CLOUD_URL).origin });
     const page = await ctx.newPage();
 
     // ---- セットアップ: ログインしてマップを2つ用意（切替テスト用） ----
@@ -73,6 +74,33 @@ function assert(cond, msg) {
     assert(leftSidebarTop === '32px', '左サイドバーも下がる: ' + leftSidebarTop);
 
     // ========================================
+    // Test 2b: 青帯の「URLをコピー」ボタン
+    // ========================================
+    console.log('\n=== Test 2b: 青帯のURLをコピー ===');
+    const dialogUrl = await page.$eval('#shareUrlInput', el => el.value);
+    assert(/\/share\/[^/]+$/.test(dialogUrl), '共有ダイアログに共有URLが出ている: ' + dialogUrl);
+    const btnLabel = await page.$eval('#ownerShareCopyBtn', el => el.textContent);
+    assert(btnLabel === 'URLをコピー', 'ボタンの文字が「URLをコピー」: ' + btnLabel);
+    const nextToText = await page.$eval('#ownerShareCopyBtn', el => el.previousElementSibling.className);
+    assert(nextToText === 'owner-share-banner-text', 'ボタンは文言の右隣にある');
+    await page.click('#shareCloseBtn');
+    await page.waitForTimeout(200);
+    await page.evaluate(() => navigator.clipboard.writeText(''));
+    await page.click('#ownerShareCopyBtn');
+    await page.waitForTimeout(300);
+    let clip = await page.evaluate(() => navigator.clipboard.readText());
+    assert(clip === dialogUrl, '共有ダイアログと同じURLがコピーされる: ' + clip);
+    const toastText = await page.$eval('#toast', el => el.textContent);
+    assert(toastText === 'URLをコピーしました', 'トーストが出る: ' + toastText);
+    let copiedLabel = await page.$eval('#ownerShareCopyBtn', el => el.textContent);
+    assert(copiedLabel === '✓ コピーしました', 'ボタンが「✓ コピーしました」に変わる: ' + copiedLabel);
+    await page.waitForTimeout(2200);
+    copiedLabel = await page.$eval('#ownerShareCopyBtn', el => el.textContent);
+    assert(copiedLabel === 'URLをコピー', '2秒後に「URLをコピー」へ戻る: ' + copiedLabel);
+    await page.evaluate(() => window.showShareDialog(1));
+    await page.waitForTimeout(600);
+
+    // ========================================
     // Test 3: 共同編集ON → オレンジバナーに変化
     // ========================================
     console.log('\n=== Test 3: 共同編集ONでオレンジバナー ===');
@@ -85,6 +113,17 @@ function assert(cond, msg) {
     assert(collabText.includes('共同編集モード'), 'バナー文言が共同編集を示す: ' + collabText);
     const orangeBg = await page.$eval('#ownerShareBanner', el => getComputedStyle(el).backgroundColor);
     assert(orangeBg === 'rgb(217, 115, 13)', 'バナーがオレンジ #d9730d: ' + orangeBg);
+
+    // オレンジ帯でも同じURLがコピーできる（共有ダイアログを閉じてから押す）
+    await page.click('#shareCloseBtn');
+    await page.waitForTimeout(200);
+    await page.evaluate(() => navigator.clipboard.writeText(''));
+    await page.click('#ownerShareCopyBtn');
+    await page.waitForTimeout(300);
+    clip = await page.evaluate(() => navigator.clipboard.readText());
+    assert(clip === dialogUrl, 'オレンジ帯でも同じ共有URLがコピーされる: ' + clip);
+    await page.evaluate(() => window.showShareDialog(1));
+    await page.waitForTimeout(600);
 
     // ========================================
     // Test 4: 旧仕様の「共同編集中」文字ラベルが存在しない

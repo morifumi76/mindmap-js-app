@@ -614,6 +614,28 @@ body.collab-guest-mode .collab-avatars {
     background: #d9730d;
 }
 
+/* 「URLをコピー」ボタン：帯の色に合わせた白抜きの小ボタン（文言の右隣） */
+.owner-share-banner-copy {
+    margin-left: 12px;
+    height: 22px;
+    padding: 0 10px;
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    border-radius: 4px;
+    background: transparent;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.12s;
+}
+.owner-share-banner-copy:hover {
+    background: rgba(255, 255, 255, 0.18);
+}
+.owner-share-banner-copy:active {
+    background: rgba(255, 255, 255, 0.3);
+}
+
 /* バナー表示中はバナーの高さぶん上部の固定要素を下げる
    （閲覧専用モード・ゲスト参加中と同じレイアウト調整。
    オーナー画面は左サイドバーやスターボタン等も表示されるため対象が多い） */
